@@ -1,0 +1,90 @@
+name: Deploy Production
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  PROJECT_ID: medichips-new
+  REGION: asia-northeast3
+  REGISTRY: asia-northeast3-docker.pkg.dev/medichips-new/medichips-link
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Get version tag
+        id: tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      # Build and push Docker images
+      - name: Build Web image
+        run: |
+          docker build -f docker/Dockerfile.web \
+            -t ${{ env.REGISTRY }}/web:${{ steps.tag.outputs.VERSION }} \
+            -t ${{ env.REGISTRY }}/web:latest .
+          docker push ${{ env.REGISTRY }}/web:${{ steps.tag.outputs.VERSION }}
+          docker push ${{ env.REGISTRY }}/web:latest
+
+      # Backup database before migration
+      - name: Backup Database
+        run: |
+          gcloud sql export sql medichips-link-db \
+            gs://medichips-link-backups/pre-deploy-${{ steps.tag.outputs.VERSION }}.sql \
+            --database=medichips_link
+
+      # Run database migrations
+      - name: Run Migrations
+        run: |
+          gcloud run jobs execute medichips-link-migrate \
+            --region ${{ env.REGION }} --wait
+
+      # Deploy with canary (10% traffic initially)
+      - name: Deploy Web (Canary)
+        run: |
+          gcloud run deploy medichips-link-web \
+            --image ${{ env.REGISTRY }}/web:${{ steps.tag.outputs.VERSION }} \
+            --region ${{ env.REGION }} \
+            --tag canary \
+            --no-traffic
+
+      # Smoke test canary
+      - name: Smoke Test
+        run: |
+          CANARY_URL=$(gcloud run services describe medichips-link-web \
+            --region ${{ env.REGION }} \
+            --format 'value(status.traffic[0].url)')
+          curl -sf "${CANARY_URL}/api/v1/health" || exit 1
+
+      # Shift all traffic to new version
+      - name: Shift Traffic
+        run: |
+          gcloud run services update-traffic medichips-link-web \
+            --region ${{ env.REGION }} \
+            --to-latest
+
+      - name: Verify Deployment
+        run: |
+          sleep 10
+          curl -sf "https://link.medichips.ai/api/v1/health" || exit 1
+          echo "Deployment successful!"

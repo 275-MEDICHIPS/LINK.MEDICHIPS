@@ -164,6 +164,7 @@ model Organization {
   programs    Program[]
   apiKeys     OrgApiKey[]
   courses     Course[]
+  inviteCodes InviteCode[]
   notifications Notification[]
   impactMetrics ImpactMetric[]
   costRecords   CostRecord[]
@@ -324,6 +325,25 @@ model OrganizationMembership {
 
   @@unique([userId, organizationId])
   @@map("organization_memberships")
+}
+
+model InviteCode {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  role           UserRole     @default(LEARNER)
+  createdBy      String
+  usedBy         String?
+  usedAt         DateTime?
+  maxUses        Int          @default(1)
+  useCount       Int          @default(0)
+  expiresAt      DateTime
+
+  createdAt      DateTime     @default(now())
+
+  @@index([code])
+  @@map("invite_codes")
 }
 
 model ProgramEnrollment {

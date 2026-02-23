@@ -1,0 +1,40 @@
+FROM node:20-alpine AS base
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+FROM base AS deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+
+FROM base AS builder
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm db:generate
+RUN pnpm build
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 worker
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./
+
+USER worker
+
+# Worker processes are triggered via Cloud Run Jobs
+# The CMD is set at deployment time for each job type:
+# - video-transcode
+# - ai-course-builder
+# - translation-pipeline
+# - notification-dispatcher
+# - analytics-aggregator
+# - certificate-generator
+CMD ["node", "--experimental-specifier-resolution=node", "dist/workers/index.js"]

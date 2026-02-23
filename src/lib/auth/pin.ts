@@ -45,6 +45,13 @@ export function isAccountLocked(
 }
 
 /**
+ * Check if a character is in the readable character set (no I, O, 0, 1).
+ */
+export function isReadableChar(char: string): boolean {
+  return "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".includes(char);
+}
+
+/**
  * Calculate lockout expiry with exponential backoff.
  * 5 fails = 15 min, 10 fails = 60 min, 15 fails = 240 min
  */

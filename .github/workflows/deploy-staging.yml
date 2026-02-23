@@ -1,0 +1,66 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  PROJECT_ID: medichips-new
+  REGION: asia-northeast3
+  REGISTRY: asia-northeast3-docker.pkg.dev/medichips-new/medichips-link
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Get short SHA
+        id: sha
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Build Web image
+        run: |
+          docker build -f docker/Dockerfile.web \
+            -t ${{ env.REGISTRY }}/web:staging-${{ steps.sha.outputs.SHORT_SHA }} \
+            -t ${{ env.REGISTRY }}/web:staging-latest .
+          docker push ${{ env.REGISTRY }}/web:staging-${{ steps.sha.outputs.SHORT_SHA }}
+          docker push ${{ env.REGISTRY }}/web:staging-latest
+
+      - name: Run Migrations (Staging)
+        run: |
+          gcloud run jobs execute medichips-link-migrate-staging \
+            --region ${{ env.REGION }} --wait
+
+      - name: Deploy Web (Staging)
+        run: |
+          gcloud run deploy medichips-link-web-staging \
+            --image ${{ env.REGISTRY }}/web:staging-${{ steps.sha.outputs.SHORT_SHA }} \
+            --region ${{ env.REGION }} \
+            --set-env-vars "NODE_ENV=staging"
+
+      - name: Smoke Test
+        run: |
+          STAGING_URL=$(gcloud run services describe medichips-link-web-staging \
+            --region ${{ env.REGION }} \
+            --format 'value(status.url)')
+          curl -sf "${STAGING_URL}/api/v1/health" || exit 1
+          echo "Staging deployment successful!"

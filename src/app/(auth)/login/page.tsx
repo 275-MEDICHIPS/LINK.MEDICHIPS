@@ -204,10 +204,16 @@ export default function LoginPage() {
       )}
 
       {/* Footer links */}
-      <div className="text-center text-sm text-gray-500">
+      <div className="space-y-2 text-center text-sm text-gray-500">
+        <p>
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="font-medium text-brand-500 hover:text-brand-600">
+            Register
+          </Link>
+        </p>
         <p>
           Have an invite code?{" "}
-          <Link href="/invite" className="font-medium text-brand-500 hover:text-brand-600">
+          <Link href="/register" className="font-medium text-brand-500 hover:text-brand-600">
             Enter here
           </Link>
         </p>
