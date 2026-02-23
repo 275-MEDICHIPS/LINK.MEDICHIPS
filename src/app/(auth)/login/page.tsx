@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 type AuthMode = "pin" | "email" | "oauth";
 
@@ -61,9 +62,7 @@ export default function LoginPage() {
     <div className="space-y-6">
       {/* Logo */}
       <div className="text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-500">
-          <span className="text-xl font-bold text-white">M</span>
-        </div>
+        <Image src="/logo.png" alt="MEDICHIPS" width={56} height={56} className="mx-auto h-14 w-14" />
         <h1 className="mt-4 text-2xl font-bold text-gray-900">
           Welcome to MEDICHIPS-LINK
         </h1>

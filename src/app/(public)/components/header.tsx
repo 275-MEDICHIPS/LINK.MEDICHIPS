@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, X, Globe } from "lucide-react";
 
 const navItems = [
@@ -20,9 +21,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500">
-            <span className="text-sm font-bold text-white">M</span>
-          </div>
+          <Image src="/logo.png" alt="MEDICHIPS" width={36} height={36} className="h-9 w-9" />
           <span className="text-lg font-bold text-gray-900">
             MEDICHIPS<span className="text-brand-500">-LINK</span>
           </span>

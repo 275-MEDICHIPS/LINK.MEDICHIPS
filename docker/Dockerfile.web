@@ -6,7 +6,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma/
 RUN pnpm install --frozen-lockfile
 
@@ -16,6 +16,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Prisma client must be generated before Next.js build
+RUN npx prisma generate
+# Provide build-time env defaults (overridden at runtime)
+ENV NEXT_PUBLIC_APP_URL=https://link.medichips.ai
+ENV NEXT_PUBLIC_DEFAULT_LOCALE=ko
 RUN pnpm build
 
 # Production image

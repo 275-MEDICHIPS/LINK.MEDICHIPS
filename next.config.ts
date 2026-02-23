@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     // Lint is checked in CI separately; don't block builds on warnings
     ignoreDuringBuilds: true,
   },
+  allowedDevOrigins: ["http://192.168.0.29:3000", "192.168.0.29"],
   images: {
     remotePatterns: [
       {
