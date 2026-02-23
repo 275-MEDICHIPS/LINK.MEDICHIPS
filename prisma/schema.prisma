@@ -1,0 +1,979 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  SUPER_ADMIN
+  ORG_ADMIN
+  INSTRUCTOR
+  SUPERVISOR
+  MENTOR
+  LEARNER
+}
+
+enum AuthMethod {
+  EMAIL_PASSWORD
+  PIN_CODE
+  INVITE_CODE
+  OAUTH_GOOGLE
+  OAUTH_KAKAO
+  SMS_OTP
+}
+
+enum ConnectivityLevel {
+  HIGH
+  MEDIUM
+  LOW
+  OFFLINE
+}
+
+enum RiskLevel {
+  L1
+  L2
+  L3
+}
+
+enum ContentReviewStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LessonProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum MissionSubmissionStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  RESUBMITTED
+}
+
+enum VerificationType {
+  AI_L1
+  SUPERVISOR_L2
+  MENTOR_L3
+}
+
+enum VerificationResult {
+  PASS
+  FAIL
+  CONDITIONAL
+}
+
+enum TaskSource {
+  AUTO_GENERATED
+  SUPERVISOR_ASSIGNED
+  SELF_CREATED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
+enum XpActionType {
+  LESSON_COMPLETE
+  QUIZ_PASS
+  MISSION_SUBMIT
+  MISSION_APPROVED
+  STREAK_BONUS
+  BADGE_EARNED
+  TASK_COMPLETE
+  PEER_HELP
+  DAILY_LOGIN
+}
+
+enum BadgeCategory {
+  COMPLETION
+  MASTERY
+  STREAK
+  SOCIAL
+  SPECIAL
+}
+
+enum TranslationJobStatus {
+  PENDING
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  FAILED
+}
+
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  SMS
+  EMAIL
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum CourseGenerationStatus {
+  PENDING
+  PROCESSING
+  REVIEW
+  COMPLETED
+  FAILED
+}
+
+enum ContentType {
+  VIDEO
+  AUDIO
+  TEXT
+  QUIZ
+  MISSION
+  MIXED
+}
+
+// ==================== ORGANIZATIONS & MULTI-TENANCY ====================
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  parentId    String?
+  parent      Organization?  @relation("OrgHierarchy", fields: [parentId], references: [id])
+  children    Organization[] @relation("OrgHierarchy")
+
+  memberships OrganizationMembership[]
+  programs    Program[]
+  apiKeys     OrgApiKey[]
+  courses     Course[]
+  notifications Notification[]
+  impactMetrics ImpactMetric[]
+  costRecords   CostRecord[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@map("organizations")
+}
+
+model OrgApiKey {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  keyHash        String   @unique
+  permissions    Json
+  expiresAt      DateTime?
+  lastUsedAt     DateTime?
+  isActive       Boolean  @default(true)
+
+  createdAt      DateTime @default(now())
+
+  @@map("org_api_keys")
+}
+
+model Program {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  description    String?
+  country        String
+  startDate      DateTime
+  endDate        DateTime?
+  isActive       Boolean  @default(true)
+  metadata       Json?
+
+  courses        ProgramCourse[]
+  enrollments    ProgramEnrollment[]
+  costRecords    CostRecord[]
+  outcomeRecords OutcomeRecord[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  @@map("programs")
+}
+
+model ProgramCourse {
+  id        String  @id @default(cuid())
+  programId String
+  program   Program @relation(fields: [programId], references: [id])
+  courseId   String
+  course     Course  @relation(fields: [courseId], references: [id])
+  isRequired Boolean @default(true)
+  orderIndex Int     @default(0)
+
+  createdAt  DateTime @default(now())
+
+  @@unique([programId, courseId])
+  @@map("program_courses")
+}
+
+// ==================== USERS & AUTH ====================
+
+model User {
+  id                String           @id @default(cuid())
+  email             String?          @unique
+  phone             String?          @unique
+  name              String
+  avatarUrl         String?
+  preferredLocale   String           @default("en")
+  connectivityLevel ConnectivityLevel @default(MEDIUM)
+  isActive          Boolean          @default(true)
+  lastActiveAt      DateTime?
+
+  authMethods       UserAuth[]
+  sessions          UserSession[]
+  memberships       OrganizationMembership[]
+  programEnrollments ProgramEnrollment[]
+  courseEnrollments  CourseEnrollment[]
+  lessonProgress    LessonProgress[]
+  quizAttempts      QuizAttempt[]
+  missionSubmissions MissionSubmission[]
+  verifications     VerificationRecord[] @relation("VerifiedBy")
+  improvementPlans  ImprovementPlan[]
+  competencyAssessments CompetencyAssessment[]
+  assignedTasks     Task[]           @relation("TaskAssignee")
+  createdTasks      Task[]           @relation("TaskCreator")
+  xpLedger          XpLedger[]
+  earnedBadges      EarnedBadge[]
+  streaks           Streak[]
+  issuedCertificates IssuedCertificate[]
+  notificationPrefs NotificationPreference[]
+  notifications     Notification[]
+  reviewComments    ReviewComment[]
+  contentAuditLogs  ContentAuditLog[]
+  outcomeRecords    OutcomeRecord[]
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
+
+  @@map("users")
+}
+
+model UserAuth {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id])
+  method     AuthMethod
+  identifier String
+  credential String
+  deviceFingerprint String?
+  failedAttempts Int    @default(0)
+  lockedUntil DateTime?
+  isActive   Boolean    @default(true)
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([method, identifier])
+  @@map("user_auths")
+}
+
+model UserSession {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  deviceInfo    Json
+  ipAddress     String?
+  csrfToken     String
+  refreshToken  String   @unique
+  expiresAt     DateTime
+  lastActivityAt DateTime @default(now())
+
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model OrganizationMembership {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  role           UserRole
+  isActive       Boolean      @default(true)
+  joinedAt       DateTime     @default(now())
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, organizationId])
+  @@map("organization_memberships")
+}
+
+model ProgramEnrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  programId String
+  program   Program  @relation(fields: [programId], references: [id])
+  enrolledAt DateTime @default(now())
+  completedAt DateTime?
+
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, programId])
+  @@map("program_enrollments")
+}
+
+// ==================== COURSE CONTENT & VERSIONING ====================
+
+model MedicalSpecialty {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String?
+  iconUrl     String?
+  courses     CourseSpecialtyTag[]
+
+  createdAt   DateTime @default(now())
+
+  @@map("medical_specialties")
+}
+
+model CourseSpecialtyTag {
+  id          String           @id @default(cuid())
+  courseId    String
+  course      Course           @relation(fields: [courseId], references: [id])
+  specialtyId String
+  specialty   MedicalSpecialty @relation(fields: [specialtyId], references: [id])
+
+  @@unique([courseId, specialtyId])
+  @@map("course_specialty_tags")
+}
+
+model Course {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  slug           String              @unique
+  riskLevel      RiskLevel           @default(L1)
+  status         ContentReviewStatus @default(DRAFT)
+  thumbnailUrl   String?
+  estimatedHours Float?
+  isPublished    Boolean             @default(false)
+  publishedAt    DateTime?
+
+  translations   CourseTranslation[]
+  modules        Module[]
+  specialtyTags  CourseSpecialtyTag[]
+  programCourses ProgramCourse[]
+  enrollments    CourseEnrollment[]
+  aiJobs         AiCourseJob[]
+
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+
+  @@map("courses")
+}
+
+model CourseTranslation {
+  id          String @id @default(cuid())
+  courseId    String
+  course      Course @relation(fields: [courseId], references: [id])
+  locale      String
+  title       String
+  description String?
+
+  @@unique([courseId, locale])
+  @@map("course_translations")
+}
+
+model Module {
+  id          String @id @default(cuid())
+  courseId    String
+  course      Course @relation(fields: [courseId], references: [id])
+  orderIndex  Int
+
+  translations ModuleTranslation[]
+  lessons      Lesson[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@map("modules")
+}
+
+model ModuleTranslation {
+  id          String @id @default(cuid())
+  moduleId    String
+  module      Module @relation(fields: [moduleId], references: [id])
+  locale      String
+  title       String
+  description String?
+
+  @@unique([moduleId, locale])
+  @@map("module_translations")
+}
+
+model Lesson {
+  id           String      @id @default(cuid())
+  moduleId     String
+  module       Module      @relation(fields: [moduleId], references: [id])
+  orderIndex   Int
+  contentType  ContentType
+  durationMin  Int?
+  isRequired   Boolean     @default(true)
+
+  translations  LessonTranslation[]
+  versions      ContentVersion[]
+  progress      LessonProgress[]
+  quizAttempts  QuizAttempt[]
+  missions      MissionSubmission[]
+  tasks         Task[]
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+
+  @@map("lessons")
+}
+
+model LessonTranslation {
+  id          String @id @default(cuid())
+  lessonId    String
+  lesson      Lesson @relation(fields: [lessonId], references: [id])
+  locale      String
+  title       String
+  description String?
+
+  @@unique([lessonId, locale])
+  @@map("lesson_translations")
+}
+
+model ContentVersion {
+  id            String              @id @default(cuid())
+  lessonId      String
+  lesson        Lesson              @relation(fields: [lessonId], references: [id])
+  version       Int
+  body          Json
+  status        ContentReviewStatus @default(DRAFT)
+  isAiGenerated Boolean             @default(false)
+  previousVersionId String?
+  previousVersion   ContentVersion? @relation("VersionChain", fields: [previousVersionId], references: [id])
+  nextVersions      ContentVersion[] @relation("VersionChain")
+  reviewComments    ReviewComment[]
+
+  publishedAt   DateTime?
+  createdAt     DateTime            @default(now())
+
+  @@index([lessonId, status])
+  @@map("content_versions")
+}
+
+model ContentAuditLog {
+  id            String @id @default(cuid())
+  entityType    String
+  entityId      String
+  action        String
+  previousState Json?
+  newState      Json?
+  userId        String
+  user          User   @relation(fields: [userId], references: [id])
+  ipAddress     String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("content_audit_logs")
+}
+
+model ReviewComment {
+  id               String         @id @default(cuid())
+  contentVersionId String
+  contentVersion   ContentVersion @relation(fields: [contentVersionId], references: [id])
+  userId           String
+  user             User           @relation(fields: [userId], references: [id])
+  parentId         String?
+  parent           ReviewComment? @relation("CommentThread", fields: [parentId], references: [id])
+  replies          ReviewComment[] @relation("CommentThread")
+  body             String
+  isResolved       Boolean        @default(false)
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("review_comments")
+}
+
+// ==================== LEARNING PROGRESS ====================
+
+model CourseEnrollment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  courseId     String
+  course       Course   @relation(fields: [courseId], references: [id])
+  progressPct Float    @default(0)
+  enrolledAt  DateTime @default(now())
+  completedAt DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, courseId])
+  @@map("course_enrollments")
+}
+
+model LessonProgress {
+  id          String               @id @default(cuid())
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id])
+  lessonId    String
+  lesson      Lesson               @relation(fields: [lessonId], references: [id])
+  status      LessonProgressStatus @default(NOT_STARTED)
+  score       Float?
+  timeSpentSec Int                 @default(0)
+  lastPosition Float?
+  checksum    String?
+  syncedAt    DateTime?
+
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([userId, status])
+  @@map("lesson_progress")
+}
+
+model QuizAttempt {
+  id           String @id @default(cuid())
+  userId       String
+  user         User   @relation(fields: [userId], references: [id])
+  lessonId     String
+  lesson       Lesson @relation(fields: [lessonId], references: [id])
+  quizVersion  Int    @default(1)
+  answers      Json
+  score        Float
+  passed       Boolean
+  attemptNumber Int
+  idempotencyKey String? @unique
+
+  startedAt    DateTime
+  completedAt  DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId, lessonId])
+  @@map("quiz_attempts")
+}
+
+model MissionSubmission {
+  id          String                  @id @default(cuid())
+  userId      String
+  user        User                    @relation(fields: [userId], references: [id])
+  lessonId    String
+  lesson      Lesson                  @relation(fields: [lessonId], references: [id])
+  status      MissionSubmissionStatus @default(PENDING)
+  description String?
+  evidenceUrls Json?
+  reviewNote  String?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@map("mission_submissions")
+}
+
+// ==================== L-D-V-I CYCLE ====================
+
+model VerificationRecord {
+  id              String             @id @default(cuid())
+  userId          String
+  type            VerificationType
+  result          VerificationResult
+  entityType      String
+  entityId        String
+  aiConfidence    Float?
+  digitalSignature String?
+  verifierId      String?
+  verifier        User?              @relation("VerifiedBy", fields: [verifierId], references: [id])
+  notes           String?
+  metadata        Json?
+
+  createdAt       DateTime           @default(now())
+
+  @@index([entityType, entityId])
+  @@map("verification_records")
+}
+
+model ImprovementPlan {
+  id             String @id @default(cuid())
+  userId         String
+  user           User   @relation(fields: [userId], references: [id])
+  weakAreas      Json
+  recommendations Json
+  supplementLessons Json?
+  isCompleted    Boolean @default(false)
+  completedAt    DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("improvement_plans")
+}
+
+model CompetencyAssessment {
+  id          String @id @default(cuid())
+  userId      String
+  user        User   @relation(fields: [userId], references: [id])
+  courseId     String
+  competencies Json
+  overallScore Float
+  assessedAt   DateTime @default(now())
+
+  createdAt   DateTime @default(now())
+
+  @@map("competency_assessments")
+}
+
+// ==================== TASK MANAGEMENT ====================
+
+model Task {
+  id            String     @id @default(cuid())
+  lessonId      String?
+  lesson        Lesson?    @relation(fields: [lessonId], references: [id])
+  assigneeId    String
+  assignee      User       @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creatorId     String?
+  creator       User?      @relation("TaskCreator", fields: [creatorId], references: [id])
+  source        TaskSource @default(AUTO_GENERATED)
+  status        TaskStatus @default(PENDING)
+  title         String
+  description   String?
+  checklist     Json?
+  dueDate       DateTime?
+  digitalSignature String?
+  completedAt   DateTime?
+
+  evidence      TaskEvidence[]
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([assigneeId, status])
+  @@map("tasks")
+}
+
+model TaskEvidence {
+  id        String @id @default(cuid())
+  taskId    String
+  task      Task   @relation(fields: [taskId], references: [id])
+  fileUrl   String
+  fileType  String
+  gpsLat    Float?
+  gpsLng    Float?
+  metadata  Json?
+
+  createdAt DateTime @default(now())
+
+  @@map("task_evidence")
+}
+
+// ==================== GAMIFICATION ====================
+
+model XpLedger {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  action         XpActionType
+  amount         Int
+  entityType     String?
+  entityId       String?
+  idempotencyKey String       @unique
+
+  createdAt      DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@map("xp_ledger")
+}
+
+model BadgeDefinition {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  category    BadgeCategory
+  name        String
+  description String
+  iconUrl     String
+  criteria    Json
+  xpReward    Int           @default(0)
+
+  earnedBadges EarnedBadge[]
+
+  createdAt   DateTime      @default(now())
+
+  @@map("badge_definitions")
+}
+
+model EarnedBadge {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  badgeId   String
+  badge     BadgeDefinition @relation(fields: [badgeId], references: [id])
+  earnedAt  DateTime        @default(now())
+
+  @@unique([userId, badgeId])
+  @@map("earned_badges")
+}
+
+model Streak {
+  id            String @id @default(cuid())
+  userId        String
+  user          User   @relation(fields: [userId], references: [id])
+  currentStreak Int    @default(0)
+  longestStreak Int    @default(0)
+  lastActivityDate DateTime?
+  streakFreezes Int    @default(2)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId])
+  @@map("streaks")
+}
+
+model CertificateTemplate {
+  id          String @id @default(cuid())
+  name        String
+  htmlTemplate String
+  isActive    Boolean @default(true)
+
+  issuedCertificates IssuedCertificate[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("certificate_templates")
+}
+
+model IssuedCertificate {
+  id               String              @id @default(cuid())
+  userId           String
+  user             User                @relation(fields: [userId], references: [id])
+  templateId       String
+  template         CertificateTemplate @relation(fields: [templateId], references: [id])
+  issueNumber      String              @unique
+  courseId          String
+  verificationHash String
+  pdfUrl           String?
+  issuedAt         DateTime            @default(now())
+  expiresAt        DateTime?
+  revokedAt        DateTime?
+  revokedReason    String?
+
+  createdAt        DateTime            @default(now())
+
+  @@map("issued_certificates")
+}
+
+// ==================== AI COURSE BUILDER ====================
+
+model AiCourseJob {
+  id             String                 @id @default(cuid())
+  courseId        String?
+  course          Course?                @relation(fields: [courseId], references: [id])
+  status          CourseGenerationStatus @default(PENDING)
+  sourceDocuments AiSourceDocument[]
+  generatedDrafts AiGeneratedDraft[]
+  config          Json?
+  errorMessage    String?
+
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@map("ai_course_jobs")
+}
+
+model AiSourceDocument {
+  id       String      @id @default(cuid())
+  jobId    String
+  job      AiCourseJob @relation(fields: [jobId], references: [id])
+  fileName String
+  fileUrl  String
+  fileType String
+  content  String?
+
+  createdAt DateTime   @default(now())
+
+  @@map("ai_source_documents")
+}
+
+model AiGeneratedDraft {
+  id          String      @id @default(cuid())
+  jobId       String
+  job         AiCourseJob @relation(fields: [jobId], references: [id])
+  entityType  String
+  entityId    String?
+  content     Json
+  confidence  Float?
+
+  createdAt   DateTime    @default(now())
+
+  @@map("ai_generated_drafts")
+}
+
+model TranslationJob {
+  id           String               @id @default(cuid())
+  sourceLocale String
+  targetLocale String
+  entityType   String
+  entityId     String
+  status       TranslationJobStatus @default(PENDING)
+  method       String               @default("ai")
+  sourceText   String
+  translatedText String?
+  isVerified   Boolean              @default(false)
+  verifiedBy   String?
+
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@map("translation_jobs")
+}
+
+model MedicalGlossary {
+  id           String  @id @default(cuid())
+  term         String
+  locale       String
+  definition   String
+  abbreviation String?
+  isVerified   Boolean @default(false)
+  verifiedBy   String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([term, locale])
+  @@map("medical_glossary")
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model NotificationTemplate {
+  id        String @id @default(cuid())
+  slug      String @unique
+  channel   NotificationChannel
+  subject   String?
+  body      String
+  variables Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notification_templates")
+}
+
+model NotificationPreference {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id])
+  channel   NotificationChannel
+  enabled   Boolean             @default(true)
+  quietStart String?
+  quietEnd   String?
+
+  @@unique([userId, channel])
+  @@map("notification_preferences")
+}
+
+model Notification {
+  id             String             @id @default(cuid())
+  userId         String
+  user           User               @relation(fields: [userId], references: [id])
+  organizationId String?
+  organization   Organization?      @relation(fields: [organizationId], references: [id])
+  channel        NotificationChannel
+  status         NotificationStatus @default(QUEUED)
+  title          String
+  body           String
+  data           Json?
+  scheduledFor   DateTime?
+  sentAt         DateTime?
+  readAt         DateTime?
+
+  createdAt      DateTime           @default(now())
+
+  @@index([status, scheduledFor])
+  @@index([userId, status])
+  @@map("notifications")
+}
+
+// ==================== ANALYTICS & IMPACT ====================
+
+model ImpactMetric {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  period         String
+  metricType     String
+  value          Float
+  metadata       Json?
+
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, period, metricType])
+  @@map("impact_metrics")
+}
+
+model CostRecord {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  programId      String?
+  program        Program?     @relation(fields: [programId], references: [id])
+  category       String
+  amount         Float
+  currency       String       @default("USD")
+  period         String
+  notes          String?
+
+  createdAt      DateTime     @default(now())
+
+  @@map("cost_records")
+}
+
+model OutcomeRecord {
+  id          String   @id @default(cuid())
+  programId   String
+  program     Program  @relation(fields: [programId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  outcomeType String
+  description String
+  verifiedBy  String?
+  evidenceUrl String?
+
+  createdAt   DateTime @default(now())
+
+  @@map("outcome_records")
+}

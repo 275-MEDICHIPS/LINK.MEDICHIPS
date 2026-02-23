@@ -1,0 +1,80 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "search": "Search",
+    "noResults": "No results found",
+    "offline": "You are offline",
+    "syncing": "Syncing..."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "courses": "Courses",
+    "tasks": "Tasks",
+    "achievements": "Achievements",
+    "leaderboard": "Leaderboard",
+    "glossary": "Glossary",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login": "Log In",
+    "logout": "Log Out",
+    "register": "Register",
+    "pin": "Enter PIN",
+    "pinPlaceholder": "8-character PIN",
+    "forgotPin": "Forgot PIN?",
+    "switchUser": "Switch User",
+    "welcomeBack": "Welcome back, {name}"
+  },
+  "course": {
+    "enrolled": "Enrolled",
+    "progress": "{percent}% complete",
+    "lessons": "{count} lessons",
+    "startLearning": "Start Learning",
+    "continueLearning": "Continue Learning",
+    "completed": "Completed",
+    "locked": "Complete previous lessons first",
+    "download": "Download for Offline",
+    "downloaded": "Available Offline"
+  },
+  "quiz": {
+    "question": "Question {current} of {total}",
+    "submit": "Submit Answer",
+    "correct": "Correct!",
+    "incorrect": "Not quite. Try again.",
+    "score": "Score: {score}%",
+    "passed": "You passed!",
+    "failed": "Keep practicing"
+  },
+  "task": {
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "submitted": "Submitted",
+    "verified": "Verified",
+    "uploadEvidence": "Upload Evidence",
+    "addPhoto": "Add Photo",
+    "addVideo": "Add Video"
+  },
+  "gamification": {
+    "xp": "{amount} XP",
+    "level": "Level {level}",
+    "streak": "{days}-day streak",
+    "badge": "Badge earned: {name}",
+    "leaderboard": "Leaderboard",
+    "rank": "Rank #{rank}"
+  },
+  "landing": {
+    "heroTitle": "Korean Medical Expertise to the World",
+    "heroSubtitle": "AI-powered microlearning that systematically trains healthcare workers in developing countries.",
+    "getStarted": "Get Started",
+    "requestTrial": "Request Free Trial"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "common": {
+    "loading": "로딩 중...",
+    "error": "문제가 발생했습니다",
+    "retry": "다시 시도",
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "수정",
+    "back": "뒤로",
+    "next": "다음",
+    "submit": "제출",
+    "search": "검색",
+    "noResults": "결과가 없습니다",
+    "offline": "오프라인 상태입니다",
+    "syncing": "동기화 중..."
+  },
+  "nav": {
+    "dashboard": "대시보드",
+    "courses": "코스",
+    "tasks": "태스크",
+    "achievements": "성과",
+    "leaderboard": "리더보드",
+    "glossary": "용어집",
+    "settings": "설정"
+  },
+  "auth": {
+    "login": "로그인",
+    "logout": "로그아웃",
+    "register": "회원가입",
+    "pin": "PIN 입력",
+    "pinPlaceholder": "8자리 PIN",
+    "forgotPin": "PIN을 잊으셨나요?",
+    "switchUser": "사용자 전환",
+    "welcomeBack": "{name}님, 환영합니다"
+  },
+  "course": {
+    "enrolled": "등록됨",
+    "progress": "{percent}% 완료",
+    "lessons": "레슨 {count}개",
+    "startLearning": "학습 시작",
+    "continueLearning": "학습 계속",
+    "completed": "완료",
+    "locked": "이전 레슨을 먼저 완료하세요",
+    "download": "오프라인 다운로드",
+    "downloaded": "오프라인 사용 가능"
+  },
+  "quiz": {
+    "question": "문제 {current}/{total}",
+    "submit": "답안 제출",
+    "correct": "정답입니다!",
+    "incorrect": "다시 시도해보세요.",
+    "score": "점수: {score}%",
+    "passed": "합격입니다!",
+    "failed": "더 연습해보세요"
+  },
+  "task": {
+    "pending": "대기 중",
+    "inProgress": "진행 중",
+    "submitted": "제출됨",
+    "verified": "검증됨",
+    "uploadEvidence": "근거 업로드",
+    "addPhoto": "사진 추가",
+    "addVideo": "동영상 추가"
+  },
+  "gamification": {
+    "xp": "{amount} XP",
+    "level": "레벨 {level}",
+    "streak": "{days}일 연속",
+    "badge": "배지 획득: {name}",
+    "leaderboard": "리더보드",
+    "rank": "{rank}등"
+  },
+  "landing": {
+    "heroTitle": "한국 의료 전문성을 세계로",
+    "heroSubtitle": "AI 기반 마이크로러닝으로 개도국 의료인을 체계적으로 훈련합니다.",
+    "getStarted": "시작하기",
+    "requestTrial": "무료 체험 요청"
+  }
+}
