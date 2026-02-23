@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const footerLinks = {
   Platform: [
@@ -37,9 +38,7 @@ export function Footer() {
           {/* Brand column */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500">
-                <span className="text-sm font-bold text-white">M</span>
-              </div>
+              <Image src="/logo.png" alt="MEDICHIPS" width={32} height={32} className="h-8 w-8" />
               <span className="text-lg font-bold text-gray-900">
                 MEDICHIPS<span className="text-brand-500">-LINK</span>
               </span>
