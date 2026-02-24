@@ -4,11 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { useAuthStore } from "@/stores/auth-store";
 
 type AuthMode = "pin" | "email" | "oauth";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
+  const setUser = useAuthStore((s) => s.setUser);
   const [mode, setMode] = useState<AuthMode>("pin");
   const [pin, setPin] = useState("");
   const [email, setEmail] = useState("");
@@ -30,6 +32,8 @@ export default function LoginPage() {
         const data = await res.json();
         throw new Error(data.error?.message || "Login failed");
       }
+      const json = await res.json();
+      if (json.data?.user) setUser(json.data.user);
       window.location.href = "/dashboard";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -52,6 +56,8 @@ export default function LoginPage() {
         const data = await res.json();
         throw new Error(data.error?.message || "Login failed");
       }
+      const json = await res.json();
+      if (json.data?.user) setUser(json.data.user);
       window.location.href = "/dashboard";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");

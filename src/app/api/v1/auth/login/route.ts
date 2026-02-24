@@ -127,7 +127,18 @@ export async function POST(req: NextRequest) {
         data: { lastActiveAt: new Date() },
       });
 
-      return success({ userId: userAuth.userId });
+      return success({
+        userId: userAuth.userId,
+        user: {
+          id: userAuth.userId,
+          name: userAuth.user.name,
+          email: userAuth.user.email,
+          role: userAuth.user.memberships[0]?.role || "LEARNER",
+          orgId,
+          avatarUrl: userAuth.user.avatarUrl,
+          locale: userAuth.user.preferredLocale || "en",
+        },
+      });
     }
 
     // Email login
@@ -211,7 +222,18 @@ export async function POST(req: NextRequest) {
         data: { lastActiveAt: new Date() },
       });
 
-      return success({ userId: userAuth.userId });
+      return success({
+        userId: userAuth.userId,
+        user: {
+          id: userAuth.userId,
+          name: userAuth.user.name,
+          email: userAuth.user.email,
+          role: userAuth.user.memberships[0]?.role || "LEARNER",
+          orgId,
+          avatarUrl: userAuth.user.avatarUrl,
+          locale: userAuth.user.preferredLocale || "en",
+        },
+      });
     }
 
     throw new ApiError("Unsupported auth method", 400);
