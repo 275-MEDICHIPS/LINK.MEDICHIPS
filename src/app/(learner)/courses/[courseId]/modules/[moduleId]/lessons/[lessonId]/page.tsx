@@ -108,6 +108,29 @@ function LessonSkeleton() {
 
 // ─── Video Player ─────────────────────────────────────────────────────────────
 
+function getYouTubeId(url: string): string | null {
+  const match = url.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
+  );
+  return match ? match[1] : null;
+}
+
+function YouTubePlayer({ videoId }: { videoId: string }) {
+  return (
+    <div className="overflow-hidden rounded-xl bg-black">
+      <div className="relative aspect-video">
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}?rel=0`}
+          className="h-full w-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="Lesson video"
+        />
+      </div>
+    </div>
+  );
+}
+
 function VideoPlayer({
   videoUrl,
   playbackId,
@@ -119,6 +142,8 @@ function VideoPlayer({
   lastPosition?: number | null;
   onTimeUpdate?: (time: number) => void;
 }) {
+  const youtubeId = videoUrl ? getYouTubeId(videoUrl) : null;
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -205,6 +230,10 @@ function VideoPlayer({
     videoRef.current.currentTime = time;
     setCurrentTime(time);
   };
+
+  if (youtubeId) {
+    return <YouTubePlayer videoId={youtubeId} />;
+  }
 
   return (
     <div className="overflow-hidden rounded-xl bg-black">

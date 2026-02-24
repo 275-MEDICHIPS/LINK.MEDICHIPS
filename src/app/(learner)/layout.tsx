@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   LayoutDashboard,
   BookOpen,
@@ -26,9 +27,7 @@ export default function LearnerLayout({
       <header className="sticky top-0 z-40 border-b border-gray-100 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-500">
-              <span className="text-xs font-bold text-white">M</span>
-            </div>
+            <Image src="/logo.png" alt="Medichips Link" width={28} height={28} className="rounded-md" />
             <span className="text-sm font-bold text-gray-900">LINK</span>
           </Link>
           <div className="flex items-center gap-2">

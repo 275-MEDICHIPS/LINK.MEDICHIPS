@@ -6,11 +6,11 @@ const prisma = new PrismaClient();
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const VIDEOS = [
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-  "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+  "https://www.youtube.com/watch?v=HQzmGhpIIMo", // History taking & clinical skills
+  "https://www.youtube.com/watch?v=YnGdJ5IyMQs", // Physical examination
+  "https://www.youtube.com/watch?v=3PkGSueW9tA", // Vital signs assessment
+  "https://www.youtube.com/watch?v=gJGnVMVGSHk", // Blood pressure measurement
+  "https://www.youtube.com/watch?v=ab2F3V9e-bw", // Lab interpretation basics
 ];
 let vi = 0;
 const nextVid = () => VIDEOS[vi++ % VIDEOS.length];
