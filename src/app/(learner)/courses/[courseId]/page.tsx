@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   ChevronDown,
@@ -118,11 +119,13 @@ function ModuleAccordion({
   courseId,
   isExpanded,
   onToggle,
+  t,
 }: {
   module: ModuleItem;
   courseId: string;
   isExpanded: boolean;
   onToggle: () => void;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const allCompleted = module.completedLessons === module.totalLessons && module.totalLessons > 0;
   const progressPct =
@@ -158,7 +161,7 @@ function ModuleAccordion({
             {module.title}
           </h3>
           <p className="text-[10px] text-gray-400">
-            {module.completedLessons}/{module.totalLessons} lessons
+            {t("lessonsCount", { completed: module.completedLessons, total: module.totalLessons })}
             {module.description && ` - ${module.description}`}
           </p>
         </div>
@@ -261,7 +264,7 @@ function ModuleAccordion({
                     <p className="truncate text-sm font-medium text-gray-400">
                       {lesson.title}
                     </p>
-                    <span className="text-[10px] text-gray-300">Locked</span>
+                    <span className="text-[10px] text-gray-300">{t("locked")}</span>
                   </div>
                 </div>
               )}
@@ -276,6 +279,8 @@ function ModuleAccordion({
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function CourseDetailPage() {
+  const t = useTranslations("course");
+  const tc = useTranslations("common");
   const params = useParams<{ courseId: string }>();
   const router = useRouter();
   const [course, setCourse] = useState<CourseDetail | null>(null);
@@ -336,7 +341,7 @@ export default function CourseDetailPage() {
       <div className="flex flex-col items-center justify-center gap-4 py-12">
         <p className="text-sm text-gray-500">{error}</p>
         <Button variant="outline" size="sm" onClick={fetchCourse}>
-          Try again
+          {tc("tryAgain")}
         </Button>
       </div>
     );
@@ -362,7 +367,7 @@ export default function CourseDetailPage() {
         aria-label="Go back to courses"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        Back
+        {tc("back")}
       </button>
 
       {/* Course Header */}
@@ -392,7 +397,7 @@ export default function CourseDetailPage() {
         {/* Meta */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
           {course.instructorName && (
-            <span>By {course.instructorName}</span>
+            <span>{t("by", { name: course.instructorName })}</span>
           )}
           {course.estimatedHours && (
             <span className="flex items-center gap-1">
@@ -424,7 +429,7 @@ export default function CourseDetailPage() {
       {course.isEnrolled && (
         <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium text-gray-900">Your Progress</span>
+            <span className="font-medium text-gray-900">{t("yourProgress")}</span>
             <span className="font-semibold text-brand-600">
               {Math.round(course.progressPct)}%
             </span>
@@ -448,7 +453,7 @@ export default function CourseDetailPage() {
             />
           </div>
           <p className="mt-1.5 text-[10px] text-gray-400">
-            {completedLessons} of {totalLessons} lessons completed
+            {t("lessonsCompleted", { completed: completedLessons, total: totalLessons })}
           </p>
         </div>
       )}
@@ -459,7 +464,7 @@ export default function CourseDetailPage() {
           id="modules-heading"
           className="mb-3 text-sm font-semibold text-gray-900"
         >
-          Course Content
+          {t("courseContent")}
         </h2>
         <div className="space-y-3">
           {course.modules.map((module) => (
@@ -469,6 +474,7 @@ export default function CourseDetailPage() {
               courseId={course.id}
               isExpanded={expandedModules.has(module.id)}
               onToggle={() => toggleModule(module.id)}
+              t={t}
             />
           ))}
         </div>
@@ -482,7 +488,7 @@ export default function CourseDetailPage() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
           >
             <Play className="h-4 w-4" aria-hidden="true" />
-            Continue Learning
+            {t("continueLearning")}
           </Link>
         </div>
       )}
@@ -491,7 +497,7 @@ export default function CourseDetailPage() {
       {!course.isEnrolled && (
         <div className="fixed bottom-20 left-0 right-0 z-30 px-4">
           <Button className="w-full rounded-xl py-6 text-sm font-semibold shadow-lg">
-            Enroll in Course
+            {t("enrollInCourse")}
           </Button>
         </div>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   Trophy,
   Crown,
@@ -64,7 +65,13 @@ function LeaderboardSkeleton() {
 
 // ─── Podium ───────────────────────────────────────────────────────────────────
 
-function Podium({ top3 }: { top3: LeaderboardEntry[] }) {
+function Podium({
+  top3,
+  t,
+}: {
+  top3: LeaderboardEntry[];
+  t: ReturnType<typeof useTranslations>;
+}) {
   if (top3.length === 0) return null;
 
   // Reorder: [2nd, 1st, 3rd] for visual display
@@ -80,7 +87,7 @@ function Podium({ top3 }: { top3: LeaderboardEntry[] }) {
     <Crown key="gold" className="h-5 w-5 text-yellow-500" aria-hidden="true" />,
     <Medal key="bronze" className="h-5 w-5 text-amber-600" aria-hidden="true" />,
   ];
-  const rankLabels = ["2nd", "1st", "3rd"];
+  const rankLabels = [t("second"), t("first"), t("third")];
 
   return (
     <div
@@ -130,7 +137,7 @@ function Podium({ top3 }: { top3: LeaderboardEntry[] }) {
               )}
               {entry.isCurrentUser && (
                 <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-brand-500 px-1.5 py-0.5 text-[7px] font-bold text-white">
-                  You
+                  {t("you")}
                 </div>
               )}
             </div>
@@ -172,7 +179,15 @@ function Podium({ top3 }: { top3: LeaderboardEntry[] }) {
 
 // ─── Leaderboard Row ──────────────────────────────────────────────────────────
 
-function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
+function LeaderboardRow({
+  entry,
+  t,
+  td,
+}: {
+  entry: LeaderboardEntry;
+  t: ReturnType<typeof useTranslations>;
+  td: ReturnType<typeof useTranslations>;
+}) {
   return (
     <div
       className={cn(
@@ -220,12 +235,12 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
             {entry.name}
             {entry.isCurrentUser && (
               <span className="ml-1 text-[10px] font-bold text-brand-500">
-                (You)
+                ({t("you")})
               </span>
             )}
           </p>
         </div>
-        <p className="text-[10px] text-gray-400">Level {entry.level}</p>
+        <p className="text-[10px] text-gray-400">{td("level", { level: entry.level })}</p>
       </div>
 
       {/* XP & Streak */}
@@ -250,6 +265,10 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function LeaderboardPage() {
+  const t = useTranslations("leaderboard");
+  const tc = useTranslations("common");
+  const td = useTranslations("dashboard");
+
   const [data, setData] = useState<LeaderboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -296,7 +315,7 @@ export default function LeaderboardPage() {
     <div className="space-y-4 pb-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-gray-900">Leaderboard</h1>
+        <h1 className="text-lg font-bold text-gray-900">{t("leaderboard")}</h1>
         <Trophy
           className="h-5 w-5 text-healthcare-amber"
           aria-hidden="true"
@@ -311,8 +330,8 @@ export default function LeaderboardPage() {
       >
         {(
           [
-            { label: "Organization", value: "ORGANIZATION" as Scope },
-            { label: "Global", value: "GLOBAL" as Scope },
+            { label: t("organization"), value: "ORGANIZATION" as Scope },
+            { label: t("global"), value: "GLOBAL" as Scope },
           ] as const
         ).map((item) => (
           <button
@@ -340,9 +359,9 @@ export default function LeaderboardPage() {
       >
         {(
           [
-            { label: "This Week", value: "WEEK" as TimeRange },
-            { label: "This Month", value: "MONTH" as TimeRange },
-            { label: "All Time", value: "ALL_TIME" as TimeRange },
+            { label: t("thisWeek"), value: "WEEK" as TimeRange },
+            { label: t("thisMonth"), value: "MONTH" as TimeRange },
+            { label: t("allTime"), value: "ALL_TIME" as TimeRange },
           ] as const
         ).map((item) => (
           <button
@@ -369,21 +388,21 @@ export default function LeaderboardPage() {
         <div className="flex flex-col items-center justify-center gap-4 py-12">
           <p className="text-sm text-gray-500">{error}</p>
           <Button variant="outline" size="sm" onClick={fetchLeaderboard}>
-            Try again
+            {tc("tryAgain")}
           </Button>
         </div>
       ) : data && data.entries.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-200 bg-white px-6 py-12">
           <Trophy className="h-8 w-8 text-gray-300" aria-hidden="true" />
           <p className="text-sm text-gray-500">
-            No leaderboard data yet. Start learning to appear on the board!
+            {t("noData")}
           </p>
         </div>
       ) : (
         data && (
           <>
             {/* Podium */}
-            <Podium top3={top3} />
+            <Podium top3={top3} t={t} />
 
             {/* Scrollable List (rank 4+) */}
             {restEntries.length > 0 && (
@@ -394,7 +413,7 @@ export default function LeaderboardPage() {
               >
                 {restEntries.map((entry) => (
                   <div key={entry.userId} role="listitem">
-                    <LeaderboardRow entry={entry} />
+                    <LeaderboardRow entry={entry} t={t} td={td} />
                   </div>
                 ))}
               </div>
@@ -404,17 +423,17 @@ export default function LeaderboardPage() {
             {!currentUserVisible && data.currentUserRank && (
               <div className="space-y-2 border-t border-gray-100 pt-3">
                 <p className="text-center text-[10px] font-medium text-gray-400">
-                  Your Ranking
+                  {t("yourRanking")}
                 </p>
                 {currentUserEntry ? (
-                  <LeaderboardRow entry={currentUserEntry} />
+                  <LeaderboardRow entry={currentUserEntry} t={t} td={td} />
                 ) : (
                   <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-center">
                     <p className="text-sm font-semibold text-brand-700">
                       #{data.currentUserRank}
                     </p>
                     <p className="text-[10px] text-brand-500">
-                      Keep learning to climb the ranks!
+                      {t("keepLearning")}
                     </p>
                   </div>
                 )}

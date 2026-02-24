@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -102,7 +103,13 @@ function AlphabetSidebar({
 
 // ─── Term Card ────────────────────────────────────────────────────────────────
 
-function TermCard({ term }: { term: GlossaryTerm }) {
+function TermCard({
+  term,
+  t,
+}: {
+  term: GlossaryTerm;
+  t: ReturnType<typeof useTranslations>;
+}) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -169,7 +176,7 @@ function TermCard({ term }: { term: GlossaryTerm }) {
           {/* Definition */}
           <div>
             <p className="mb-0.5 text-[10px] font-medium uppercase text-gray-400">
-              Definition
+              {t("definition")}
             </p>
             <p className="text-sm leading-relaxed text-gray-700">
               {term.definition}
@@ -180,7 +187,7 @@ function TermCard({ term }: { term: GlossaryTerm }) {
           {term.translations.length > 0 && (
             <div>
               <p className="mb-0.5 text-[10px] font-medium uppercase text-gray-400">
-                Translations
+                {t("translations")}
               </p>
               <div className="space-y-1.5">
                 {term.translations.map((trans) => (
@@ -215,6 +222,9 @@ function TermCard({ term }: { term: GlossaryTerm }) {
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function GlossaryPage() {
+  const t = useTranslations("glossary");
+  const tc = useTranslations("common");
+
   const [terms, setTerms] = useState<GlossaryTerm[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -301,7 +311,7 @@ export default function GlossaryPage() {
     <div className="space-y-4 pb-4 pr-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-gray-900">Medical Glossary</h1>
+        <h1 className="text-lg font-bold text-gray-900">{t("title")}</h1>
         {!isOnline && (
           <div
             className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700"
@@ -309,7 +319,7 @@ export default function GlossaryPage() {
             aria-live="polite"
           >
             <WifiOff className="h-3 w-3" aria-hidden="true" />
-            Offline
+            {tc("offline")}
           </div>
         )}
       </div>
@@ -322,7 +332,7 @@ export default function GlossaryPage() {
         />
         <Input
           type="search"
-          placeholder="Search terms..."
+          placeholder={t("searchTerms")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 text-sm"
@@ -337,7 +347,7 @@ export default function GlossaryPage() {
         <div className="flex flex-col items-center justify-center gap-4 py-12">
           <p className="text-sm text-gray-500">{error}</p>
           <Button variant="outline" size="sm" onClick={fetchGlossary}>
-            Try again
+            {tc("tryAgain")}
           </Button>
         </div>
       ) : terms.length === 0 ? (
@@ -346,13 +356,13 @@ export default function GlossaryPage() {
           <div className="text-center">
             <p className="text-sm font-medium text-gray-900">
               {debouncedSearch
-                ? "No terms found"
-                : "No glossary terms available"}
+                ? t("noTermsFound")
+                : t("noTermsAvailable")}
             </p>
             <p className="mt-1 text-xs text-gray-500">
               {debouncedSearch
-                ? `No results for "${debouncedSearch}". Try a different search.`
-                : "Glossary terms will be available when published by your organization."}
+                ? t("noTermsFoundDesc", { query: debouncedSearch })
+                : t("noTermsAvailableDesc")}
             </p>
           </div>
         </div>
@@ -392,7 +402,7 @@ export default function GlossaryPage() {
                 >
                   {letterTerms.map((term) => (
                     <div key={term.id} role="listitem">
-                      <TermCard term={term} />
+                      <TermCard term={term} t={t} />
                     </div>
                   ))}
                 </div>
@@ -402,7 +412,7 @@ export default function GlossaryPage() {
 
           {/* Total count */}
           <p className="pt-2 text-center text-[10px] text-gray-400">
-            {terms.length} term{terms.length !== 1 ? "s" : ""} total
+            {t("termsTotal", { count: terms.length })}
           </p>
         </>
       )}

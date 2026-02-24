@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Flame,
   Play,
@@ -100,15 +101,6 @@ function DashboardSkeleton() {
   );
 }
 
-// ─── Helper: Greeting ─────────────────────────────────────────────────────────
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
-}
-
 // ─── Helper: Day labels ──────────────────────────────────────────────────────
 
 function getWeekdayLabels(): string[] {
@@ -124,6 +116,8 @@ function getWeekdayLabels(): string[] {
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function LearnerDashboard() {
+  const t = useTranslations("dashboard");
+  const tc = useTranslations("common");
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -175,7 +169,7 @@ export default function LearnerDashboard() {
       <div className="flex flex-col items-center justify-center gap-4 py-12">
         <p className="text-sm text-gray-500">{error}</p>
         <Button variant="outline" size="sm" onClick={fetchDashboard}>
-          Try again
+          {tc("tryAgain")}
         </Button>
       </div>
     );
@@ -183,16 +177,14 @@ export default function LearnerDashboard() {
 
   if (!data) return null;
 
-  const greeting = getGreeting();
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? t("goodMorning") : hour < 17 ? t("goodAfternoon") : t("goodEvening");
   const weekLabels = getWeekdayLabels();
   const weekData = data.weeklyProgress.length === 7
     ? data.weeklyProgress
     : [0, 0, 0, 0, 0, 0, 0];
   const maxWeekVal = Math.max(...weekData, 1);
 
-  const xpInLevel = data.level.nextLevelXp
-    ? data.level.currentXp - (data.level.nextLevelXp - Math.round((data.level.nextLevelXp - (data.level.nextLevelXp * (1 - data.level.progress))) ))
-    : data.level.currentXp;
   const xpProgressPct = Math.round(data.level.progress * 100);
 
   return (
@@ -212,7 +204,7 @@ export default function LearnerDashboard() {
               </span>
             )}
           </h1>
-          <p className="text-sm text-gray-500">Continue your learning journey</p>
+          <p className="text-sm text-gray-500">{t("continueJourney")}</p>
         </div>
         {data.user.avatarUrl ? (
           <img
@@ -238,7 +230,7 @@ export default function LearnerDashboard() {
               {data.level.level}
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Level {data.level.level}</p>
+              <p className="text-xs font-medium text-gray-500">{t("level", { level: data.level.level })}</p>
               <p className="text-sm font-bold text-gray-900">
                 {data.totalXp.toLocaleString()} XP
               </p>
@@ -246,7 +238,7 @@ export default function LearnerDashboard() {
           </div>
           {data.level.nextLevelXp && (
             <p className="text-xs text-gray-400">
-              {data.level.nextLevelXp.toLocaleString()} XP to Level {data.level.level + 1}
+              {t("xpToNextLevel", { xp: data.level.nextLevelXp.toLocaleString(), level: data.level.level + 1 })}
             </p>
           )}
         </div>
@@ -271,7 +263,7 @@ export default function LearnerDashboard() {
           <p className="text-xl font-bold text-brand-600">
             {data.totalXp.toLocaleString()}
           </p>
-          <p className="text-[10px] text-gray-600">XP Earned</p>
+          <p className="text-[10px] text-gray-600">{t("xpEarned")}</p>
         </div>
         <div className="rounded-xl bg-orange-50 p-3 text-center">
           <div className="flex items-center justify-center gap-1">
@@ -280,13 +272,13 @@ export default function LearnerDashboard() {
               {data.streak.currentStreak}
             </p>
           </div>
-          <p className="text-[10px] text-gray-600">Day Streak</p>
+          <p className="text-[10px] text-gray-600">{t("dayStreak")}</p>
         </div>
         <div className="rounded-xl bg-purple-50 p-3 text-center">
           <p className="text-xl font-bold text-purple-600">
             Lv.{data.level.level}
           </p>
-          <p className="text-[10px] text-gray-600">Current Level</p>
+          <p className="text-[10px] text-gray-600">{t("currentLevel")}</p>
         </div>
       </div>
 
@@ -296,7 +288,7 @@ export default function LearnerDashboard() {
           id="continue-learning-heading"
           className="mb-3 text-sm font-semibold text-gray-900"
         >
-          Continue Learning
+          {t("continueLearning")}
         </h2>
         {data.continueLearning ? (
           <Link
@@ -346,14 +338,14 @@ export default function LearnerDashboard() {
         ) : (
           <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
             <p className="text-sm text-gray-500">
-              No courses enrolled yet.{" "}
+              {t("noCourses")}{" "}
               <Link
                 href="/courses"
                 className="font-medium text-brand-500 hover:underline"
               >
-                Browse available courses
+                {t("browseCourses")}
               </Link>{" "}
-              to get started.
+              {t("toGetStarted")}
             </p>
           </div>
         )}
@@ -366,14 +358,14 @@ export default function LearnerDashboard() {
             id="tasks-heading"
             className="text-sm font-semibold text-gray-900"
           >
-            Today&apos;s Tasks
+            {t("todayTasks")}
           </h2>
           {data.pendingTasks.length > 0 && (
             <Link
               href="/tasks"
               className="flex items-center text-xs font-medium text-brand-500 hover:underline"
             >
-              View all
+              {tc("viewAll")}
               <ChevronRight className="h-3 w-3" aria-hidden="true" />
             </Link>
           )}
@@ -409,10 +401,11 @@ export default function LearnerDashboard() {
                   </p>
                   {task.dueDate && (
                     <p className="text-[10px] text-gray-400">
-                      Due:{" "}
-                      {new Date(task.dueDate).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
+                      {t("due", {
+                        date: new Date(task.dueDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                        }),
                       })}
                     </p>
                   )}
@@ -427,7 +420,7 @@ export default function LearnerDashboard() {
           </div>
         ) : (
           <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-            <p className="text-sm text-gray-500">No pending tasks. Great job!</p>
+            <p className="text-sm text-gray-500">{t("noPendingTasks")}</p>
           </div>
         )}
       </section>
@@ -438,7 +431,7 @@ export default function LearnerDashboard() {
           id="weekly-progress-heading"
           className="mb-3 text-sm font-semibold text-gray-900"
         >
-          Weekly Progress
+          {t("weeklyProgress")}
         </h2>
         <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
           <div
@@ -480,13 +473,13 @@ export default function LearnerDashboard() {
             id="achievements-heading"
             className="text-sm font-semibold text-gray-900"
           >
-            Recent Achievements
+            {t("recentAchievements")}
           </h2>
           <Link
             href="/achievements"
             className="flex items-center text-xs font-medium text-brand-500 hover:underline"
           >
-            View all
+            {tc("viewAll")}
             <ChevronRight className="h-3 w-3" aria-hidden="true" />
           </Link>
         </div>
@@ -522,7 +515,7 @@ export default function LearnerDashboard() {
                 <Trophy className="h-5 w-5 text-gray-300" aria-hidden="true" />
               </div>
               <p className="text-sm text-gray-500">
-                Complete lessons to earn badges and XP!
+                {t("earnBadgesPrompt")}
               </p>
             </div>
           </div>
@@ -536,7 +529,7 @@ export default function LearnerDashboard() {
             id="recommended-heading"
             className="mb-3 text-sm font-semibold text-gray-900"
           >
-            Recommended for You
+            {t("recommendedForYou")}
           </h2>
           <Link
             href={`/courses/${data.recommendedCourse.id}`}
@@ -569,7 +562,7 @@ export default function LearnerDashboard() {
                   {data.recommendedCourse.description}
                 </p>
                 <p className="mt-1 text-[10px] text-gray-400">
-                  {data.recommendedCourse.moduleCount} modules
+                  {t("modules", { count: data.recommendedCourse.moduleCount })}
                 </p>
               </div>
               <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" aria-hidden="true" />
@@ -592,12 +585,12 @@ export default function LearnerDashboard() {
         {isOnline ? (
           <>
             <Wifi className="h-3.5 w-3.5" aria-hidden="true" />
-            All data synced
+            {tc("allDataSynced")}
           </>
         ) : (
           <>
             <WifiOff className="h-3.5 w-3.5" aria-hidden="true" />
-            Offline - changes will sync when connected
+            {tc("offlineChangesWillSync")}
           </>
         )}
       </div>

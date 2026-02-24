@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -448,10 +449,12 @@ function QuizSection({
   quiz,
   lessonId,
   onComplete,
+  tq,
 }: {
   quiz: QuizData;
   lessonId: string;
   onComplete: (passed: boolean, score: number) => void;
+  tq: ReturnType<typeof useTranslations>;
 }) {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -518,11 +521,11 @@ function QuizSection({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-900">
-          Knowledge Check
+          {tq("knowledgeCheck")}
         </h3>
         {quiz.attemptsAllowed > 0 && (
           <span className="text-[10px] text-gray-400">
-            Attempt {quiz.attemptsUsed + (submitted ? 1 : 0)}/{quiz.attemptsAllowed}
+            {tq("attempt", { used: quiz.attemptsUsed + (submitted ? 1 : 0), total: quiz.attemptsAllowed })}
           </span>
         )}
       </div>
@@ -539,11 +542,10 @@ function QuizSection({
           role="alert"
         >
           <p className="text-lg font-bold">
-            {result.passed ? "Passed!" : "Not Passed"}
+            {result.passed ? tq("passed") : tq("notPassed")}
           </p>
           <p className="text-sm">
-            Score: {Math.round(result.score * 100)}% (need{" "}
-            {Math.round(quiz.passingScore * 100)}%)
+            {tq("score", { score: Math.round(result.score * 100), passing: Math.round(quiz.passingScore * 100) })}
           </p>
         </div>
       )}
@@ -632,12 +634,12 @@ function QuizSection({
                 className="mr-2 h-4 w-4 animate-spin"
                 aria-hidden="true"
               />
-              Submitting...
+              {tq("submitting")}
             </>
           ) : !canAttempt ? (
-            "No attempts remaining"
+            tq("noAttemptsRemaining")
           ) : (
-            "Submit Answers"
+            tq("submitAnswers")
           )}
         </Button>
       ) : (
@@ -646,7 +648,7 @@ function QuizSection({
         canAttempt && (
           <Button onClick={handleRetry} variant="outline" className="w-full">
             <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
-            Try Again
+            {tq("tryAgain")}
           </Button>
         )
       )}
@@ -663,6 +665,9 @@ export default function LessonViewerPage() {
     lessonId: string;
   }>();
   const router = useRouter();
+  const tl = useTranslations("lesson");
+  const tq = useTranslations("quiz");
+  const tc = useTranslations("common");
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -799,7 +804,7 @@ export default function LessonViewerPage() {
       <div className="flex flex-col items-center justify-center gap-4 py-12">
         <p className="text-sm text-gray-500">{error}</p>
         <Button variant="outline" size="sm" onClick={fetchLesson}>
-          Try again
+          {tc("tryAgain")}
         </Button>
       </div>
     );
@@ -824,7 +829,7 @@ export default function LessonViewerPage() {
         <div className="mb-1 flex items-center justify-between text-[10px] text-gray-400">
           <span>{lesson.moduleTitle}</span>
           <span>
-            {navigation.currentIndex + 1} of {navigation.totalInModule}
+            {tl("of", { current: navigation.currentIndex + 1, total: navigation.totalInModule })}
           </span>
         </div>
         <div
@@ -861,13 +866,13 @@ export default function LessonViewerPage() {
           {lesson.durationMin && (
             <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
               <Clock className="h-2.5 w-2.5" aria-hidden="true" />
-              {lesson.durationMin} min
+              {tl("min", { count: lesson.durationMin })}
             </span>
           )}
           {isCompleted && (
             <span className="flex items-center gap-0.5 text-[10px] font-semibold text-accent-600">
               <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-              Completed
+              {tl("completed")}
             </span>
           )}
         </div>
@@ -885,7 +890,7 @@ export default function LessonViewerPage() {
           aria-live="polite"
         >
           <WifiOff className="h-3.5 w-3.5" aria-hidden="true" />
-          Viewing cached content - progress will sync when online
+          {tc("viewingCachedContent")}
         </div>
       )}
 
@@ -935,7 +940,7 @@ export default function LessonViewerPage() {
               className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900"
             >
               <BookOpen className="h-4 w-4 text-brand-500" aria-hidden="true" />
-              Key Points
+              {tl("keyPoints")}
             </h2>
             <ul className="space-y-2">
               {lesson.keyPoints.map((point, i) => (
@@ -963,7 +968,7 @@ export default function LessonViewerPage() {
               id="notes-heading"
               className="mb-2 text-sm font-semibold text-gray-900"
             >
-              Lesson Notes
+              {tl("lessonNotes")}
             </h2>
             <div className="text-sm leading-relaxed text-gray-600">
               {lesson.body.notes}
@@ -978,6 +983,7 @@ export default function LessonViewerPage() {
               quiz={lesson.quiz}
               lessonId={lesson.id}
               onComplete={handleQuizComplete}
+              tq={tq}
             />
           </section>
         )}
@@ -996,12 +1002,12 @@ export default function LessonViewerPage() {
                   className="mr-2 h-4 w-4 animate-spin"
                   aria-hidden="true"
                 />
-                Marking complete...
+                {tl("markingComplete")}
               </>
             ) : (
               <>
                 <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                Mark as Complete
+                {tl("markAsComplete")}
               </>
             )}
           </Button>
@@ -1010,7 +1016,7 @@ export default function LessonViewerPage() {
         {isCompleted && (
           <div className="flex items-center justify-center gap-2 rounded-xl bg-accent-50 py-3 text-sm font-medium text-accent-700">
             <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-            Lesson completed
+            {tl("lessonCompleted")}
           </div>
         )}
       </div>
@@ -1028,7 +1034,7 @@ export default function LessonViewerPage() {
               aria-label={`Previous lesson: ${navigation.previousLesson.title}`}
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-              <span className="max-w-[100px] truncate">Previous</span>
+              <span className="max-w-[100px] truncate">{tl("previousLesson")}</span>
             </Link>
           ) : (
             <div />
@@ -1045,7 +1051,7 @@ export default function LessonViewerPage() {
               )}
               aria-label={`Next lesson: ${navigation.nextLesson.title}`}
             >
-              <span className="max-w-[100px] truncate">Next</span>
+              <span className="max-w-[100px] truncate">{tl("nextLesson")}</span>
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           ) : (
@@ -1053,7 +1059,7 @@ export default function LessonViewerPage() {
               href={`/courses/${params.courseId}`}
               className="flex items-center gap-1 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
-              Back to Course
+              {tl("backToCourse")}
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   Trophy,
   Star,
@@ -146,9 +147,23 @@ function StatCard({
   );
 }
 
+// ─── Category label map ──────────────────────────────────────────────────────
+
+const CATEGORY_KEY_MAP: Record<string, string> = {
+  COMPLETION: "completion",
+  MASTERY: "mastery",
+  STREAK: "streak",
+  SOCIAL: "social",
+  SPECIAL: "special",
+};
+
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function AchievementsPage() {
+  const t = useTranslations("achievements");
+  const tc = useTranslations("common");
+  const td = useTranslations("dashboard");
+
   const [data, setData] = useState<AchievementsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -184,7 +199,7 @@ export default function AchievementsPage() {
       <div className="flex flex-col items-center justify-center gap-4 py-12">
         <p className="text-sm text-gray-500">{error}</p>
         <Button variant="outline" size="sm" onClick={fetchAchievements}>
-          Try again
+          {tc("tryAgain")}
         </Button>
       </div>
     );
@@ -245,7 +260,7 @@ export default function AchievementsPage() {
                 <Star className="h-3 w-3" aria-hidden="true" />
                 {profile.totalXp.toLocaleString()} XP
               </span>
-              <span>Level {profile.level.level}</span>
+              <span>{td("level", { level: profile.level.level })}</span>
               {profile.streak.currentStreak > 0 && (
                 <span className="flex items-center gap-0.5 text-orange-500">
                   <Flame className="h-3 w-3" aria-hidden="true" />
@@ -264,9 +279,9 @@ export default function AchievementsPage() {
         {/* XP Progress Bar */}
         <div className="mt-3">
           <div className="mb-1 flex items-center justify-between text-[10px] text-gray-400">
-            <span>Level {profile.level.level}</span>
+            <span>{td("level", { level: profile.level.level })}</span>
             {profile.level.nextLevelXp && (
-              <span>Level {profile.level.level + 1}</span>
+              <span>{td("level", { level: profile.level.level + 1 })}</span>
             )}
           </div>
           <div
@@ -284,10 +299,12 @@ export default function AchievementsPage() {
           </div>
           {profile.level.nextLevelXp && (
             <p className="mt-1 text-center text-[10px] text-gray-400">
-              {(
-                profile.level.nextLevelXp - profile.level.currentXp
-              ).toLocaleString()}{" "}
-              XP to Level {profile.level.level + 1}
+              {t("xpToLevel", {
+                xp: (
+                  profile.level.nextLevelXp - profile.level.currentXp
+                ).toLocaleString(),
+                level: profile.level.level + 1,
+              })}
             </p>
           )}
         </div>
@@ -300,10 +317,10 @@ export default function AchievementsPage() {
             id="badges-heading"
             className="text-sm font-semibold text-gray-900"
           >
-            Badges
+            {t("badges")}
           </h2>
           <span className="text-xs text-gray-400">
-            {earnedCount}/{badges.length} earned
+            {t("earned", { earned: earnedCount, total: badges.length })}
           </span>
         </div>
 
@@ -321,7 +338,9 @@ export default function AchievementsPage() {
               )}
             >
               {cat !== "ALL" && <CategoryIcon category={cat} />}
-              {cat === "ALL" ? "All" : cat.charAt(0) + cat.slice(1).toLowerCase()}
+              {cat === "ALL"
+                ? t("all")
+                : t(CATEGORY_KEY_MAP[cat] ?? cat.toLowerCase())}
             </button>
           ))}
         </div>
@@ -387,7 +406,7 @@ export default function AchievementsPage() {
           id="certificates-heading"
           className="mb-3 text-sm font-semibold text-gray-900"
         >
-          Certificates
+          {t("certificates")}
         </h2>
         {certificates.length > 0 ? (
           <div className="space-y-2">
@@ -425,7 +444,7 @@ export default function AchievementsPage() {
                     </span>
                     {!cert.isValid && (
                       <span className="font-semibold text-red-500">
-                        Revoked
+                        {t("revoked")}
                       </span>
                     )}
                   </div>
@@ -450,7 +469,7 @@ export default function AchievementsPage() {
               aria-hidden="true"
             />
             <p className="mt-2 text-sm text-gray-500">
-              Complete courses to earn certificates
+              {t("completeCoursesCert")}
             </p>
           </div>
         )}
@@ -462,14 +481,14 @@ export default function AchievementsPage() {
           id="stats-heading"
           className="mb-3 text-sm font-semibold text-gray-900"
         >
-          Learning Stats
+          {t("learningStats")}
         </h2>
         <div className="grid grid-cols-2 gap-3">
           <StatCard
             icon={
               <BookOpen className="h-5 w-5 text-brand-500" aria-hidden="true" />
             }
-            label="Lessons Completed"
+            label={t("lessonsCompleted")}
             value={stats.lessonsCompleted}
             color="bg-brand-50"
           />
@@ -480,7 +499,7 @@ export default function AchievementsPage() {
                 aria-hidden="true"
               />
             }
-            label="Quizzes Passed"
+            label={t("quizzesPassed")}
             value={stats.quizzesPassed}
             color="bg-purple-50"
           />
@@ -491,7 +510,7 @@ export default function AchievementsPage() {
                 aria-hidden="true"
               />
             }
-            label="Tasks Verified"
+            label={t("tasksVerified")}
             value={stats.tasksVerified}
             color="bg-accent-50"
           />
@@ -502,7 +521,7 @@ export default function AchievementsPage() {
                 aria-hidden="true"
               />
             }
-            label="Courses Completed"
+            label={t("coursesCompleted")}
             value={stats.coursesCompleted}
             color="bg-amber-50"
           />

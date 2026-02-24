@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 import {
   ClipboardCheck,
   Clock,
@@ -57,6 +58,8 @@ interface TasksResponse {
   pageSize: number;
 }
 
+type TranslationFn = ReturnType<typeof useTranslations>;
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function SkeletonBlock({ className }: { className?: string }) {
@@ -86,48 +89,28 @@ function TasksSkeleton() {
   );
 }
 
-// ─── Tab Filter ───────────────────────────────────────────────────────────────
-
-const TABS: { label: string; value: TabStatus; statuses: string[] }[] = [
-  {
-    label: "Pending",
-    value: "PENDING",
-    statuses: ["PENDING", "REJECTED"],
-  },
-  {
-    label: "In Progress",
-    value: "IN_PROGRESS",
-    statuses: ["IN_PROGRESS", "SUBMITTED"],
-  },
-  {
-    label: "Completed",
-    value: "COMPLETED",
-    statuses: ["VERIFIED"],
-  },
-];
-
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
-function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; className: string }> = {
+function StatusBadge({ status, t }: { status: string; t: TranslationFn }) {
+  const config: Record<string, { labelKey: string; className: string }> = {
     PENDING: {
-      label: "Pending",
+      labelKey: "pending",
       className: "bg-gray-100 text-gray-600",
     },
     IN_PROGRESS: {
-      label: "In Progress",
+      labelKey: "inProgress",
       className: "bg-blue-100 text-blue-700",
     },
     SUBMITTED: {
-      label: "Submitted",
+      labelKey: "submitted",
       className: "bg-purple-100 text-purple-700",
     },
     VERIFIED: {
-      label: "Verified",
+      labelKey: "verified",
       className: "bg-accent-100 text-accent-700",
     },
     REJECTED: {
-      label: "Rejected",
+      labelKey: "rejected",
       className: "bg-red-100 text-red-700",
     },
   };
@@ -141,7 +124,7 @@ function StatusBadge({ status }: { status: string }) {
         s.className
       )}
     >
-      {s.label}
+      {t(s.labelKey)}
     </span>
   );
 }
@@ -151,9 +134,11 @@ function StatusBadge({ status }: { status: string }) {
 function TaskCard({
   task,
   onUploadEvidence,
+  t,
 }: {
   task: TaskItem;
   onUploadEvidence: (taskId: string) => void;
+  t: TranslationFn;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -224,7 +209,7 @@ function TaskCard({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={task.status} />
+            <StatusBadge status={task.status} t={t} />
             {task.dueDate && (
               <span
                 className={cn(
@@ -233,17 +218,23 @@ function TaskCard({
                 )}
               >
                 <CalendarDays className="h-2.5 w-2.5" aria-hidden="true" />
-                {isOverdue && "Overdue: "}
-                {new Date(task.dueDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
+                {isOverdue
+                  ? t("overdue", {
+                      date: new Date(task.dueDate).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      }),
+                    })
+                  : new Date(task.dueDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
               </span>
             )}
             {task.evidence.length > 0 && (
               <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
                 <FileImage className="h-2.5 w-2.5" aria-hidden="true" />
-                {task.evidence.length} file{task.evidence.length !== 1 ? "s" : ""}
+                {t("files", { count: task.evidence.length })}
               </span>
             )}
           </div>
@@ -297,15 +288,16 @@ function TaskCard({
           {/* Course/Lesson reference */}
           {task.courseTitle && (
             <p className="text-[10px] text-gray-400">
-              From: {task.courseTitle}
-              {task.lessonTitle && ` - ${task.lessonTitle}`}
+              {t("from", {
+                source: task.courseTitle + (task.lessonTitle ? ` - ${task.lessonTitle}` : ""),
+              })}
             </p>
           )}
 
           {/* Checklist */}
           {task.checklist && task.checklist.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-gray-500">Checklist</p>
+              <p className="text-xs font-medium text-gray-500">{t("checklist")}</p>
               <ul className="space-y-1" role="list">
                 {task.checklist.map((item, i) => (
                   <li
@@ -342,7 +334,7 @@ function TaskCard({
           {/* Evidence */}
           {task.evidence.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs font-medium text-gray-500">Evidence</p>
+              <p className="text-xs font-medium text-gray-500">{t("evidence")}</p>
               <div className="flex flex-wrap gap-2">
                 {task.evidence.map((ev) => (
                   <a
@@ -382,7 +374,7 @@ function TaskCard({
                 className="flex-1"
               >
                 <Camera className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                Take Photo
+                {t("takePhoto")}
               </Button>
               <Button
                 variant="outline"
@@ -391,7 +383,7 @@ function TaskCard({
                 className="flex-1"
               >
                 <Upload className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                Upload File
+                {t("uploadFile")}
               </Button>
             </div>
           )}
@@ -403,19 +395,19 @@ function TaskCard({
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
-function EmptyState({ tab }: { tab: TabStatus }) {
-  const messages: Record<TabStatus, { title: string; desc: string }> = {
+function EmptyState({ tab, t }: { tab: TabStatus; t: TranslationFn }) {
+  const messages: Record<TabStatus, { titleKey: string; descKey: string }> = {
     PENDING: {
-      title: "No pending tasks",
-      desc: "When new tasks are assigned or generated from lessons, they will appear here.",
+      titleKey: "noPendingTasks",
+      descKey: "noPendingTasksDesc",
     },
     IN_PROGRESS: {
-      title: "No tasks in progress",
-      desc: "Start working on pending tasks to see them here.",
+      titleKey: "noInProgressTasks",
+      descKey: "noInProgressTasksDesc",
     },
     COMPLETED: {
-      title: "No completed tasks yet",
-      desc: "Completed and verified tasks will appear here.",
+      titleKey: "noCompletedTasks",
+      descKey: "noCompletedTasksDesc",
     },
   };
 
@@ -427,8 +419,8 @@ function EmptyState({ tab }: { tab: TabStatus }) {
         <ClipboardCheck className="h-6 w-6 text-gray-300" aria-hidden="true" />
       </div>
       <div className="text-center">
-        <p className="text-sm font-medium text-gray-900">{msg.title}</p>
-        <p className="mt-1 text-xs text-gray-500">{msg.desc}</p>
+        <p className="text-sm font-medium text-gray-900">{t(msg.titleKey)}</p>
+        <p className="mt-1 text-xs text-gray-500">{t(msg.descKey)}</p>
       </div>
     </div>
   );
@@ -437,12 +429,33 @@ function EmptyState({ tab }: { tab: TabStatus }) {
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function TasksPage() {
+  const t = useTranslations("task");
+  const tc = useTranslations("common");
+
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabStatus>("PENDING");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingTaskId, setUploadingTaskId] = useState<string | null>(null);
+
+  const TABS: { label: string; value: TabStatus; statuses: string[] }[] = [
+    {
+      label: t("pending"),
+      value: "PENDING",
+      statuses: ["PENDING", "REJECTED"],
+    },
+    {
+      label: t("inProgress"),
+      value: "IN_PROGRESS",
+      statuses: ["IN_PROGRESS", "SUBMITTED"],
+    },
+    {
+      label: t("completed"),
+      value: "COMPLETED",
+      statuses: ["VERIFIED"],
+    },
+  ];
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -464,18 +477,18 @@ export default function TasksPage() {
     fetchTasks();
   }, [fetchTasks]);
 
-  const activeStatuses = TABS.find((t) => t.value === activeTab)?.statuses ?? [];
-  const filteredTasks = tasks.filter((t) => activeStatuses.includes(t.status));
+  const activeStatuses = TABS.find((tab) => tab.value === activeTab)?.statuses ?? [];
+  const filteredTasks = tasks.filter((task) => activeStatuses.includes(task.status));
 
   const tabCounts: Record<TabStatus, number> = {
-    PENDING: tasks.filter((t) =>
-      TABS[0].statuses.includes(t.status)
+    PENDING: tasks.filter((task) =>
+      TABS[0].statuses.includes(task.status)
     ).length,
-    IN_PROGRESS: tasks.filter((t) =>
-      TABS[1].statuses.includes(t.status)
+    IN_PROGRESS: tasks.filter((task) =>
+      TABS[1].statuses.includes(task.status)
     ).length,
-    COMPLETED: tasks.filter((t) =>
-      TABS[2].statuses.includes(t.status)
+    COMPLETED: tasks.filter((task) =>
+      TABS[2].statuses.includes(task.status)
     ).length,
   };
 
@@ -515,7 +528,7 @@ export default function TasksPage() {
   return (
     <div className="space-y-4">
       {/* Page Header */}
-      <h1 className="text-lg font-bold text-gray-900">Tasks</h1>
+      <h1 className="text-lg font-bold text-gray-900">{t("tasks")}</h1>
 
       {/* Tabs */}
       <div
@@ -571,11 +584,11 @@ export default function TasksPage() {
         <div className="flex flex-col items-center justify-center gap-4 py-12">
           <p className="text-sm text-gray-500">{error}</p>
           <Button variant="outline" size="sm" onClick={fetchTasks}>
-            Try again
+            {tc("tryAgain")}
           </Button>
         </div>
       ) : filteredTasks.length === 0 ? (
-        <EmptyState tab={activeTab} />
+        <EmptyState tab={activeTab} t={t} />
       ) : (
         <div className="space-y-3" role="list" aria-label={`${activeTab.replace("_", " ").toLowerCase()} tasks`}>
           {filteredTasks.map((task) => (
@@ -583,6 +596,7 @@ export default function TasksPage() {
               <TaskCard
                 task={task}
                 onUploadEvidence={handleUploadEvidence}
+                t={t}
               />
             </div>
           ))}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Search,
   BookOpen,
@@ -77,15 +78,6 @@ function CoursesGridSkeleton() {
   );
 }
 
-// ─── Filter Chips ─────────────────────────────────────────────────────────────
-
-const FILTERS: { label: string; value: FilterStatus }[] = [
-  { label: "All", value: "ALL" },
-  { label: "In Progress", value: "IN_PROGRESS" },
-  { label: "Completed", value: "COMPLETED" },
-  { label: "Available", value: "AVAILABLE" },
-];
-
 // ─── Risk Level Badge ─────────────────────────────────────────────────────────
 
 function RiskBadge({ level }: { level: string }) {
@@ -106,7 +98,7 @@ function RiskBadge({ level }: { level: string }) {
 
 // ─── Course Card ──────────────────────────────────────────────────────────────
 
-function CourseCard({ course }: { course: CourseItem }) {
+function CourseCard({ course, t }: { course: CourseItem; t: ReturnType<typeof useTranslations> }) {
   const progress = course.progressPct ?? 0;
   const isCompleted = progress >= 100;
 
@@ -139,7 +131,7 @@ function CourseCard({ course }: { course: CourseItem }) {
         {isCompleted && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
             <span className="rounded-full bg-accent-500 px-2.5 py-1 text-[10px] font-bold text-white">
-              Completed
+              {t("completed")}
             </span>
           </div>
         )}
@@ -183,7 +175,7 @@ function CourseCard({ course }: { course: CourseItem }) {
         )}
         {!course.isEnrolled && (
           <p className="text-[10px] font-medium text-brand-500">
-            Start course
+            {t("startCourse")}
           </p>
         )}
       </div>
@@ -193,23 +185,23 @@ function CourseCard({ course }: { course: CourseItem }) {
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
-function EmptyState({ filter }: { filter: FilterStatus }) {
+function EmptyState({ filter, t }: { filter: FilterStatus; t: ReturnType<typeof useTranslations> }) {
   const messages: Record<FilterStatus, { title: string; desc: string }> = {
     ALL: {
-      title: "No courses available",
-      desc: "New courses will appear here when they are published by your organization.",
+      title: t("noCoursesAvailable"),
+      desc: t("noCoursesAvailableDesc"),
     },
     IN_PROGRESS: {
-      title: "No courses in progress",
-      desc: "Start a course from the available courses to see your progress here.",
+      title: t("noCoursesInProgress"),
+      desc: t("noCoursesInProgressDesc"),
     },
     COMPLETED: {
-      title: "No completed courses yet",
-      desc: "Complete your enrolled courses to see them here.",
+      title: t("noCoursesCompleted"),
+      desc: t("noCoursesCompletedDesc"),
     },
     AVAILABLE: {
-      title: "No new courses available",
-      desc: "You are enrolled in all available courses. Check back later for new content.",
+      title: t("noNewCourses"),
+      desc: t("noNewCoursesDesc"),
     },
   };
 
@@ -231,12 +223,21 @@ function EmptyState({ filter }: { filter: FilterStatus }) {
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function CoursesPage() {
+  const t = useTranslations("course");
+  const tc = useTranslations("common");
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("ALL");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const FILTERS: { label: string; value: FilterStatus }[] = [
+    { label: t("all"), value: "ALL" },
+    { label: t("inProgress"), value: "IN_PROGRESS" },
+    { label: t("completed"), value: "COMPLETED" },
+    { label: t("available"), value: "AVAILABLE" },
+  ];
 
   // Debounce search input
   useEffect(() => {
@@ -294,11 +295,11 @@ export default function CoursesPage() {
         />
         <Input
           type="search"
-          placeholder="Search courses..."
+          placeholder={t("searchCourses")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-9 text-sm"
-          aria-label="Search courses"
+          aria-label={t("searchCourses")}
         />
       </div>
 
@@ -333,15 +334,15 @@ export default function CoursesPage() {
         <div className="flex flex-col items-center justify-center gap-4 py-12">
           <p className="text-sm text-gray-500">{error}</p>
           <Button variant="outline" size="sm" onClick={fetchCourses}>
-            Try again
+            {tc("tryAgain")}
           </Button>
         </div>
       ) : filteredCourses.length === 0 ? (
-        <EmptyState filter={activeFilter} />
+        <EmptyState filter={activeFilter} t={t} />
       ) : (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {filteredCourses.map((course) => (
-            <CourseCard key={course.id} course={course} />
+            <CourseCard key={course.id} course={course} t={t} />
           ))}
         </div>
       )}

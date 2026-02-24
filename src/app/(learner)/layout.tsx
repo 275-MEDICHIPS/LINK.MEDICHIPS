@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   BookOpen,
@@ -8,12 +11,12 @@ import {
   BarChart3,
 } from "lucide-react";
 
-const tabs = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Home" },
-  { href: "/courses", icon: BookOpen, label: "Courses" },
-  { href: "/tasks", icon: ClipboardCheck, label: "Tasks" },
-  { href: "/achievements", icon: Trophy, label: "Awards" },
-  { href: "/leaderboard", icon: BarChart3, label: "Rank" },
+const tabKeys = [
+  { href: "/dashboard", icon: LayoutDashboard, key: "home" as const },
+  { href: "/courses", icon: BookOpen, key: "courses" as const },
+  { href: "/tasks", icon: ClipboardCheck, key: "tasks" as const },
+  { href: "/achievements", icon: Trophy, key: "awards" as const },
+  { href: "/leaderboard", icon: BarChart3, key: "rank" as const },
 ];
 
 export default function LearnerLayout({
@@ -21,6 +24,9 @@ export default function LearnerLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = useTranslations("nav");
+  const tc = useTranslations("common");
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       {/* Top header */}
@@ -33,7 +39,7 @@ export default function LearnerLayout({
           <div className="flex items-center gap-2">
             {/* Offline indicator placeholder */}
             <div className="rounded-full bg-accent-100 px-2 py-0.5 text-xs font-medium text-accent-700">
-              Online
+              {tc("online")}
             </div>
           </div>
         </div>
@@ -45,14 +51,14 @@ export default function LearnerLayout({
       {/* Bottom tab bar */}
       <nav className="sticky bottom-0 z-40 border-t border-gray-100 bg-white pb-safe">
         <div className="flex items-center justify-around py-2">
-          {tabs.map((tab) => (
+          {tabKeys.map((tab) => (
             <Link
               key={tab.href}
               href={tab.href}
               className="flex flex-col items-center gap-1 px-3 py-1 text-gray-500 transition-colors hover:text-brand-500"
             >
               <tab.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <span className="text-[10px] font-medium">{t(tab.key)}</span>
             </Link>
           ))}
         </div>

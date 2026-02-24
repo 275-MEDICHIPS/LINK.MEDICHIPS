@@ -3,10 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 type AuthMode = "pin" | "email" | "oauth";
 
 export default function LoginPage() {
+  const t = useTranslations("auth");
   const [mode, setMode] = useState<AuthMode>("pin");
   const [pin, setPin] = useState("");
   const [email, setEmail] = useState("");
@@ -64,10 +66,10 @@ export default function LoginPage() {
       <div className="text-center">
         <Image src="/logo.png" alt="MEDICHIPS" width={56} height={56} className="mx-auto h-14 w-14" />
         <h1 className="mt-4 text-2xl font-bold text-gray-900">
-          Welcome to MEDICHIPS-LINK
+          {t("welcomeTitle")}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Sign in to continue learning
+          {t("welcomeSubtitle")}
         </p>
       </div>
 
@@ -86,7 +88,7 @@ export default function LoginPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            {m === "pin" ? "PIN" : m === "email" ? "Email" : "Google"}
+            {m === "pin" ? t("pin") : m === "email" ? t("email") : t("google")}
           </button>
         ))}
       </div>
@@ -106,7 +108,7 @@ export default function LoginPage() {
               htmlFor="pin"
               className="block text-sm font-medium text-gray-700"
             >
-              Enter your PIN
+              {t("enterPin")}
             </label>
             <input
               id="pin"
@@ -114,7 +116,7 @@ export default function LoginPage() {
               value={pin}
               onChange={(e) => setPin(e.target.value.toUpperCase())}
               maxLength={8}
-              placeholder="8-character PIN"
+              placeholder={t("pinPlaceholder")}
               className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-lg tracking-widest focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               autoFocus
             />
@@ -124,7 +126,7 @@ export default function LoginPage() {
             disabled={pin.length < 8 || loading}
             className="w-full rounded-lg bg-brand-500 px-4 py-3 font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? t("signingIn") : t("signIn")}
           </button>
         </form>
       )}
@@ -137,7 +139,7 @@ export default function LoginPage() {
               htmlFor="email"
               className="block text-sm font-medium text-gray-700"
             >
-              Email
+              {t("email")}
             </label>
             <input
               id="email"
@@ -152,7 +154,7 @@ export default function LoginPage() {
               htmlFor="password"
               className="block text-sm font-medium text-gray-700"
             >
-              Password
+              {t("password")}
             </label>
             <input
               id="password"
@@ -167,7 +169,7 @@ export default function LoginPage() {
             disabled={!email || !password || loading}
             className="w-full rounded-lg bg-brand-500 px-4 py-3 font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? t("signingIn") : t("signIn")}
           </button>
         </form>
       )}
@@ -197,7 +199,7 @@ export default function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Sign in with Google
+            {t("signInWithGoogle")}
           </button>
         </div>
       )}
@@ -205,15 +207,15 @@ export default function LoginPage() {
       {/* Footer links */}
       <div className="space-y-2 text-center text-sm text-gray-500">
         <p>
-          Don&apos;t have an account?{" "}
+          {t("noAccount")}{" "}
           <Link href="/register" className="font-medium text-brand-500 hover:text-brand-600">
-            Register
+            {t("register")}
           </Link>
         </p>
         <p>
-          Have an invite code?{" "}
+          {t("haveInviteCode")}{" "}
           <Link href="/register" className="font-medium text-brand-500 hover:text-brand-600">
-            Enter here
+            {t("enterHere")}
           </Link>
         </p>
       </div>

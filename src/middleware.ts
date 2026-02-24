@@ -13,8 +13,37 @@ const PUBLIC_PATHS = [
   "/api/v1/health",
 ];
 
-const SUPPORTED_LOCALES = ["en", "ko", "km", "sw", "fr"];
-const DEFAULT_LOCALE = "ko";
+const SUPPORTED_LOCALES = [
+  "en", "ko", "km", "sw", "fr",
+  "es", "pt", "ar", "hi", "zh",
+  "ja", "id", "vi", "th", "bn",
+  "am", "my", "de", "ru", "tr",
+];
+const DEFAULT_LOCALE = "en";
+
+function parseAcceptLanguage(header: string): string | undefined {
+  // Parse Accept-Language header and match against supported locales
+  // e.g. "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7" → "ko"
+  const entries = header.split(",").map((part) => {
+    const [langTag, qPart] = part.trim().split(";");
+    const q = qPart ? parseFloat(qPart.replace("q=", "")) : 1;
+    return { lang: langTag.trim().toLowerCase(), q };
+  });
+
+  // Sort by quality descending
+  entries.sort((a, b) => b.q - a.q);
+
+  for (const { lang } of entries) {
+    // Exact match (e.g. "en", "ko")
+    if (SUPPORTED_LOCALES.includes(lang)) return lang;
+
+    // Primary subtag match (e.g. "zh-CN" → "zh", "pt-BR" → "pt")
+    const primary = lang.split("-")[0];
+    if (SUPPORTED_LOCALES.includes(primary)) return primary;
+  }
+
+  return undefined;
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -34,7 +63,7 @@ export function middleware(request: NextRequest) {
     const cookieLocale = request.cookies.get("locale")?.value;
     const acceptLang = request.headers.get("accept-language");
     const detectedLocale = cookieLocale ||
-      SUPPORTED_LOCALES.find((l) => acceptLang?.startsWith(l)) ||
+      (acceptLang ? parseAcceptLanguage(acceptLang) : undefined) ||
       DEFAULT_LOCALE;
 
     const response = NextResponse.next();
