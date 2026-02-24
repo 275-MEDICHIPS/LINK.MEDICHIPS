@@ -286,7 +286,7 @@ export default function NewVideoJobWizard() {
             <button
               onClick={() => {
                 update("method", "AI_GENERATED");
-                update("provider", "SYNTHESIA");
+                update("provider", "VEO");
               }}
               className={`rounded-xl border-2 p-6 text-left transition-all ${
                 config.method === "AI_GENERATED"
@@ -299,13 +299,13 @@ export default function NewVideoJobWizard() {
               </div>
               <h3 className="font-semibold text-gray-900">AI Generated</h3>
               <p className="mt-1 text-sm text-gray-500">
-                AI avatar reads script — no filming needed. Uses Synthesia or HeyGen.
+                AI가 스크립트 기반으로 영상 생성. Google Veo 3.1 사용.
               </p>
             </button>
             <button
               onClick={() => {
                 update("method", "FACE_SWAP");
-                update("provider", "AKOOL");
+                update("provider", "VEO");
               }}
               className={`rounded-xl border-2 p-6 text-left transition-all ${
                 config.method === "FACE_SWAP"
@@ -318,7 +318,7 @@ export default function NewVideoJobWizard() {
               </div>
               <h3 className="font-semibold text-gray-900">Face Swap</h3>
               <p className="mt-1 text-sm text-gray-500">
-                Replace faces in existing video — uses Akool or WaveSpeedAI.
+                기존 영상에서 얼굴 교체. Google Veo 또는 Akool/WaveSpeed 사용.
               </p>
             </button>
           </div>
@@ -332,6 +332,7 @@ export default function NewVideoJobWizard() {
                 {config.method === "AI_GENERATED" ? (
                   <div className="flex gap-3">
                     {[
+                      { id: "VEO", label: "Google Veo 3.1", cost: "GCP 크레딧" },
                       { id: "SYNTHESIA", label: "Synthesia", cost: "~$3/min" },
                       { id: "HEYGEN", label: "HeyGen", cost: "~$4/min" },
                     ].map((p) => (
@@ -352,6 +353,7 @@ export default function NewVideoJobWizard() {
                 ) : (
                   <div className="flex gap-3">
                     {[
+                      { id: "VEO", label: "Google Veo 3.1", cost: "GCP 크레딧" },
                       { id: "AKOOL", label: "Akool", cost: "~$15/5min" },
                       { id: "WAVESPEED_AI", label: "WaveSpeed AI", cost: "~$6/5min" },
                     ].map((p) => (

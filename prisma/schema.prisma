@@ -172,6 +172,7 @@ enum VideoProvider {
   HEYGEN
   AKOOL
   WAVESPEED_AI
+  VEO
 }
 
 // ==================== ORGANIZATIONS & MULTI-TENANCY ====================

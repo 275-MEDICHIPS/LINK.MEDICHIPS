@@ -106,26 +106,28 @@ async function transitionStatus(
  * Create a new video production job.
  */
 export async function createJob(params: CreateJobParams, userId: string) {
-  // Validate method-provider compatibility
-  if (
-    params.method === "AI_GENERATED" &&
-    !isVideoGenerationProvider(params.provider)
-  ) {
-    throw new ApiError(
-      "AI_GENERATED method requires SYNTHESIA or HEYGEN provider",
-      400,
-      "INVALID_PROVIDER"
-    );
-  }
-  if (
-    params.method === "FACE_SWAP" &&
-    isVideoGenerationProvider(params.provider)
-  ) {
-    throw new ApiError(
-      "FACE_SWAP method requires AKOOL or WAVESPEED_AI provider",
-      400,
-      "INVALID_PROVIDER"
-    );
+  // Validate method-provider compatibility (VEO supports both methods)
+  if (params.provider !== "VEO") {
+    if (
+      params.method === "AI_GENERATED" &&
+      !isVideoGenerationProvider(params.provider)
+    ) {
+      throw new ApiError(
+        "AI_GENERATED method requires VEO, SYNTHESIA, or HEYGEN provider",
+        400,
+        "INVALID_PROVIDER"
+      );
+    }
+    if (
+      params.method === "FACE_SWAP" &&
+      isVideoGenerationProvider(params.provider)
+    ) {
+      throw new ApiError(
+        "FACE_SWAP method requires VEO, AKOOL, or WAVESPEED_AI provider",
+        400,
+        "INVALID_PROVIDER"
+      );
+    }
   }
 
   const job = await prisma.videoProductionJob.create({
