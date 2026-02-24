@@ -71,7 +71,7 @@ const personas = [
 
 export function PersonaColumns() {
   return (
-    <section className="bg-gray-50/50 py-20 sm:py-28">
+    <section className="bg-gradient-to-b from-white to-brand-50/30 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">
@@ -90,7 +90,7 @@ export function PersonaColumns() {
           {personas.map((persona) => (
             <div
               key={persona.role}
-              className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+              className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-lg hover:border-brand-200"
             >
               {/* Header */}
               <div className="border-b border-gray-100 px-6 py-5">

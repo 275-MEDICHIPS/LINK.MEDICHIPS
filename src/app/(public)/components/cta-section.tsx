@@ -3,7 +3,7 @@ import { ArrowRight, Mail } from "lucide-react";
 
 export function CtaSection() {
   return (
-    <section id="contact" className="scroll-mt-20 bg-brand-500 py-20 sm:py-28">
+    <section id="contact" className="scroll-mt-20 bg-gradient-to-br from-brand-600 via-brand-500 to-accent-600 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-3xl font-bold text-white sm:text-4xl">

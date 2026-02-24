@@ -23,7 +23,7 @@ const values = [
       "2G-optimized content delivery",
       "Automatic progress sync",
     ],
-    gradient: "from-accent-500 to-accent-600",
+    gradient: "from-brand-600 to-accent-500",
   },
   {
     icon: Sparkles,
@@ -60,7 +60,7 @@ export function ValueCards() {
           {values.map((value) => (
             <div
               key={value.title}
-              className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-all hover:shadow-lg"
+              className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-all hover:shadow-lg hover:border-brand-200 hover:shadow-brand-500/5"
             >
               {/* Top gradient bar */}
               <div

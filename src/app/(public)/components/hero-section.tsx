@@ -8,11 +8,12 @@ export function HeroSection() {
   const [showVideo, setShowVideo] = useState(false);
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-white to-white pt-28 pb-20 sm:pt-36 sm:pb-28">
+    <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-brand-50/30 to-white pt-28 pb-20 sm:pt-36 sm:pb-28">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-brand-100/30 blur-3xl" />
-        <div className="absolute top-20 -left-40 h-[400px] w-[400px] rounded-full bg-accent-100/20 blur-3xl" />
+        <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-brand-200/40 blur-3xl" />
+        <div className="absolute top-20 -left-40 h-[400px] w-[400px] rounded-full bg-accent-200/30 blur-3xl" />
+        <div className="absolute bottom-0 left-1/2 h-[300px] w-[600px] -translate-x-1/2 rounded-full bg-brand-300/20 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -21,7 +22,7 @@ export function HeroSection() {
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl lg:leading-[1.1]">
             Turn Medical Expertise
             <br />
-            <span className="bg-gradient-to-r from-brand-500 to-accent-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-brand-600 via-brand-500 to-accent-500 bg-clip-text text-transparent">
               Into Global Impact
             </span>
           </h1>
@@ -37,14 +38,14 @@ export function HeroSection() {
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-brand-500/25 transition-all hover:bg-brand-600 hover:shadow-xl hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-brand-500/30 transition-all hover:shadow-xl hover:shadow-brand-500/40 hover:-translate-y-0.5"
             >
               Request Free Trial
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-8 py-4 text-base font-semibold text-gray-700 transition-all hover:border-brand-200 hover:bg-brand-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-white px-8 py-4 text-base font-semibold text-brand-600 transition-all hover:border-brand-300 hover:bg-brand-50"
             >
               Try MEDICHIPS-LINK Now
             </Link>

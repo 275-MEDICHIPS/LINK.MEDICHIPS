@@ -160,8 +160,8 @@ export function PlatformTabs() {
               onClick={() => setActiveTab(i)}
               className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all ${
                 i === activeTab
-                  ? "bg-brand-500 text-white shadow-md shadow-brand-500/25"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-md shadow-brand-500/30"
+                  : "bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-600"
               }`}
             >
               <tab.icon className="h-4 w-4" />
@@ -205,9 +205,9 @@ export function PlatformTabs() {
 
           {/* Preview card */}
           <div className="order-1 lg:order-2">
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
+            <div className="overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-lg ring-1 ring-brand-500/10">
               {/* Preview header */}
-              <div className="border-b border-gray-100 bg-gray-50 px-6 py-4">
+              <div className="border-b border-brand-100 bg-gradient-to-r from-brand-50 to-white px-6 py-4">
                 <div className="flex items-center gap-2">
                   <active.icon className="h-5 w-5 text-brand-500" />
                   <span className="text-sm font-semibold text-gray-900">
@@ -253,7 +253,7 @@ export function PlatformTabs() {
                   {active.features.slice(0, 3).map((f, i) => (
                     <div
                       key={f}
-                      className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-2.5"
+                      className="flex items-center gap-3 rounded-lg bg-brand-50/50 px-4 py-2.5"
                     >
                       <div className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-100 text-xs font-bold text-brand-600">
                         {i + 1}

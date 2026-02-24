@@ -40,7 +40,7 @@ export function FaqAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="py-20 sm:py-28">
+    <section className="bg-gradient-to-b from-brand-50/20 to-white py-20 sm:py-28">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">
@@ -62,8 +62,8 @@ export function FaqAccordion() {
                   {faq.question}
                 </span>
                 <ChevronDown
-                  className={`mt-1 h-5 w-5 shrink-0 text-gray-400 transition-transform ${
-                    openIndex === i ? "rotate-180" : ""
+                  className={`mt-1 h-5 w-5 shrink-0 transition-transform ${
+                    openIndex === i ? "rotate-180 text-brand-500" : "text-gray-400"
                   }`}
                 />
               </button>

@@ -51,7 +51,7 @@ export function Header() {
           </button>
           <Link
             href="/login"
-            className="hidden rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600 sm:inline-flex"
+            className="hidden rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-500/20 transition-all hover:shadow-md hover:shadow-brand-500/30 sm:inline-flex"
           >
             Get Started
           </Link>
@@ -87,7 +87,7 @@ export function Header() {
             ))}
             <Link
               href="/login"
-              className="mt-2 rounded-lg bg-brand-500 px-4 py-2 text-center text-sm font-medium text-white"
+              className="mt-2 rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-2 text-center text-sm font-medium text-white"
               onClick={() => setMobileOpen(false)}
             >
               Get Started

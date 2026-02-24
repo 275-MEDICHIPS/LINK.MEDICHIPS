@@ -39,7 +39,7 @@ const results = [
 
 export function ResultsGrid() {
   return (
-    <section id="impact" className="scroll-mt-20 bg-gray-50/50 py-20 sm:py-28">
+    <section id="impact" className="scroll-mt-20 bg-gradient-to-b from-brand-50/40 to-white py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">
@@ -57,7 +57,7 @@ export function ResultsGrid() {
           {results.map((result) => (
             <div
               key={result.description}
-              className="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-lg"
+              className="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-all hover:shadow-lg hover:border-brand-200"
             >
               <div
                 className={`inline-flex items-baseline gap-1 bg-gradient-to-r ${result.color} bg-clip-text text-transparent`}
