@@ -5,19 +5,26 @@ const prisma = new PrismaClient();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const VIDEO_URL = "https://storage.googleapis.com/medichips-link-assets/videos/dental-resin-treatment.mp4";
-const nextVid = () => VIDEO_URL;
+const GCS = "https://storage.googleapis.com/medichips-link-assets/videos";
+const VIDEOS = [
+  `${GCS}/dental-resin-treatment.mp4`,       // 치과 레진 치료 교육
+  `${GCS}/dental-production-workflow.mp4`,    // 영상 제작 요청 및 완료
+  `${GCS}/dental-advanced-procedure.mp4`,     // 이어지는 영상 제작
+];
+let vi = 0;
+const nextVid = () => VIDEOS[vi++ % VIDEOS.length];
 
 const badgeIcon = (emoji: string) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" x="50" text-anchor="middle" font-size="70">${emoji}</text></svg>`)}`;
 
 type CT = "VIDEO" | "TEXT" | "QUIZ" | "MISSION";
-interface LDef { mi: number; o: number; ko: string; en: string; t: CT; d: number; }
+interface LDef { mi: number; o: number; ko: string; en: string; t: CT; d: number; notes?: string; }
 
 async function createLessonsWithContent(
   modules: { id: string }[],
   defs: LDef[],
   quizBodies: Record<number, object>,
+  missionBodies: Record<number, object>,
 ) {
   const lessons: { id: string; contentType: string; durationMin: number | null }[] = [];
   for (let i = 0; i < defs.length; i++) {
@@ -41,30 +48,24 @@ async function createLessonsWithContent(
     if (l.t === "VIDEO") {
       body = {
         videoUrl: nextVid(),
-        markdownContent: `## ${l.en}\n\nKey learning objectives for this video lesson.\n\n- Understand core dental concepts\n- Apply clinical reasoning to oral health\n- Practice hands-on dental skills`,
+        markdownContent: l.notes || `## ${l.en}\n\nKey learning objectives for this video lesson.`,
         notes: "Review this material before proceeding to the next lesson.",
-      };
-    } else if (l.t === "TEXT") {
-      body = {
-        markdownContent: `## ${l.en}\n\n### Overview\n\nThis lesson covers essential knowledge for dental clinical practice.\n\n### Key Points\n\n1. **Systematic approach** — Follow established dental protocols\n2. **Clinical correlation** — Always correlate with patient oral presentation\n3. **Documentation** — Record dental findings accurately in the chart\n\n### Summary\n\nApply these principles consistently in your dental practice.`,
       };
     } else if (l.t === "QUIZ") {
       body = quizBodies[i] || {
         questions: [
           { id: "q1", type: "multiple_choice", question: `What is the primary focus of ${l.en.toLowerCase()}?`, options: ["Correct answer", "Distractor A", "Distractor B", "Distractor C"], correctIndex: 0, explanation: "This is the correct approach based on dental clinical guidelines." },
-          { id: "q2", type: "multiple_choice", question: "Which finding requires immediate attention?", options: ["Critical finding", "Normal variant", "Benign finding", "Expected result"], correctIndex: 0, explanation: "Critical findings require immediate dental intervention." },
-          { id: "q3", type: "multiple_choice", question: "What is the recommended next step?", options: ["Follow protocol", "Wait and observe", "Repeat test", "Discharge"], correctIndex: 0, explanation: "Following established protocol ensures patient safety." },
         ],
-        passingScore: 70,
-        timeLimit: 300,
+        passingScore: 70, timeLimit: 300,
       };
     } else {
-      body = {
-        markdownContent: `## Mission: ${l.en}\n\nComplete the following practical tasks to demonstrate dental competency.\n\n### Instructions\n\n1. Follow the checklist below\n2. Document each step with evidence\n3. Submit for supervisor review`,
+      // MISSION
+      body = missionBodies[i] || {
+        markdownContent: `## Mission: ${l.en}\n\nComplete the following practical tasks to demonstrate dental competency.`,
         checklist: [
-          { text: "Complete initial oral assessment", required: true },
-          { text: "Document findings in dental chart", required: true },
-          { text: "Submit evidence photos", required: true },
+          { text: "Complete assessment", required: true },
+          { text: "Document findings", required: true },
+          { text: "Submit evidence", required: true },
         ],
       };
     }
@@ -280,23 +281,46 @@ async function main() {
     },
   };
 
+  const c1MissionBodies: Record<number, object> = {
+    7: {
+      markdownContent: "## Mission: 방사선 판독 실습\n\n실제 임상 환경에서 촬영된 방사선 사진 3장을 판독하고, 각각의 소견을 기록하세요.\n\n### 평가 기준\n- 해부학적 구조물 정확히 식별\n- 병변 위치 및 크기 기술\n- 감별 진단 2개 이상 제시\n- 추천 추가 검사 명시",
+      checklist: [
+        { text: "치근단 방사선 사진 판독 및 소견서 작성", required: true },
+        { text: "교익 방사선 사진에서 인접면 우식 표시", required: true },
+        { text: "파노라마 사진에서 비정상 소견 3개 이상 식별", required: true },
+        { text: "판독 보고서를 지도교수에게 제출", required: true },
+      ],
+    },
+  };
+
   const c1Lessons = await createLessonsWithContent(c1Mods, [
-    { mi: 0, o: 0, ko: "구외 검사 및 TMJ 평가", en: "Extraoral Exam & TMJ Assessment", t: "VIDEO", d: 5 },
-    { mi: 0, o: 1, ko: "구내 연조직 검사", en: "Intraoral Soft Tissue Examination", t: "VIDEO", d: 5 },
-    { mi: 0, o: 2, ko: "치주 검사 및 치아 차트 작성", en: "Periodontal Exam & Dental Charting", t: "VIDEO", d: 4 },
+    { mi: 0, o: 0, ko: "구외 검사 및 TMJ 평가", en: "Extraoral Exam & TMJ Assessment", t: "VIDEO", d: 5,
+      notes: "## 구외 검사 및 TMJ 평가\n\n### 학습 목표\n- 체계적인 구외 검사 순서를 수행할 수 있다\n- 측두하악관절(TMJ)의 촉진 및 청진법을 익힌다\n- 림프절 촉진을 통한 이상 소견을 감별한다\n\n### 핵심 포인트\n1. **대칭성 평가**: 안면 좌우 대칭, 부종, 변색 확인\n2. **TMJ 평가**: 개구 범위(정상 40-50mm), 편위, 관절잡음\n3. **림프절**: 이하선, 악하선, 경부 림프절 순서로 촉진" },
+    { mi: 0, o: 1, ko: "구내 연조직 검사", en: "Intraoral Soft Tissue Examination", t: "VIDEO", d: 5,
+      notes: "## 구내 연조직 검사\n\n### 학습 목표\n- 구강 내 연조직의 정상 해부학적 구조를 숙지한다\n- 이상 소견(궤양, 백반증, 홍반)을 식별한다\n- 구강암 조기 발견을 위한 선별검사를 수행한다\n\n### 검사 순서\n1. **구순 및 구순점막** → 2. **협점막** → 3. **경구개/연구개**\n4. **구인두** → 5. **혀(설배면/설측면/설하면)** → 6. **구저**" },
+    { mi: 0, o: 2, ko: "치주 검사 및 치아 차트 작성", en: "Periodontal Exam & Dental Charting", t: "VIDEO", d: 4,
+      notes: "## 치주 검사 및 치아 차트 작성\n\n### 학습 목표\n- 6점법 치주낭 측정을 정확히 수행한다\n- FDI 표기법으로 치아 차트를 작성한다\n- 치은퇴축, 동요도, 분지부 병변을 기록한다\n\n### 기록 항목\n- **치주낭 깊이**: 6점법 (MB, B, DB, ML, L, DL)\n- **치은퇴축**: 백악법랑경계(CEJ)부터 치은연까지\n- **동요도**: Miller 분류 (I, II, III도)\n- **BOP**: 탐침 시 출혈 유무" },
     { mi: 0, o: 3, ko: "구강 검진 퀴즈", en: "Oral Examination Quiz", t: "QUIZ", d: 3 },
-    { mi: 1, o: 0, ko: "치근단 방사선 촬영법", en: "Periapical Radiograph Technique", t: "VIDEO", d: 5 },
-    { mi: 1, o: 1, ko: "교익 방사선 촬영 및 판독", en: "Bitewing Radiograph & Interpretation", t: "VIDEO", d: 7 },
-    { mi: 1, o: 2, ko: "파노라마 방사선 판독", en: "Panoramic Radiograph Interpretation", t: "VIDEO", d: 6 },
+    { mi: 1, o: 0, ko: "치근단 방사선 촬영법", en: "Periapical Radiograph Technique", t: "VIDEO", d: 5,
+      notes: "## 치근단 방사선 촬영법\n\n### 학습 목표\n- 평행촬영법과 등각촬영법의 원리를 이해한다\n- 부위별 최적 촬영 각도를 설정한다\n- 촬영 오류의 원인을 분석하고 교정한다\n\n### 평행촬영법 vs 등각촬영법\n| 항목 | 평행촬영법 | 등각촬영법 |\n|---|---|---|\n| 정확도 | 높음 | 보통 |\n| 왜곡 | 최소 | 신장/단축 가능 |\n| 기구 | 필름 홀더 필요 | 손가락 고정 가능 |" },
+    { mi: 1, o: 1, ko: "교익 방사선 촬영 및 판독", en: "Bitewing Radiograph & Interpretation", t: "VIDEO", d: 7,
+      notes: "## 교익 방사선 촬영 및 판독\n\n### 학습 목표\n- 교익 방사선의 적응증과 촬영 기법을 익힌다\n- 인접면 우식의 방사선학적 소견을 판독한다\n- 치조골 높이를 평가한다\n\n### 판독 체크리스트\n1. **인접면 우식**: 법랑질 내 / DEJ 통과 / 상아질 침범 구분\n2. **치조골 수준**: CEJ로부터 거리 측정\n3. **치석**: 치은연하 치석의 방사선 불투과상\n4. **수복물 하방**: 2차 우식 여부 확인" },
+    { mi: 1, o: 2, ko: "파노라마 방사선 판독", en: "Panoramic Radiograph Interpretation", t: "VIDEO", d: 6,
+      notes: "## 파노라마 방사선 판독\n\n### 학습 목표\n- 파노라마 영상의 정상 해부학적 구조를 식별한다\n- 체계적 판독 순서를 수행한다\n- 주요 병변(낭종, 종양, 골절)을 감별한다\n\n### 체계적 판독 순서\n1. **하악과두/TMJ** → 2. **상악동** → 3. **비강**\n4. **상악 치아** → 5. **하악 치아** → 6. **하악관**\n7. **설골** → 8. **경추**" },
     { mi: 1, o: 3, ko: "방사선 판독 실습 과제", en: "Radiograph Interpretation Practice Task", t: "MISSION", d: 5 },
-    { mi: 2, o: 0, ko: "치아우식 분류 (ICDAS)", en: "Caries Classification (ICDAS)", t: "VIDEO", d: 5 },
-    { mi: 2, o: 1, ko: "우식 위험도 평가 (CRA)", en: "Caries Risk Assessment (CRA)", t: "VIDEO", d: 5 },
-    { mi: 2, o: 2, ko: "예방적 우식 관리", en: "Preventive Caries Management", t: "VIDEO", d: 5 },
+    { mi: 2, o: 0, ko: "치아우식 분류 (ICDAS)", en: "Caries Classification (ICDAS)", t: "VIDEO", d: 5,
+      notes: "## 치아우식 분류 (ICDAS)\n\n### 학습 목표\n- ICDAS 코드 0~6을 정확히 구분한다\n- 임상 사진에서 ICDAS 코드를 적용한다\n- 치료 결정에 ICDAS를 활용한다\n\n### ICDAS 분류\n| 코드 | 설명 |\n|---|---|\n| 0 | 건전한 치면 |\n| 1 | 건조 후 첫 시각적 변화 (white spot) |\n| 2 | 습윤 상태에서 시각적 변화 |\n| 3 | 국소적 법랑질 파괴 (상아질 노출 없음) |\n| 4 | 상아질 그림자 비침 |\n| 5 | 상아질 노출된 뚜렷한 와동 |\n| 6 | 광범위한 와동 (치수 근접) |" },
+    { mi: 2, o: 1, ko: "우식 위험도 평가 (CRA)", en: "Caries Risk Assessment (CRA)", t: "VIDEO", d: 5,
+      notes: "## 우식 위험도 평가 (CRA)\n\n### 학습 목표\n- 우식 발생의 위험 인자와 보호 인자를 분석한다\n- CAMBRA 프로토콜을 적용한다\n- 위험도에 따른 예방 전략을 수립한다\n\n### 위험 인자\n- **생물학적**: S. mutans 수, 타액 분비량 감소, 산성 pH\n- **행동적**: 당류 섭취 빈도, 불량한 구강위생, 불규칙한 치과 방문\n- **임상적**: 활성 우식 병소, 수복물 다수, 교정장치\n\n### 보호 인자\n- 불소 노출 (치약, 수돗물, 바니쉬)\n- 정상 타액 분비 및 완충능\n- 실란트 적용" },
+    { mi: 2, o: 2, ko: "예방적 우식 관리", en: "Preventive Caries Management", t: "VIDEO", d: 5,
+      notes: "## 예방적 우식 관리\n\n### 학습 목표\n- 초기 우식의 재광화 전략을 수립한다\n- 불소 도포의 종류와 적응증을 숙지한다\n- 실란트 시술 과정을 이해한다\n\n### 예방 전략 단계\n1. **저위험**: 불소 치약(1000ppm+), 6개월 정기검진\n2. **중위험**: 불소 바니시(22,600ppm) 3~6개월 간격, 자일리톨 껌\n3. **고위험**: 처방 불소(5000ppm 치약), 0.05% NaF 양치액, 3개월 정기검진, 치면열구전색" },
     { mi: 2, o: 3, ko: "우식 진단 퀴즈", en: "Caries Diagnosis Quiz", t: "QUIZ", d: 4 },
-    { mi: 3, o: 0, ko: "수복 재료 선택 원칙", en: "Restorative Material Selection Principles", t: "VIDEO", d: 5 },
-    { mi: 3, o: 1, ko: "단계별 치료 계획 수립", en: "Phased Treatment Plan Development", t: "VIDEO", d: 4 },
+    { mi: 3, o: 0, ko: "수복 재료 선택 원칙", en: "Restorative Material Selection Principles", t: "VIDEO", d: 5,
+      notes: "## 수복 재료 선택 원칙\n\n### 학습 목표\n- 각 수복 재료의 물리적 특성과 적응증을 비교한다\n- 부위별 최적 재료를 선택한다\n- 환자 상황에 맞는 재료를 추천한다\n\n### 주요 수복 재료 비교\n| 재료 | 장점 | 단점 | 적응증 |\n|---|---|---|---|\n| 복합레진 | 심미적, 보존적 | 수축, 감수성 | 전치/소구치 |\n| GIC | 불소 방출, 접착 | 취약, 심미↓ | 유치, 5급 와동 |\n| 아말감 | 내구성, 경제적 | 비심미 | 구치부 대형 와동 |\n| 세라믹 | 심미, 내마모 | 고비용 | 인레이/크라운 |" },
+    { mi: 3, o: 1, ko: "단계별 치료 계획 수립", en: "Phased Treatment Plan Development", t: "VIDEO", d: 4,
+      notes: "## 단계별 치료 계획 수립\n\n### 학습 목표\n- 응급/질환조절/확정/유지 단계를 구분한다\n- 치료 우선순위를 결정한다\n- 환자별 맞춤 치료 계획서를 작성한다\n\n### 치료 단계\n1. **응급 단계**: 통증 해소, 감염 조절, 외상 처치\n2. **질환 조절**: 우식 제거, 스케일링/SRP, 잠정 수복\n3. **재평가**: 치주 상태 재검사, 치료 반응 평가\n4. **확정 수복**: 최종 수복물, 보철, 임플란트\n5. **유지관리**: 정기 검진, 예방 처치" },
     { mi: 3, o: 2, ko: "치료 계획 종합 퀴즈", en: "Treatment Planning Quiz", t: "QUIZ", d: 5 },
-  ], c1QuizBodies);
+  ], c1QuizBodies, c1MissionBodies);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // COURSE 2: 치주질환 진단과 치료 (Periodontal Disease Diagnosis & Treatment)
@@ -359,19 +383,28 @@ async function main() {
   };
 
   const c2Lessons = await createLessonsWithContent(c2Mods, [
-    { mi: 0, o: 0, ko: "치주질환 역학 및 위험 요인", en: "Periodontal Disease Epidemiology & Risk Factors", t: "VIDEO", d: 5 },
-    { mi: 0, o: 1, ko: "치주 탐침 검사 기법", en: "Periodontal Probing Technique", t: "VIDEO", d: 5 },
+    { mi: 0, o: 0, ko: "치주질환 역학 및 위험 요인", en: "Periodontal Disease Epidemiology & Risk Factors", t: "VIDEO", d: 5,
+      notes: "## 치주질환 역학 및 위험 요인\n\n### 학습 목표\n- 전 세계 치주질환 유병률과 공중보건 영향을 이해한다\n- 수정 가능/불가능 위험 인자를 구분한다\n- 전신질환과 치주질환의 관계를 설명한다\n\n### 주요 위험 인자\n- **흡연**: 치주질환 위험 5~7배 증가, 치료 반응 저하\n- **당뇨병**: HbA1c >7%일 때 치주 파괴 가속\n- **유전적 소인**: IL-1 유전자 다형성\n- **스트레스**: 코르티솔 증가 → 면역 반응 저하\n- **불량한 구강위생**: 치태 축적 → 치은염 → 치주염 진행" },
+    { mi: 0, o: 1, ko: "치주 탐침 검사 기법", en: "Periodontal Probing Technique", t: "VIDEO", d: 5,
+      notes: "## 치주 탐침 검사 기법\n\n### 학습 목표\n- WHO/UNC-15 탐침의 눈금을 활용한다\n- 6점법 탐침 기록을 정확히 수행한다\n- 탐침 오차를 최소화하는 기법을 습득한다\n\n### 탐침 기법\n1. **삽입 각도**: 치아 장축에 평행, 20~25g 압력\n2. **6점 측정**: MB, B, DB, ML, L, DL\n3. **기록**: 치주낭 깊이(PD), 치은퇴축(GR), 임상부착수준(CAL = PD + GR)\n4. **출혈(BOP)**: 탐침 후 30초 이내 출혈 유무\n\n### 주의사항\n- 과도한 힘 → 위양성 결과\n- 치석 하방 → 탐침 정지점 오류\n- 염증성 치은 → PD 과대평가 가능" },
     { mi: 0, o: 2, ko: "치주질환 분류 퀴즈", en: "Periodontal Classification Quiz", t: "QUIZ", d: 3 },
-    { mi: 1, o: 0, ko: "스케일링 및 치근활택술 (SRP)", en: "Scaling & Root Planing (SRP)", t: "VIDEO", d: 6 },
-    { mi: 1, o: 1, ko: "초음파 스케일러 vs 수동 스케일러", en: "Ultrasonic vs Hand Scalers", t: "VIDEO", d: 5 },
-    { mi: 1, o: 2, ko: "국소 항균제 적용", en: "Local Antimicrobial Delivery", t: "VIDEO", d: 6 },
-    { mi: 2, o: 0, ko: "치주 판막 수술", en: "Periodontal Flap Surgery", t: "VIDEO", d: 5 },
-    { mi: 2, o: 1, ko: "골유도재생술 (GTR/GBR)", en: "Guided Tissue/Bone Regeneration", t: "VIDEO", d: 5 },
+    { mi: 1, o: 0, ko: "스케일링 및 치근활택술 (SRP)", en: "Scaling & Root Planing (SRP)", t: "VIDEO", d: 6,
+      notes: "## 스케일링 및 치근활택술 (SRP)\n\n### 학습 목표\n- SRP의 목적과 적응증을 설명한다\n- Gracey 큐렛의 부위별 선택과 사용법을 익힌다\n- 시술 후 환자 교육 사항을 전달한다\n\n### Gracey 큐렛 선택\n| 부위 | 큐렛 번호 |\n|---|---|\n| 전치부 | Gracey 1/2, 3/4 |\n| 소구치 | Gracey 5/6 |\n| 구치부 협설면 | Gracey 7/8, 9/10 |\n| 구치부 근원심면 | Gracey 11/12, 13/14 |\n\n### 시술 프로토콜\n1. 국소마취 → 2. 치은연상 스케일링 → 3. 치은연하 SRP\n4. 치근면 활택 확인 → 5. 세척 → 6. 4~6주 재평가" },
+    { mi: 1, o: 1, ko: "초음파 스케일러 vs 수동 스케일러", en: "Ultrasonic vs Hand Scalers", t: "VIDEO", d: 5,
+      notes: "## 초음파 스케일러 vs 수동 스케일러\n\n### 학습 목표\n- 초음파/음파 스케일러의 작동 원리를 이해한다\n- 수동 기구와의 장단점을 비교한다\n- 임상 상황에 따른 최적 기구를 선택한다\n\n### 비교표\n| 항목 | 초음파 스케일러 | 수동 스케일러 |\n|---|---|---|\n| 효율성 | 빠름, 넓은 범위 | 느림, 정밀 |\n| 촉각 감각 | 제한적 | 우수 |\n| 환자 편의 | 소음, 수류 | 조용 |\n| 치근면 손상 | 주의 필요 | 최소 |\n| 에어로졸 | 많음 | 없음 |\n\n### 금기증 (초음파)\n- 심박조율기 환자(자력식), 전염성 질환, 미맹출치 주위" },
+    { mi: 1, o: 2, ko: "국소 항균제 적용", en: "Local Antimicrobial Delivery", t: "VIDEO", d: 6,
+      notes: "## 국소 항균제 적용\n\n### 학습 목표\n- SRP 보조요법으로서 국소 항균제의 역할을 이해한다\n- 주요 국소 항균제의 종류와 작용기전을 학습한다\n- 적용 기법과 환자 주의사항을 숙지한다\n\n### 주요 약제\n- **Minocycline microspheres (Arestin)**: 서방형, SRP 후 잔존 포켓\n- **Chlorhexidine chip (PerioChip)**: 2.5mg, 7~10일 약물 방출\n- **Doxycycline gel (Atridox)**: 10%, 7일간 서방출\n\n### 적응증\n- SRP 후 재평가 시 잔존 포켓 ≥5mm\n- 국소적으로 진행하는 부위\n- 전신 항생제가 부적절한 경우" },
+    { mi: 2, o: 0, ko: "치주 판막 수술", en: "Periodontal Flap Surgery", t: "VIDEO", d: 5,
+      notes: "## 치주 판막 수술\n\n### 학습 목표\n- 치주 판막 수술의 적응증과 금기증을 판단한다\n- Modified Widman Flap 술식을 이해한다\n- 술후 관리와 합병증 예방을 학습한다\n\n### 수술 순서\n1. **마취** → 2. **절개** (내사절개 + 열구절개)\n3. **판막 거상** (전층/부분층) → 4. **치근면 debridement**\n5. **골형태 수정** (필요시) → 6. **봉합** (단순/수평매트리스)\n\n### 술후 관리\n- 48시간 냉찜질, 부드러운 음식\n- 0.12% CHX 양치 2주간\n- 7~14일 후 발사\n- 4~6주 후 재평가" },
+    { mi: 2, o: 1, ko: "골유도재생술 (GTR/GBR)", en: "Guided Tissue/Bone Regeneration", t: "VIDEO", d: 5,
+      notes: "## 골유도재생술 (GTR/GBR)\n\n### 학습 목표\n- GTR/GBR의 생물학적 원리를 설명한다\n- 차폐막의 종류와 선택 기준을 이해한다\n- 골이식재의 분류와 적응증을 학습한다\n\n### 차폐막 분류\n| 유형 | 예시 | 장점 | 단점 |\n|---|---|---|---|\n| 비흡수성 | e-PTFE, Ti mesh | 공간 유지 | 2차 수술 필요 |\n| 흡수성 | 콜라겐막, PLA | 2차 수술 불필요 | 조기 흡수 우려 |\n\n### 골이식재\n- **자가골**: Gold standard, 골유도/골전도/골형성\n- **동종골 (DFDBA)**: BMP 함유, 면역 반응 낮음\n- **이종골 (Bio-Oss)**: 느린 흡수, 공간 유지\n- **합성골 (β-TCP, HA)**: 생체적합성, 무한 공급" },
     { mi: 2, o: 2, ko: "치주 수술 퀴즈", en: "Periodontal Surgery Quiz", t: "QUIZ", d: 4 },
-    { mi: 3, o: 0, ko: "치주 유지관리 프로토콜", en: "Periodontal Maintenance Protocol", t: "VIDEO", d: 5 },
-    { mi: 3, o: 1, ko: "환자 구강위생 교육", en: "Patient Oral Hygiene Instruction", t: "VIDEO", d: 5 },
+    { mi: 3, o: 0, ko: "치주 유지관리 프로토콜", en: "Periodontal Maintenance Protocol", t: "VIDEO", d: 5,
+      notes: "## 치주 유지관리 프로토콜\n\n### 학습 목표\n- 치주 유지관리의 구성요소를 열거한다\n- 재발 위험에 따른 리콜 주기를 설정한다\n- 유지관리 실패 시 재치료 기준을 판단한다\n\n### 유지관리 방문 구성 (30~60분)\n1. **병력 업데이트**: 전신건강, 투약, 생활습관\n2. **치주 재검사**: PD, CAL, BOP 측정\n3. **방사선 평가**: 연 1회 또는 필요시\n4. **치은연상/연하 debridement**\n5. **불소 도포 및 구강위생 재교육\n\n### 리콜 주기\n- 안정기: 3개월 → 6개월으로 연장 가능\n- 불안정/위험 높음: 2~3개월 유지" },
+    { mi: 3, o: 1, ko: "환자 구강위생 교육", en: "Patient Oral Hygiene Instruction", t: "VIDEO", d: 5,
+      notes: "## 환자 구강위생 교육\n\n### 학습 목표\n- Modified Bass 칫솔질법을 교육한다\n- 치간 관리 도구(치실, 치간솔)를 추천한다\n- 환자 동기부여 기법(MI)을 적용한다\n\n### Modified Bass 칫솔질법\n1. 칫솔모를 치은연 45도로 위치\n2. 짧은 진동 운동 10~15초 (2~3개 치아)\n3. 교합면 방향으로 회전 이동\n4. 전치부 설면: 칫솔을 세워서 상하 운동\n\n### 치간 관리\n- **치실**: 건강한 치간유두, 좁은 치간 공간\n- **치간솔**: 치간유두 퇴축, 넓은 치간 공간 (사이즈 적합도 확인)\n- **워터플로서**: 보조적, 교정장치/임플란트 주위" },
     { mi: 3, o: 2, ko: "유지관리 퀴즈", en: "Maintenance Therapy Quiz", t: "QUIZ", d: 4 },
-  ], c2QuizBodies);
+  ], c2QuizBodies, {});
 
   // ═══════════════════════════════════════════════════════════════════════════
   // COURSE 3: 근관치료 기초 (Endodontic Treatment Fundamentals)
@@ -432,16 +465,22 @@ async function main() {
   };
 
   const c3Lessons = await createLessonsWithContent(c3Mods, [
-    { mi: 0, o: 0, ko: "치수 생활력 검사", en: "Pulp Vitality Testing", t: "VIDEO", d: 5 },
-    { mi: 0, o: 1, ko: "치수 질환 분류", en: "Pulp Disease Classification", t: "VIDEO", d: 4 },
+    { mi: 0, o: 0, ko: "치수 생활력 검사", en: "Pulp Vitality Testing", t: "VIDEO", d: 5,
+      notes: "## 치수 생활력 검사\n\n### 학습 목표\n- 온도 검사(냉자극/열자극)의 방법과 해석을 익힌다\n- EPT(전기 치수 검사)의 원리와 한계를 이해한다\n- 감별 진단 알고리즘을 수행한다\n\n### 검사 방법\n| 검사 | 방법 | 정상 반응 | 비정상 |\n|---|---|---|---|\n| 냉자극 | Endo-Ice 면구 | 짧은 통증 후 소실 | 지속통(>10초) 또는 무반응 |\n| 열자극 | 가열 GP, 온수 | 경미한 불편감 | 심한 통증 |\n| EPT | 점진적 전류 증가 | 수치 응답 | 무반응 = 괴사 의심 |\n| 타진 | 미러 핸들 수직/수평 | 불편감 없음 | 통증 = 치근단 염증 |" },
+    { mi: 0, o: 1, ko: "치수 질환 분류", en: "Pulp Disease Classification", t: "VIDEO", d: 4,
+      notes: "## 치수 질환 분류\n\n### 학습 목표\n- AAE 진단 분류 체계를 적용한다\n- 가역적/비가역적 치수염을 감별한다\n- 치근단 병변의 분류와 예후를 판단한다\n\n### 치수 진단 분류 (AAE 2009)\n1. **정상 치수**: 검사에 정상 반응\n2. **가역적 치수염**: 자극 제거 시 통증 소실, 보존적 치료\n3. **비가역적 치수염 (증상성)**: 자발통, 지속통, 열에 악화 → RCT\n4. **비가역적 치수염 (무증상성)**: 우식 깊지만 증상 없음 → RCT\n5. **치수 괴사**: EPT 무반응, 변색 → RCT\n6. **기 치료치**: 근관치료 이력\n\n### 치근단 진단\n- 정상 치근단 / 증상성 치근단염 / 무증상성 치근단염\n- 급성 치근단 농양 / 만성 치근단 농양 / 응축성 골염" },
     { mi: 0, o: 2, ko: "치수 진단 퀴즈", en: "Pulp Diagnosis Quiz", t: "QUIZ", d: 3 },
-    { mi: 1, o: 0, ko: "근관 접근 및 형성", en: "Access Cavity & Canal Shaping", t: "VIDEO", d: 6 },
-    { mi: 1, o: 1, ko: "근관 세척 프로토콜", en: "Irrigation Protocol", t: "VIDEO", d: 5 },
+    { mi: 1, o: 0, ko: "근관 접근 및 형성", en: "Access Cavity & Canal Shaping", t: "VIDEO", d: 6,
+      notes: "## 근관 접근 및 형성\n\n### 학습 목표\n- 치아 유형별 접근 와동 형태를 설계한다\n- NiTi 회전 파일 시스템의 사용법을 익힌다\n- Working length 결정법을 수행한다\n\n### 접근 와동 형태\n| 치아 | 형태 | 근관 수 |\n|---|---|---|\n| 상악 전치 | 삼각형 (설면) | 1 |\n| 상악 소구치 | 타원형 | 1~2 |\n| 상악 대구치 | 삼각형 (교합면) | 3~4 (MB2!) |\n| 하악 대구치 | 사각형 | 3~4 |\n\n### NiTi 파일 사용 원칙\n1. **Glide path 확보** (K-file #10~#15)\n2. **Crown-down 접근법**\n3. **매 파일 교체 시 세척**\n4. **토크/속도 제조사 지침 준수**\n5. **일회용 사용 권장**" },
+    { mi: 1, o: 1, ko: "근관 세척 프로토콜", en: "Irrigation Protocol", t: "VIDEO", d: 5,
+      notes: "## 근관 세척 프로토콜\n\n### 학습 목표\n- NaOCl의 작용기전과 최적 농도를 이해한다\n- EDTA의 역할과 사용 순서를 학습한다\n- 안전한 세척 기법을 수행한다\n\n### 세척 프로토콜\n1. **NaOCl 2.5~5.25%**: 매 파일 교체 시, 2~3ml\n2. **17% EDTA**: 최종 세척, 도말층(smear layer) 제거, 1분\n3. **최종 NaOCl**: EDTA 후 잔류 세척\n4. **생리식염수**: 최종 린스\n\n### 세척 강화법\n- **수동 활성화**: K-file로 상하 운동\n- **초음파 활성화 (PUI)**: 세척 효과 극대화\n- **음압 세척 (EndoVac)**: 치근단 밖 압출 최소화\n\n### 안전 수칙\n- 근관 내 바늘 고착 금지 (passive insertion)\n- 측방 천공 바늘 사용\n- NaOCl 치근단 밖 압출 주의 (NaOCl accident)" },
     { mi: 1, o: 2, ko: "근관 형성 퀴즈", en: "Canal Shaping Quiz", t: "QUIZ", d: 4 },
-    { mi: 2, o: 0, ko: "근관 충전 기법", en: "Obturation Techniques", t: "VIDEO", d: 5 },
-    { mi: 2, o: 1, ko: "근관치료 후 수복", en: "Post-Endodontic Restoration", t: "VIDEO", d: 5 },
+    { mi: 2, o: 0, ko: "근관 충전 기법", en: "Obturation Techniques", t: "VIDEO", d: 5,
+      notes: "## 근관 충전 기법\n\n### 학습 목표\n- 측방가압 충전법의 술식을 수행한다\n- 연속파 충전법(continuous wave)을 이해한다\n- 충전 후 방사선 평가 기준을 적용한다\n\n### 측방가압 충전법\n1. **Master cone 적합**: Working length에서 tug-back 확인\n2. **근관 건조**: Paper point로 흡습\n3. **실러 도포**: 근관벽에 얇게 도포\n4. **Master cone 삽입**\n5. **Spreader 삽입**: Master cone 옆 1~2mm 깊이까지\n6. **Accessory cone 추가**: 저항 느껴질 때까지 반복\n7. **치관부 절단**: 가열 기구로 근관 입구 수준에서 절단\n\n### 충전 품질 평가 (방사선)\n- 근첨 0.5~1mm 이내 충전\n- 치근관벽과 GP 사이 간극 없음\n- 근관 전체 균일한 충전" },
+    { mi: 2, o: 1, ko: "근관치료 후 수복", en: "Post-Endodontic Restoration", t: "VIDEO", d: 5,
+      notes: "## 근관치료 후 수복\n\n### 학습 목표\n- 잔존 치질량에 따른 수복 방법을 결정한다\n- 포스트(post) 사용의 적응증과 종류를 이해한다\n- 크라운 수복의 적응증과 시기를 판단한다\n\n### 수복 결정 알고리즘\n```\n잔존 치질 평가\n├─ 4벽 건전 → 직접 수복 (복합레진)\n├─ 2~3벽 건전 → 커스프 커버 (온레이/크라운)\n├─ 1벽 이하 → 포스트 + 코어 + 크라운\n└─ 수복 불가 → 발치 고려\n```\n\n### 포스트 종류\n| 유형 | 장점 | 단점 |\n|---|---|---|\n| Fiber post | 탄성계수 유사, 치근파절↓ | 유지력 보통 |\n| 주조 포스트 | 정밀 적합 | 응력 집중, 치근파절 위험 |\n\n### 타이밍\n- 근관치료 직후 코어 빌드업 (세균 침투 방지)\n- 크라운 인상: 증상 소실 확인 후 2~4주" },
     { mi: 2, o: 2, ko: "충전 및 수복 퀴즈", en: "Obturation & Restoration Quiz", t: "QUIZ", d: 4 },
-  ], c3QuizBodies);
+  ], c3QuizBodies, {});
 
   console.log(`✅ Courses: 3 (${c1Lessons.length + c2Lessons.length + c3Lessons.length} lessons, all with content)`);
 
