@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
+import { AuthError } from "@/lib/auth/guards";
 
 export class ApiError extends Error {
   constructor(
@@ -35,6 +36,13 @@ export function paginated<T>(
 }
 
 export function handleError(error: unknown): NextResponse {
+  if (error instanceof AuthError) {
+    return NextResponse.json(
+      { data: null, error: { message: error.message } },
+      { status: error.statusCode }
+    );
+  }
+
   if (error instanceof ApiError) {
     return NextResponse.json(
       { data: null, error: { message: error.message, code: error.code } },
