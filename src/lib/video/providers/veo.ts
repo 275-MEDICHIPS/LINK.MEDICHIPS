@@ -143,7 +143,7 @@ export class VeoProvider implements VideoGenerationProvider {
         sampleCount: 1,
         durationSeconds,
         aspectRatio: params.aspectRatio === "9:16" ? "9:16" : "16:9",
-        resolution: (config.resolution as string) || "720p",
+        resolution: (config.resolution as string) || "1080p",
         generateAudio: config.generateAudio !== false,
         ...(config.negativePrompt
           ? { negativePrompt: config.negativePrompt as string }
@@ -289,7 +289,7 @@ export class VeoFaceSwapProvider implements FaceSwapProvider {
         storageUri: `gs://${GCS_OUTPUT_BUCKET}/veo-faceswap/${Date.now()}/`,
         sampleCount: 1,
         aspectRatio: "16:9",
-        resolution: params.resolution || "720p",
+        resolution: params.resolution || "1080p",
         ...(config.seed ? { seed: config.seed as number } : {}),
       },
     };
