@@ -5,15 +5,8 @@ const prisma = new PrismaClient();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const VIDEOS = [
-  "https://www.youtube.com/watch?v=PqiAfCDd-rk", // Dental examination techniques
-  "https://www.youtube.com/watch?v=izMc4UTdKzY", // Oral health assessment
-  "https://www.youtube.com/watch?v=zAwKQ_kx4OQ", // Dental radiograph interpretation
-  "https://www.youtube.com/watch?v=7ZLXal0La2Y", // Periodontal probing
-  "https://www.youtube.com/watch?v=yKJKl0L_wqU", // Dental caries classification
-];
-let vi = 0;
-const nextVid = () => VIDEOS[vi++ % VIDEOS.length];
+const VIDEO_URL = "https://storage.googleapis.com/medichips-link-assets/videos/dental-resin-treatment.mp4";
+const nextVid = () => VIDEO_URL;
 
 const badgeIcon = (emoji: string) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" x="50" text-anchor="middle" font-size="70">${emoji}</text></svg>`)}`;
@@ -290,18 +283,18 @@ async function main() {
   const c1Lessons = await createLessonsWithContent(c1Mods, [
     { mi: 0, o: 0, ko: "구외 검사 및 TMJ 평가", en: "Extraoral Exam & TMJ Assessment", t: "VIDEO", d: 5 },
     { mi: 0, o: 1, ko: "구내 연조직 검사", en: "Intraoral Soft Tissue Examination", t: "VIDEO", d: 5 },
-    { mi: 0, o: 2, ko: "치주 검사 및 치아 차트 작성", en: "Periodontal Exam & Dental Charting", t: "TEXT", d: 4 },
+    { mi: 0, o: 2, ko: "치주 검사 및 치아 차트 작성", en: "Periodontal Exam & Dental Charting", t: "VIDEO", d: 4 },
     { mi: 0, o: 3, ko: "구강 검진 퀴즈", en: "Oral Examination Quiz", t: "QUIZ", d: 3 },
     { mi: 1, o: 0, ko: "치근단 방사선 촬영법", en: "Periapical Radiograph Technique", t: "VIDEO", d: 5 },
     { mi: 1, o: 1, ko: "교익 방사선 촬영 및 판독", en: "Bitewing Radiograph & Interpretation", t: "VIDEO", d: 7 },
     { mi: 1, o: 2, ko: "파노라마 방사선 판독", en: "Panoramic Radiograph Interpretation", t: "VIDEO", d: 6 },
     { mi: 1, o: 3, ko: "방사선 판독 실습 과제", en: "Radiograph Interpretation Practice Task", t: "MISSION", d: 5 },
     { mi: 2, o: 0, ko: "치아우식 분류 (ICDAS)", en: "Caries Classification (ICDAS)", t: "VIDEO", d: 5 },
-    { mi: 2, o: 1, ko: "우식 위험도 평가 (CRA)", en: "Caries Risk Assessment (CRA)", t: "TEXT", d: 5 },
-    { mi: 2, o: 2, ko: "예방적 우식 관리", en: "Preventive Caries Management", t: "TEXT", d: 5 },
+    { mi: 2, o: 1, ko: "우식 위험도 평가 (CRA)", en: "Caries Risk Assessment (CRA)", t: "VIDEO", d: 5 },
+    { mi: 2, o: 2, ko: "예방적 우식 관리", en: "Preventive Caries Management", t: "VIDEO", d: 5 },
     { mi: 2, o: 3, ko: "우식 진단 퀴즈", en: "Caries Diagnosis Quiz", t: "QUIZ", d: 4 },
     { mi: 3, o: 0, ko: "수복 재료 선택 원칙", en: "Restorative Material Selection Principles", t: "VIDEO", d: 5 },
-    { mi: 3, o: 1, ko: "단계별 치료 계획 수립", en: "Phased Treatment Plan Development", t: "TEXT", d: 4 },
+    { mi: 3, o: 1, ko: "단계별 치료 계획 수립", en: "Phased Treatment Plan Development", t: "VIDEO", d: 4 },
     { mi: 3, o: 2, ko: "치료 계획 종합 퀴즈", en: "Treatment Planning Quiz", t: "QUIZ", d: 5 },
   ], c1QuizBodies);
 
@@ -367,16 +360,16 @@ async function main() {
 
   const c2Lessons = await createLessonsWithContent(c2Mods, [
     { mi: 0, o: 0, ko: "치주질환 역학 및 위험 요인", en: "Periodontal Disease Epidemiology & Risk Factors", t: "VIDEO", d: 5 },
-    { mi: 0, o: 1, ko: "치주 탐침 검사 기법", en: "Periodontal Probing Technique", t: "TEXT", d: 5 },
+    { mi: 0, o: 1, ko: "치주 탐침 검사 기법", en: "Periodontal Probing Technique", t: "VIDEO", d: 5 },
     { mi: 0, o: 2, ko: "치주질환 분류 퀴즈", en: "Periodontal Classification Quiz", t: "QUIZ", d: 3 },
     { mi: 1, o: 0, ko: "스케일링 및 치근활택술 (SRP)", en: "Scaling & Root Planing (SRP)", t: "VIDEO", d: 6 },
-    { mi: 1, o: 1, ko: "초음파 스케일러 vs 수동 스케일러", en: "Ultrasonic vs Hand Scalers", t: "TEXT", d: 5 },
+    { mi: 1, o: 1, ko: "초음파 스케일러 vs 수동 스케일러", en: "Ultrasonic vs Hand Scalers", t: "VIDEO", d: 5 },
     { mi: 1, o: 2, ko: "국소 항균제 적용", en: "Local Antimicrobial Delivery", t: "VIDEO", d: 6 },
     { mi: 2, o: 0, ko: "치주 판막 수술", en: "Periodontal Flap Surgery", t: "VIDEO", d: 5 },
-    { mi: 2, o: 1, ko: "골유도재생술 (GTR/GBR)", en: "Guided Tissue/Bone Regeneration", t: "TEXT", d: 5 },
+    { mi: 2, o: 1, ko: "골유도재생술 (GTR/GBR)", en: "Guided Tissue/Bone Regeneration", t: "VIDEO", d: 5 },
     { mi: 2, o: 2, ko: "치주 수술 퀴즈", en: "Periodontal Surgery Quiz", t: "QUIZ", d: 4 },
     { mi: 3, o: 0, ko: "치주 유지관리 프로토콜", en: "Periodontal Maintenance Protocol", t: "VIDEO", d: 5 },
-    { mi: 3, o: 1, ko: "환자 구강위생 교육", en: "Patient Oral Hygiene Instruction", t: "TEXT", d: 5 },
+    { mi: 3, o: 1, ko: "환자 구강위생 교육", en: "Patient Oral Hygiene Instruction", t: "VIDEO", d: 5 },
     { mi: 3, o: 2, ko: "유지관리 퀴즈", en: "Maintenance Therapy Quiz", t: "QUIZ", d: 4 },
   ], c2QuizBodies);
 
@@ -440,13 +433,13 @@ async function main() {
 
   const c3Lessons = await createLessonsWithContent(c3Mods, [
     { mi: 0, o: 0, ko: "치수 생활력 검사", en: "Pulp Vitality Testing", t: "VIDEO", d: 5 },
-    { mi: 0, o: 1, ko: "치수 질환 분류", en: "Pulp Disease Classification", t: "TEXT", d: 4 },
+    { mi: 0, o: 1, ko: "치수 질환 분류", en: "Pulp Disease Classification", t: "VIDEO", d: 4 },
     { mi: 0, o: 2, ko: "치수 진단 퀴즈", en: "Pulp Diagnosis Quiz", t: "QUIZ", d: 3 },
     { mi: 1, o: 0, ko: "근관 접근 및 형성", en: "Access Cavity & Canal Shaping", t: "VIDEO", d: 6 },
-    { mi: 1, o: 1, ko: "근관 세척 프로토콜", en: "Irrigation Protocol", t: "TEXT", d: 5 },
+    { mi: 1, o: 1, ko: "근관 세척 프로토콜", en: "Irrigation Protocol", t: "VIDEO", d: 5 },
     { mi: 1, o: 2, ko: "근관 형성 퀴즈", en: "Canal Shaping Quiz", t: "QUIZ", d: 4 },
     { mi: 2, o: 0, ko: "근관 충전 기법", en: "Obturation Techniques", t: "VIDEO", d: 5 },
-    { mi: 2, o: 1, ko: "근관치료 후 수복", en: "Post-Endodontic Restoration", t: "TEXT", d: 5 },
+    { mi: 2, o: 1, ko: "근관치료 후 수복", en: "Post-Endodontic Restoration", t: "VIDEO", d: 5 },
     { mi: 2, o: 2, ko: "충전 및 수복 퀴즈", en: "Obturation & Restoration Quiz", t: "QUIZ", d: 4 },
   ], c3QuizBodies);
 
