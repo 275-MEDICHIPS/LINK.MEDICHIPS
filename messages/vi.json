@@ -111,7 +111,12 @@
     "lessons": "{count} bài học",
     "startLearning": "Bắt đầu học",
     "download": "Tải về để học ngoại tuyến",
-    "downloaded": "Có thể học ngoại tuyến"
+    "downloaded": "Có thể học ngoại tuyến",
+    "myCourses": "Khóa học của tôi",
+    "recommendedCourses": "Khóa học được đề xuất",
+    "noEnrolledCourses": "Chưa đăng ký khóa học nào",
+    "noEnrolledCoursesDesc": "Đăng ký một khóa học bên dưới để bắt đầu học.",
+    "viewAll": "Xem tất cả"
   },
   "lesson": {
     "min": "{count} phút",

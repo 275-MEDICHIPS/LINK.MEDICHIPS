@@ -111,7 +111,12 @@
     "lessons": "{count} レッスン",
     "startLearning": "学習を開始",
     "download": "オフライン用にダウンロード",
-    "downloaded": "オフライン利用可能"
+    "downloaded": "オフライン利用可能",
+    "myCourses": "マイコース",
+    "recommendedCourses": "おすすめコース",
+    "noEnrolledCourses": "登録済みコースはまだありません",
+    "noEnrolledCoursesDesc": "下記のコースに登録して学習を開始しましょう。",
+    "viewAll": "すべて表示"
   },
   "lesson": {
     "min": "{count} 分",

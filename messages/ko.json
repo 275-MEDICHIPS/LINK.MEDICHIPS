@@ -111,7 +111,12 @@
     "lessons": "레슨 {count}개",
     "startLearning": "학습 시작",
     "download": "오프라인 다운로드",
-    "downloaded": "오프라인 사용 가능"
+    "downloaded": "오프라인 사용 가능",
+    "myCourses": "내 코스",
+    "recommendedCourses": "추천 코스",
+    "noEnrolledCourses": "등록된 코스가 없습니다",
+    "noEnrolledCoursesDesc": "아래 코스에 등록하여 학습을 시작하세요.",
+    "viewAll": "모두 보기"
   },
   "lesson": {
     "min": "{count}분",

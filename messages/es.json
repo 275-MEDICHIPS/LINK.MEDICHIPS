@@ -111,7 +111,12 @@
     "lessons": "{count} lecciones",
     "startLearning": "Comenzar a aprender",
     "download": "Descargar para sin conexión",
-    "downloaded": "Disponible sin conexión"
+    "downloaded": "Disponible sin conexión",
+    "myCourses": "Mis cursos",
+    "recommendedCourses": "Cursos recomendados",
+    "noEnrolledCourses": "Aún no hay cursos inscritos",
+    "noEnrolledCoursesDesc": "Inscríbete en un curso a continuación para comenzar a aprender.",
+    "viewAll": "Ver todo"
   },
   "lesson": {
     "min": "{count} min",

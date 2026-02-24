@@ -111,7 +111,12 @@
     "lessons": "{count} บทเรียน",
     "startLearning": "เริ่มเรียน",
     "download": "ดาวน์โหลดสำหรับออฟไลน์",
-    "downloaded": "พร้อมใช้งานออฟไลน์"
+    "downloaded": "พร้อมใช้งานออฟไลน์",
+    "myCourses": "คอร์สของฉัน",
+    "recommendedCourses": "คอร์สที่แนะนำ",
+    "noEnrolledCourses": "ยังไม่ได้ลงทะเบียนคอร์สใดๆ",
+    "noEnrolledCoursesDesc": "ลงทะเบียนคอร์สด้านล่างเพื่อเริ่มเรียน",
+    "viewAll": "ดูทั้งหมด"
   },
   "lesson": {
     "min": "{count} นาที",

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type FilterStatus = "ALL" | "IN_PROGRESS" | "COMPLETED" | "AVAILABLE";
+type FilterStatus = "ALL" | "ENROLLED" | "RECOMMENDED";
 
 interface CourseItem {
   id: string;
@@ -185,36 +185,15 @@ function CourseCard({ course, t }: { course: CourseItem; t: ReturnType<typeof us
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
-function EmptyState({ filter, t }: { filter: FilterStatus; t: ReturnType<typeof useTranslations> }) {
-  const messages: Record<FilterStatus, { title: string; desc: string }> = {
-    ALL: {
-      title: t("noCoursesAvailable"),
-      desc: t("noCoursesAvailableDesc"),
-    },
-    IN_PROGRESS: {
-      title: t("noCoursesInProgress"),
-      desc: t("noCoursesInProgressDesc"),
-    },
-    COMPLETED: {
-      title: t("noCoursesCompleted"),
-      desc: t("noCoursesCompletedDesc"),
-    },
-    AVAILABLE: {
-      title: t("noNewCourses"),
-      desc: t("noNewCoursesDesc"),
-    },
-  };
-
-  const msg = messages[filter];
-
+function EmptyState({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-200 bg-white px-6 py-12">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-200 bg-white px-6 py-8">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50">
         <BookOpen className="h-6 w-6 text-gray-300" aria-hidden="true" />
       </div>
       <div className="text-center">
-        <p className="text-sm font-medium text-gray-900">{msg.title}</p>
-        <p className="mt-1 text-xs text-gray-500">{msg.desc}</p>
+        <p className="text-sm font-medium text-gray-900">{title}</p>
+        <p className="mt-1 text-xs text-gray-500">{desc}</p>
       </div>
     </div>
   );
@@ -234,9 +213,8 @@ export default function CoursesPage() {
 
   const FILTERS: { label: string; value: FilterStatus }[] = [
     { label: t("all"), value: "ALL" },
-    { label: t("inProgress"), value: "IN_PROGRESS" },
-    { label: t("completed"), value: "COMPLETED" },
-    { label: t("available"), value: "AVAILABLE" },
+    { label: t("myCourses"), value: "ENROLLED" },
+    { label: t("recommendedCourses"), value: "RECOMMENDED" },
   ];
 
   // Debounce search input
@@ -267,23 +245,15 @@ export default function CoursesPage() {
     fetchCourses();
   }, [fetchCourses]);
 
-  // Client-side filtering by enrollment status
-  const filteredCourses = useMemo(() => {
-    switch (activeFilter) {
-      case "IN_PROGRESS":
-        return courses.filter(
-          (c) => c.isEnrolled && (c.progressPct ?? 0) > 0 && (c.progressPct ?? 0) < 100
-        );
-      case "COMPLETED":
-        return courses.filter(
-          (c) => c.isEnrolled && (c.progressPct ?? 0) >= 100
-        );
-      case "AVAILABLE":
-        return courses.filter((c) => !c.isEnrolled);
-      default:
-        return courses;
-    }
-  }, [courses, activeFilter]);
+  // Split courses by enrollment status
+  const enrolledCourses = useMemo(
+    () => courses.filter((c) => c.isEnrolled),
+    [courses]
+  );
+  const recommendedCourses = useMemo(
+    () => courses.filter((c) => !c.isEnrolled),
+    [courses]
+  );
 
   return (
     <div className="space-y-4">
@@ -337,14 +307,65 @@ export default function CoursesPage() {
             {tc("tryAgain")}
           </Button>
         </div>
-      ) : filteredCourses.length === 0 ? (
-        <EmptyState filter={activeFilter} t={t} />
-      ) : (
+      ) : activeFilter === "ALL" ? (
+        <div className="space-y-6">
+          {/* My Courses Section */}
+          <section>
+            <h2 className="mb-3 text-sm font-semibold text-gray-900">
+              {t("myCourses")}
+            </h2>
+            {enrolledCourses.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+                {enrolledCourses.map((course) => (
+                  <CourseCard key={course.id} course={course} t={t} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title={t("noEnrolledCourses")}
+                desc={t("noEnrolledCoursesDesc")}
+              />
+            )}
+          </section>
+
+          {/* Recommended Courses Section */}
+          {recommendedCourses.length > 0 && (
+            <section>
+              <h2 className="mb-3 text-sm font-semibold text-gray-900">
+                {t("recommendedCourses")}
+              </h2>
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+                {recommendedCourses.map((course) => (
+                  <CourseCard key={course.id} course={course} t={t} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      ) : activeFilter === "ENROLLED" ? (
+        enrolledCourses.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            {enrolledCourses.map((course) => (
+              <CourseCard key={course.id} course={course} t={t} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title={t("noEnrolledCourses")}
+            desc={t("noEnrolledCoursesDesc")}
+          />
+        )
+      ) : recommendedCourses.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          {filteredCourses.map((course) => (
+          {recommendedCourses.map((course) => (
             <CourseCard key={course.id} course={course} t={t} />
           ))}
         </div>
+      ) : (
+        <EmptyState
+          title={t("noNewCourses")}
+          desc={t("noNewCoursesDesc")}
+        />
       )}
     </div>
   );

@@ -111,7 +111,12 @@
     "lessons": "{count} leçons",
     "startLearning": "Commencer l'apprentissage",
     "download": "Télécharger pour hors ligne",
-    "downloaded": "Disponible hors ligne"
+    "downloaded": "Disponible hors ligne",
+    "myCourses": "Mes cours",
+    "recommendedCourses": "Cours recommandés",
+    "noEnrolledCourses": "Aucun cours inscrit pour le moment",
+    "noEnrolledCoursesDesc": "Inscrivez-vous à un cours ci-dessous pour commencer à apprendre.",
+    "viewAll": "Voir tout"
   },
   "lesson": {
     "min": "{count} min",

@@ -111,7 +111,12 @@
     "lessons": "{count} pelajaran",
     "startLearning": "Mulai Belajar",
     "download": "Unduh untuk Offline",
-    "downloaded": "Tersedia Offline"
+    "downloaded": "Tersedia Offline",
+    "myCourses": "Kursus Saya",
+    "recommendedCourses": "Kursus yang Direkomendasikan",
+    "noEnrolledCourses": "Belum ada kursus yang didaftar",
+    "noEnrolledCoursesDesc": "Daftar kursus di bawah untuk memulai belajar.",
+    "viewAll": "Lihat semua"
   },
   "lesson": {
     "min": "{count} menit",

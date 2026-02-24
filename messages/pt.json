@@ -111,7 +111,12 @@
     "lessons": "{count} lições",
     "startLearning": "Começar a aprender",
     "download": "Baixar para offline",
-    "downloaded": "Disponível offline"
+    "downloaded": "Disponível offline",
+    "myCourses": "Meus cursos",
+    "recommendedCourses": "Cursos recomendados",
+    "noEnrolledCourses": "Nenhum curso inscrito ainda",
+    "noEnrolledCoursesDesc": "Inscreva-se em um curso abaixo para começar a aprender.",
+    "viewAll": "Ver tudo"
   },
   "lesson": {
     "min": "{count} min",

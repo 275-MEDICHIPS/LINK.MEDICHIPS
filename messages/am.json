@@ -111,7 +111,12 @@
     "lessons": "{count} ትምህርቶች",
     "startLearning": "መማር ጀምር",
     "download": "ከመስመር ውጪ ለመጠቀም ያውርዱ",
-    "downloaded": "ከመስመር ውጪ ይገኛል"
+    "downloaded": "ከመስመር ውጪ ይገኛል",
+    "myCourses": "የኔ ኮርሶች",
+    "recommendedCourses": "የሚመከሩ ኮርሶች",
+    "noEnrolledCourses": "ገና ምንም ኮርስ አልተመዘገቡም",
+    "noEnrolledCoursesDesc": "መማር ለመጀመር ከታች ኮርስ ውስጥ ተመዝገቡ።",
+    "viewAll": "ሁሉንም ይመልከቱ"
   },
   "lesson": {
     "min": "{count} ደቂቃ",

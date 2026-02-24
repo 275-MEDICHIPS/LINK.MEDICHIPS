@@ -111,7 +111,12 @@
     "lessons": "{count} دروس",
     "startLearning": "بدء التعلّم",
     "download": "تحميل للاستخدام بدون اتصال",
-    "downloaded": "متاح بدون اتصال"
+    "downloaded": "متاح بدون اتصال",
+    "myCourses": "دوراتي",
+    "recommendedCourses": "الدورات الموصى بها",
+    "noEnrolledCourses": "لا توجد دورات مسجّلة بعد",
+    "noEnrolledCoursesDesc": "سجّل في دورة أدناه لبدء التعلّم.",
+    "viewAll": "عرض الكل"
   },
   "lesson": {
     "min": "{count} دقيقة",

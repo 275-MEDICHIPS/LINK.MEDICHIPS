@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -289,6 +290,7 @@ export default function CourseDetailPage() {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(
     new Set()
   );
+  const [enrolling, setEnrolling] = useState(false);
 
   const fetchCourse = useCallback(async () => {
     try {
@@ -332,6 +334,25 @@ export default function CourseDetailPage() {
       }
       return next;
     });
+  };
+
+  const handleEnroll = async () => {
+    if (enrolling) return;
+    try {
+      setEnrolling(true);
+      const res = await fetch(`/api/v1/learner/courses/${params.courseId}/enroll`, {
+        method: "POST",
+        headers: csrfHeaders(),
+      });
+      if (res.status === 401) { window.location.href = "/login"; return; }
+      if (!res.ok) throw new Error("Enrollment failed");
+      // Refresh course data to show enrolled state
+      await fetchCourse();
+    } catch {
+      // Allow retry
+    } finally {
+      setEnrolling(false);
+    }
   };
 
   if (loading) return <CourseDetailSkeleton />;
@@ -496,8 +517,12 @@ export default function CourseDetailPage() {
       {/* Enroll Button (if not enrolled) */}
       {!course.isEnrolled && (
         <div className="fixed bottom-20 left-0 right-0 z-30 px-4">
-          <Button className="w-full rounded-xl py-6 text-sm font-semibold shadow-lg">
-            {t("enrollInCourse")}
+          <Button
+            onClick={handleEnroll}
+            disabled={enrolling}
+            className="w-full rounded-xl py-6 text-sm font-semibold shadow-lg"
+          >
+            {enrolling ? tc("loading") : t("enrollInCourse")}
           </Button>
         </div>
       )}

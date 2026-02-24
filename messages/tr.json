@@ -111,7 +111,12 @@
     "lessons": "{count} ders",
     "startLearning": "Öğrenmeye Başla",
     "download": "Çevrimdışı İndir",
-    "downloaded": "Çevrimdışı Kullanılabilir"
+    "downloaded": "Çevrimdışı Kullanılabilir",
+    "myCourses": "Kurslarım",
+    "recommendedCourses": "Önerilen Kurslar",
+    "noEnrolledCourses": "Henüz kayıtlı kurs yok",
+    "noEnrolledCoursesDesc": "Öğrenmeye başlamak için aşağıdaki kurslardan birine kaydolun.",
+    "viewAll": "Tümünü gör"
   },
   "lesson": {
     "min": "{count} dk",

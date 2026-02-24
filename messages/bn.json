@@ -111,7 +111,12 @@
     "lessons": "{count}টি পাঠ",
     "startLearning": "শেখা শুরু করুন",
     "download": "অফলাইনের জন্য ডাউনলোড করুন",
-    "downloaded": "অফলাইনে উপলব্ধ"
+    "downloaded": "অফলাইনে উপলব্ধ",
+    "myCourses": "আমার কোর্স",
+    "recommendedCourses": "সুপারিশকৃত কোর্স",
+    "noEnrolledCourses": "এখনো কোনো কোর্সে নথিভুক্ত হননি",
+    "noEnrolledCoursesDesc": "শেখা শুরু করতে নীচে একটি কোর্সে নাম নথিভুক্ত করুন।",
+    "viewAll": "সব দেখুন"
   },
   "lesson": {
     "min": "{count} মিনিট",

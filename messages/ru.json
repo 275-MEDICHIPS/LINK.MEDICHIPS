@@ -111,7 +111,12 @@
     "lessons": "{count} уроков",
     "startLearning": "Начать обучение",
     "download": "Скачать для офлайн-доступа",
-    "downloaded": "Доступно офлайн"
+    "downloaded": "Доступно офлайн",
+    "myCourses": "Мои курсы",
+    "recommendedCourses": "Рекомендуемые курсы",
+    "noEnrolledCourses": "Пока нет записанных курсов",
+    "noEnrolledCoursesDesc": "Запишитесь на курс ниже, чтобы начать обучение.",
+    "viewAll": "Показать все"
   },
   "lesson": {
     "min": "{count} мин",

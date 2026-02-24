@@ -111,7 +111,12 @@
     "lessons": "{count} पाठ",
     "startLearning": "सीखना शुरू करें",
     "download": "ऑफ़लाइन के लिए डाउनलोड करें",
-    "downloaded": "ऑफ़लाइन उपलब्ध"
+    "downloaded": "ऑफ़लाइन उपलब्ध",
+    "myCourses": "मेरे कोर्स",
+    "recommendedCourses": "अनुशंसित कोर्स",
+    "noEnrolledCourses": "अभी तक कोई कोर्स नामांकित नहीं",
+    "noEnrolledCoursesDesc": "सीखना शुरू करने के लिए नीचे किसी कोर्स में नामांकन करें।",
+    "viewAll": "सभी देखें"
   },
   "lesson": {
     "min": "{count} मिनट",

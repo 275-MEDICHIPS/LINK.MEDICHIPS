@@ -111,7 +111,12 @@
     "lessons": "{count} 节课",
     "startLearning": "开始学习",
     "download": "下载以供离线使用",
-    "downloaded": "可离线使用"
+    "downloaded": "可离线使用",
+    "myCourses": "我的课程",
+    "recommendedCourses": "推荐课程",
+    "noEnrolledCourses": "尚无已加入的课程",
+    "noEnrolledCoursesDesc": "加入下方的课程开始学习。",
+    "viewAll": "查看全部"
   },
   "lesson": {
     "min": "{count} 分钟",
