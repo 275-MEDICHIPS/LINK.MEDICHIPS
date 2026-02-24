@@ -42,6 +42,25 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen bg-white font-sans antialiased">
+        {process.env.NODE_ENV === "development" && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(function(regs) {
+                    regs.forEach(function(r) { r.unregister(); });
+                    if (regs.length) {
+                      caches.keys().then(function(names) {
+                        names.forEach(function(n) { caches.delete(n); });
+                      });
+                      console.log('[dev] Service workers unregistered, caches cleared');
+                    }
+                  });
+                }
+              `,
+            }}
+          />
+        )}
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>
