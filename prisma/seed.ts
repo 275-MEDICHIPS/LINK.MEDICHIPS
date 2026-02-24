@@ -499,9 +499,9 @@ async function main() {
 
   // ─── Course Enrollments ───────────────────────────────────────────────────
   const enrollments = [
-    { userId: amina.id, courseId: course1.id, pct: 65 },
-    { userId: fatima.id, courseId: course1.id, pct: 30 },
-    { userId: samuel.id, courseId: course1.id, pct: 45 },
+    { userId: amina.id, courseId: course1.id, pct: 20 },
+    { userId: fatima.id, courseId: course1.id, pct: 7 },
+    { userId: samuel.id, courseId: course1.id, pct: 13 },
     { userId: samuel.id, courseId: course2.id, pct: 20 },
     { userId: grace.id, courseId: course2.id, pct: 55 },
     { userId: ibrahim.id, courseId: course3.id, pct: 40 },
@@ -514,47 +514,47 @@ async function main() {
   }
   console.log("✅ Enrollments: 7 created");
 
-  // ─── Lesson Progress (Amina in Course 1: 9 done, 1 in progress) ─────────
-  for (let i = 0; i < 10; i++) {
+  // ─── Lesson Progress (Amina: 3 done, 1 in progress — rest uncompleted) ──
+  for (let i = 0; i < 4; i++) {
     await prisma.lessonProgress.create({
       data: {
         userId: amina.id,
         lessonId: c1Lessons[i].id,
-        status: i < 9 ? "COMPLETED" : "IN_PROGRESS",
-        timeSpentSec: i < 9 ? (c1Lessons[i].durationMin ?? 5) * 60 : 120,
-        score: i < 9 ? 85 + Math.random() * 15 : null,
-        updatedAt: new Date(Date.now() - (9 - i) * 24 * 60 * 60 * 1000),
+        status: i < 3 ? "COMPLETED" : "IN_PROGRESS",
+        timeSpentSec: i < 3 ? (c1Lessons[i].durationMin ?? 5) * 60 : 120,
+        score: i < 3 ? 85 + Math.random() * 15 : null,
+        updatedAt: new Date(Date.now() - (3 - i) * 24 * 60 * 60 * 1000),
       },
     });
   }
-  // Fatima progress on course 1
-  for (let i = 0; i < 4; i++) {
+  // Fatima: 1 done, 1 in progress
+  for (let i = 0; i < 2; i++) {
     await prisma.lessonProgress.create({
       data: {
         userId: fatima.id,
         lessonId: c1Lessons[i].id,
-        status: i < 3 ? "COMPLETED" : "IN_PROGRESS",
-        timeSpentSec: i < 3 ? (c1Lessons[i].durationMin ?? 5) * 60 : 60,
-        score: i < 3 ? 80 + Math.random() * 20 : null,
+        status: i < 1 ? "COMPLETED" : "IN_PROGRESS",
+        timeSpentSec: i < 1 ? (c1Lessons[i].durationMin ?? 5) * 60 : 60,
+        score: i < 1 ? 80 + Math.random() * 20 : null,
       },
     });
   }
-  // Samuel progress on course 1
-  for (let i = 0; i < 6; i++) {
+  // Samuel: 2 done, 1 in progress
+  for (let i = 0; i < 3; i++) {
     await prisma.lessonProgress.create({
       data: {
         userId: samuel.id,
         lessonId: c1Lessons[i].id,
-        status: i < 5 ? "COMPLETED" : "IN_PROGRESS",
-        timeSpentSec: i < 5 ? (c1Lessons[i].durationMin ?? 5) * 60 : 90,
-        score: i < 5 ? 75 + Math.random() * 25 : null,
+        status: i < 2 ? "COMPLETED" : "IN_PROGRESS",
+        timeSpentSec: i < 2 ? (c1Lessons[i].durationMin ?? 5) * 60 : 90,
+        score: i < 2 ? 75 + Math.random() * 25 : null,
       },
     });
   }
   console.log("✅ Lesson progress created for 3 users");
 
   // ─── Quiz Attempts ────────────────────────────────────────────────────────
-  const quizLessonIndices = [3, 11]; // Course 1 quiz lessons that Amina completed
+  const quizLessonIndices = [3]; // Course 1 quiz lesson that Amina completed (only first module quiz)
   for (const idx of quizLessonIndices) {
     await prisma.quizAttempt.create({
       data: {

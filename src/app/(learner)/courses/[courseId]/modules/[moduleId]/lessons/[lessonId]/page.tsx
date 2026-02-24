@@ -766,6 +766,7 @@ export default function LessonViewerPage() {
       );
       if (!res.ok) throw new Error("Failed to mark complete");
       setIsCompleted(true);
+      triggerLogoBounce();
     } catch {
       // Show error state briefly then allow retry
     } finally {
@@ -776,6 +777,15 @@ export default function LessonViewerPage() {
   const handleQuizComplete = (passed: boolean, score: number) => {
     if (passed) {
       setIsCompleted(true);
+      triggerLogoBounce();
+    }
+  };
+
+  const triggerLogoBounce = () => {
+    const logo = document.querySelector("[data-logo-bounce]");
+    if (logo) {
+      logo.classList.add("animate-bounce-logo");
+      setTimeout(() => logo.classList.remove("animate-bounce-logo"), 1500);
     }
   };
 

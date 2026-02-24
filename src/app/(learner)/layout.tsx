@@ -27,7 +27,7 @@ export default function LearnerLayout({
       <header className="sticky top-0 z-40 border-b border-gray-100 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Medichips Link" width={28} height={28} className="rounded-md" />
+            <Image src="/logo.png" alt="Medichips Link" width={28} height={28} className="rounded-md" data-logo-bounce />
             <span className="text-sm font-bold text-gray-900">LINK</span>
           </Link>
           <div className="flex items-center gap-2">

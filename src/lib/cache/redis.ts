@@ -4,16 +4,32 @@ const globalForRedis = globalThis as unknown as {
   redis: Redis | undefined;
 };
 
+let redisAvailable = !!process.env.REDIS_URL;
+
 function createRedisClient(): Redis {
   const url = process.env.REDIS_URL || "redis://localhost:6379";
-  return new Redis(url, {
-    maxRetriesPerRequest: 3,
+  const client = new Redis(url, {
+    maxRetriesPerRequest: 1,
+    connectTimeout: 2000,
+    commandTimeout: 1000,
     retryStrategy(times) {
-      const delay = Math.min(times * 50, 2000);
-      return delay;
+      if (times > 1) {
+        redisAvailable = false;
+        return null; // stop retrying
+      }
+      return 200;
     },
     lazyConnect: true,
   });
+
+  client.on("error", () => {
+    redisAvailable = false;
+  });
+  client.on("connect", () => {
+    redisAvailable = true;
+  });
+
+  return client;
 }
 
 export const redis = globalForRedis.redis ?? createRedisClient();
@@ -38,6 +54,7 @@ export const CACHE_KEYS = {
 // ==================== Cache Helpers ====================
 
 export async function cacheGet<T>(key: string): Promise<T | null> {
+  if (!redisAvailable) return null;
   try {
     const data = await redis.get(key);
     if (!data) return null;
@@ -52,29 +69,32 @@ export async function cacheSet(
   value: unknown,
   ttlSeconds = 300
 ): Promise<void> {
+  if (!redisAvailable) return;
   try {
     await redis.setex(key, ttlSeconds, JSON.stringify(value));
-  } catch (err) {
-    console.error("[Redis] Cache set error:", err);
+  } catch {
+    // silently skip
   }
 }
 
 export async function cacheDelete(key: string): Promise<void> {
+  if (!redisAvailable) return;
   try {
     await redis.del(key);
-  } catch (err) {
-    console.error("[Redis] Cache delete error:", err);
+  } catch {
+    // silently skip
   }
 }
 
 export async function cacheInvalidatePattern(pattern: string): Promise<void> {
+  if (!redisAvailable) return;
   try {
     const keys = await redis.keys(pattern);
     if (keys.length > 0) {
       await redis.del(...keys);
     }
-  } catch (err) {
-    console.error("[Redis] Pattern invalidation error:", err);
+  } catch {
+    // silently skip
   }
 }
 
@@ -85,10 +105,11 @@ export async function updateLeaderboard(
   userId: string,
   xp: number
 ): Promise<void> {
+  if (!redisAvailable) return;
   try {
     await redis.zadd(CACHE_KEYS.leaderboard(scope), xp, userId);
-  } catch (err) {
-    console.error("[Redis] Leaderboard update error:", err);
+  } catch {
+    // silently skip
   }
 }
 
@@ -96,6 +117,7 @@ export async function getLeaderboardTop(
   scope: string,
   count = 50
 ): Promise<Array<{ userId: string; xp: number }>> {
+  if (!redisAvailable) return [];
   try {
     const results = await redis.zrevrange(
       CACHE_KEYS.leaderboard(scope),
@@ -118,6 +140,7 @@ export async function getUserRank(
   scope: string,
   userId: string
 ): Promise<number | null> {
+  if (!redisAvailable) return null;
   try {
     const rank = await redis.zrevrank(CACHE_KEYS.leaderboard(scope), userId);
     return rank !== null ? rank + 1 : null;
@@ -134,6 +157,7 @@ export async function checkRateLimit(
   maxRequests = 100,
   windowSeconds = 60
 ): Promise<{ allowed: boolean; remaining: number }> {
+  if (!redisAvailable) return { allowed: true, remaining: maxRequests };
   try {
     const key = CACHE_KEYS.rateLimit(ip, endpoint);
     const current = await redis.incr(key);
@@ -152,19 +176,34 @@ export async function checkRateLimit(
 // ==================== Login Attempts ====================
 
 export async function recordLoginAttempt(identifier: string): Promise<number> {
-  const key = CACHE_KEYS.loginAttempts(identifier);
-  const count = await redis.incr(key);
-  if (count === 1) {
-    await redis.expire(key, 900); // 15 min window
+  if (!redisAvailable) return 1;
+  try {
+    const key = CACHE_KEYS.loginAttempts(identifier);
+    const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.expire(key, 900);
+    }
+    return count;
+  } catch {
+    return 1;
   }
-  return count;
 }
 
 export async function getLoginAttempts(identifier: string): Promise<number> {
-  const count = await redis.get(CACHE_KEYS.loginAttempts(identifier));
-  return count ? parseInt(count) : 0;
+  if (!redisAvailable) return 0;
+  try {
+    const count = await redis.get(CACHE_KEYS.loginAttempts(identifier));
+    return count ? parseInt(count) : 0;
+  } catch {
+    return 0;
+  }
 }
 
 export async function clearLoginAttempts(identifier: string): Promise<void> {
-  await redis.del(CACHE_KEYS.loginAttempts(identifier));
+  if (!redisAvailable) return;
+  try {
+    await redis.del(CACHE_KEYS.loginAttempts(identifier));
+  } catch {
+    // silently skip
+  }
 }
