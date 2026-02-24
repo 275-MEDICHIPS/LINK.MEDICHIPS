@@ -3,7 +3,7 @@ steps:
     args:
       - "build"
       - "-f"
-      - "docker/Dockerfile.web"
+      - "Dockerfile"
       - "-t"
       - "asia-northeast3-docker.pkg.dev/medichips-new/medichips-link/web:latest"
       - "-t"
