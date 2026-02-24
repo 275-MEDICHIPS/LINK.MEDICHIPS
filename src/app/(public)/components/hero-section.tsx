@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 
@@ -17,53 +17,54 @@ const ROTATION_VIDEOS = [
 export function HeroSection() {
   const t = useTranslations("landing");
 
-  // First visit intro
+  // Intro state
   const [showIntro, setShowIntro] = useState(false);
   const [introFading, setIntroFading] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
   const introRef = useRef<HTMLVideoElement>(null);
 
-  // Rotation player
-  const [showRotation, setShowRotation] = useState(false);
+  // Rotation state — always plays after intro (or immediately for return visitors)
   const [rotationIndex, setRotationIndex] = useState(0);
   const rotationRef = useRef<HTMLVideoElement>(null);
 
-  // Check first visit on mount
+  // On mount: check first visit
   useEffect(() => {
     const visited = localStorage.getItem("medichips_visited");
     if (!visited) {
       setShowIntro(true);
       localStorage.setItem("medichips_visited", "1");
+    } else {
+      // Return visitor — skip intro, go straight to rotation
+      setIntroDone(true);
     }
   }, []);
 
-  // Intro: skip last 0.5s + fade out
+  // Intro: stop 1s before end, fade out 0.7s, then start rotation
   const handleIntroTimeUpdate = useCallback(() => {
     const v = introRef.current;
     if (!v || introFading) return;
-    if (v.duration > 0 && v.currentTime >= v.duration - 0.5) {
+    if (v.duration > 0 && v.currentTime >= v.duration - 1) {
       v.pause();
       setIntroFading(true);
-      setTimeout(() => setShowIntro(false), 800);
+      setTimeout(() => {
+        setShowIntro(false);
+        setIntroDone(true);
+      }, 700);
     }
   }, [introFading]);
 
-  // Rotation: on video end, move to next
+  // Rotation: on video end, advance to next
   const handleRotationEnded = useCallback(() => {
     setRotationIndex((prev) => (prev + 1) % ROTATION_VIDEOS.length);
   }, []);
 
-  // Auto-play rotation video when index changes
+  // Auto-play rotation video when ready or index changes
   useEffect(() => {
-    if (showRotation && rotationRef.current) {
+    if (introDone && rotationRef.current) {
       rotationRef.current.load();
       rotationRef.current.play().catch(() => {});
     }
-  }, [rotationIndex, showRotation]);
-
-  const startRotation = () => {
-    setShowIntro(false);
-    setShowRotation(true);
-  };
+  }, [rotationIndex, introDone]);
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-brand-50/30 to-white pt-28 pb-20 sm:pt-36 sm:pb-28">
@@ -126,9 +127,11 @@ export function HeroSection() {
               {/* First-visit intro video */}
               {showIntro && (
                 <div
-                  className={`absolute inset-0 z-20 transition-opacity duration-700 ${
-                    introFading ? "opacity-0" : "opacity-100"
-                  }`}
+                  className="absolute inset-0 z-20"
+                  style={{
+                    opacity: introFading ? 0 : 1,
+                    transition: "opacity 0.7s ease-out",
+                  }}
                 >
                   <video
                     ref={introRef}
@@ -138,16 +141,12 @@ export function HeroSection() {
                     muted
                     playsInline
                     onTimeUpdate={handleIntroTimeUpdate}
-                    onEnded={() => {
-                      setIntroFading(true);
-                      setTimeout(() => setShowIntro(false), 800);
-                    }}
                   />
                 </div>
               )}
 
-              {/* Rotation video player */}
-              {showRotation && !showIntro && (
+              {/* Rotation videos — always play after intro */}
+              {introDone && (
                 <div className="absolute inset-0 z-10">
                   <video
                     ref={rotationRef}
@@ -158,7 +157,7 @@ export function HeroSection() {
                     playsInline
                     onEnded={handleRotationEnded}
                   />
-                  {/* Video indicator dots */}
+                  {/* Indicator dots */}
                   <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
                     {ROTATION_VIDEOS.map((_, i) => (
                       <button
@@ -174,47 +173,6 @@ export function HeroSection() {
                     ))}
                   </div>
                 </div>
-              )}
-
-              {/* Default: play button overlay */}
-              {!showRotation && !showIntro && (
-                <button
-                  onClick={startRotation}
-                  className="group absolute inset-0 z-10 flex flex-col items-center justify-center gap-4"
-                  aria-label="Play demo video"
-                >
-                  {/* Mock dashboard preview */}
-                  <div className="absolute inset-0 opacity-40">
-                    <div className="grid h-full grid-cols-12 gap-2 p-6">
-                      <div className="col-span-3 space-y-2">
-                        <div className="h-8 rounded bg-white/10" />
-                        <div className="h-4 w-3/4 rounded bg-white/5" />
-                        <div className="h-4 w-1/2 rounded bg-white/5" />
-                        <div className="mt-4 h-4 w-full rounded bg-brand-500/30" />
-                        <div className="h-4 w-full rounded bg-white/5" />
-                        <div className="h-4 w-full rounded bg-white/5" />
-                        <div className="h-4 w-full rounded bg-white/5" />
-                      </div>
-                      <div className="col-span-9 space-y-3">
-                        <div className="h-10 rounded bg-white/10" />
-                        <div className="grid grid-cols-4 gap-3">
-                          <div className="h-24 rounded-lg bg-brand-500/20" />
-                          <div className="h-24 rounded-lg bg-accent-500/20" />
-                          <div className="h-24 rounded-lg bg-purple-500/20" />
-                          <div className="h-24 rounded-lg bg-amber-500/20" />
-                        </div>
-                        <div className="h-48 rounded-lg bg-white/5" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform group-hover:scale-110">
-                    <Play className="h-6 w-6 text-brand-600 ml-1" />
-                  </div>
-                  <span className="relative z-10 text-sm font-medium text-white/80">
-                    {t("watchDemo")}
-                  </span>
-                </button>
               )}
             </div>
           </div>
