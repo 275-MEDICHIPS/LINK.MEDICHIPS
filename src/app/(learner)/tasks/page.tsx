@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -508,6 +509,7 @@ export default function TasksPage() {
 
       const res = await fetch(`/api/v1/learner/tasks/${uploadingTaskId}/evidence`, {
         method: "POST",
+        headers: csrfHeaders(),
         body: formData,
       });
 

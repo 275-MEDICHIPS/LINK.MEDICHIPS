@@ -23,7 +23,11 @@ export async function GET(req: NextRequest) {
         description: task.description,
         status: task.status,
         riskLevel: null,
-        checklist: task.checklist as Array<{ label: string; done: boolean }> | null,
+        checklist: task.checklist
+          ? (task.checklist as Array<{ label?: string; text?: string; done: boolean }>).map(
+              (item) => ({ label: item.label ?? item.text ?? "", done: item.done })
+            )
+          : null,
         dueDate: task.dueDate?.toISOString() ?? null,
         completedAt: task.completedAt?.toISOString() ?? null,
         evidence: task.evidence.map((e) => ({

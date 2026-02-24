@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -488,7 +489,7 @@ function QuizSection({
       setSubmitting(true);
       const res = await fetch(`/api/v1/learner/lessons/${lessonId}/quiz`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ answers }),
       });
       if (res.status === 401) { window.location.href = "/login"; return; }
@@ -724,7 +725,7 @@ export default function LessonViewerPage() {
           `/api/v1/learner/courses/${params.courseId}/modules/${params.moduleId}/lessons/${params.lessonId}/progress`,
           {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            headers: csrfHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({
               timeSpentSec: timeSpentRef.current,
               lastPosition: lastPositionRef.current,
@@ -765,7 +766,7 @@ export default function LessonViewerPage() {
         `/api/v1/learner/courses/${params.courseId}/modules/${params.moduleId}/lessons/${params.lessonId}/progress`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             status: "COMPLETED",
             timeSpentSec: timeSpentRef.current,
