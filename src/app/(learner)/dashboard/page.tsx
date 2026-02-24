@@ -13,9 +13,11 @@ import {
   BookOpen,
   Star,
   TrendingUp,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth-store";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -118,6 +120,8 @@ function getWeekdayLabels(): string[] {
 export default function LearnerDashboard() {
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === "SUPER_ADMIN" || user?.role === "ORG_ADMIN" || user?.role === "INSTRUCTOR";
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -204,7 +208,17 @@ export default function LearnerDashboard() {
               </span>
             )}
           </h1>
-          <p className="text-sm text-gray-500">{t("continueJourney")}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-gray-500">{t("continueJourney")}</p>
+            {isAdmin && (
+              <Link href="/admin/dashboard">
+                <Button variant="outline" size="sm" className="gap-1 text-xs">
+                  <Settings className="h-3 w-3" />
+                  관리
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
         {data.user.avatarUrl ? (
           <img
