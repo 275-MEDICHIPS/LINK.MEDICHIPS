@@ -263,6 +263,53 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/admin/courses?action=create">
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Course
+              </Button>
+            </Link>
+            <Link href="/admin/ai-builder">
+              <Button variant="outline" size="sm">
+                <Activity className="mr-2 h-4 w-4" />
+                AI Course Builder
+              </Button>
+            </Link>
+            <Link href="/admin/video-production/new">
+              <Button variant="outline" size="sm">
+                <Video className="mr-2 h-4 w-4" />
+                Video Studio
+              </Button>
+            </Link>
+            <Link href="/admin/users?action=invite">
+              <Button variant="outline" size="sm">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Invite Users
+              </Button>
+            </Link>
+            <Link href="/admin/analytics">
+              <Button variant="outline" size="sm">
+                <FileBarChart className="mr-2 h-4 w-4" />
+                View Reports
+              </Button>
+            </Link>
+            <Link href="/admin/content-review">
+              <Button variant="outline" size="sm">
+                <Clock className="mr-2 h-4 w-4" />
+                Review Content
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Stats Row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
@@ -362,46 +409,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/admin/courses?action=create">
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Course
-              </Button>
-            </Link>
-            <Link href="/admin/ai-builder">
-              <Button variant="outline" size="sm">
-                <Activity className="mr-2 h-4 w-4" />
-                AI Course Builder
-              </Button>
-            </Link>
-            <Link href="/admin/users?action=invite">
-              <Button variant="outline" size="sm">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Invite Users
-              </Button>
-            </Link>
-            <Link href="/admin/analytics">
-              <Button variant="outline" size="sm">
-                <FileBarChart className="mr-2 h-4 w-4" />
-                View Reports
-              </Button>
-            </Link>
-            <Link href="/admin/content-review">
-              <Button variant="outline" size="sm">
-                <Clock className="mr-2 h-4 w-4" />
-                Review Content
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
