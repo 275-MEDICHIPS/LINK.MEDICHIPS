@@ -14,6 +14,8 @@ const createJobSchema = z.object({
   provider: z.enum(["VEO"]),
   lessonId: z.string().optional(),
   courseId: z.string().optional(),
+  avatarId: z.string().optional(),
+  voicePresetId: z.string().optional(),
   config: z.record(z.unknown()).optional(),
   sourceVideoUrl: z.string().url().optional(),
   sourceVideoGcsPath: z.string().optional(),

@@ -19,6 +19,7 @@ import type {
   ProviderJobResult,
   ProviderJobStatus,
 } from "./types";
+import { getAccessToken } from "@/lib/gcp/auth";
 
 const GCP_PROJECT_ID = process.env.GCP_PROJECT_ID || "medichips-new";
 const GCP_LOCATION = process.env.VEO_LOCATION || "us-central1";
@@ -29,41 +30,6 @@ const INITIAL_BACKOFF_MS = 1_000;
 
 // Veo pricing: ~$0.35/sec for standard, varies by resolution
 const COST_PER_SECOND_USD = 0.35;
-
-// ─── Auth ─────────────────────────────────────────────────────────────
-
-async function getAccessToken(): Promise<string> {
-  // 1) Try Google Application Default Credentials metadata server (Cloud Run)
-  try {
-    const res = await fetch(
-      "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
-      { headers: { "Metadata-Flavor": "Google" } }
-    );
-    if (res.ok) {
-      const data = await res.json();
-      return data.access_token;
-    }
-  } catch {
-    // Not on GCE/Cloud Run, fall through
-  }
-
-  // 2) Use service account key file if available
-  const keyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (keyPath) {
-    const { GoogleAuth } = await import("google-auth-library");
-    const auth = new GoogleAuth({
-      keyFile: keyPath,
-      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-    });
-    const client = await auth.getClient();
-    const tokenRes = await client.getAccessToken();
-    if (tokenRes.token) return tokenRes.token;
-  }
-
-  throw new Error(
-    "Cannot obtain GCP access token. Set GOOGLE_APPLICATION_CREDENTIALS or run on GCP."
-  );
-}
 
 function apiBase(): string {
   return `https://${GCP_LOCATION}-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${GCP_LOCATION}/publishers/google/models`;
@@ -132,19 +98,32 @@ export class VeoProvider implements VideoGenerationProvider {
       8
     );
 
-    const body = {
-      instances: [
+    // When TTS voice is selected, generate silent video
+    const shouldGenerateAudio = !params.voicePresetId && config.generateAudio !== false;
+
+    const instance: Record<string, unknown> = {
+      prompt: `Medical education video: ${prompt}`,
+    };
+
+    // Add avatar reference image for character consistency
+    if (params.avatarImageUrl) {
+      instance.referenceImages = [
         {
-          prompt: `Medical education video: ${prompt}`,
+          referenceImage: { imageUri: params.avatarImageUrl },
+          referenceType: "ASSET",
         },
-      ],
+      ];
+    }
+
+    const body = {
+      instances: [instance],
       parameters: {
         storageUri: `gs://${GCS_OUTPUT_BUCKET}/veo-output/${Date.now()}/`,
         sampleCount: 1,
         durationSeconds,
         aspectRatio: params.aspectRatio === "9:16" ? "9:16" : "16:9",
         resolution: (config.resolution as string) || "1080p",
-        generateAudio: config.generateAudio !== false,
+        generateAudio: shouldGenerateAudio,
         ...(config.negativePrompt
           ? { negativePrompt: config.negativePrompt as string }
           : {}),

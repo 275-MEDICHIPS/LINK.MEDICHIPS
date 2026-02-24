@@ -889,6 +889,60 @@ model AiGeneratedDraft {
 
 // ==================== AI VIDEO PRODUCTION ====================
 
+model Avatar {
+  id             String   @id @default(cuid())
+  name           String
+  imageUrl       String
+  gcsPath        String
+  gender         String?
+  tags           Json?
+  organizationId String?
+  isGlobal       Boolean  @default(false)
+  createdBy      String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, isActive])
+  @@map("avatars")
+}
+
+model VoicePreset {
+  id             String   @id @default(cuid())
+  name           String
+  ttsVoiceName   String
+  languageCode   String
+  gender         String
+  voiceType      String   @default("Neural2")
+  sampleAudioUrl String?
+  speakingRate   Float    @default(1.0)
+  pitch          Float    @default(0.0)
+  isGlobal       Boolean  @default(true)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([ttsVoiceName, languageCode])
+  @@index([languageCode, isActive])
+  @@map("voice_presets")
+}
+
+model PromptTemplate {
+  id             String   @id @default(cuid())
+  name           String
+  category       String
+  description    String?
+  promptTemplate String
+  defaultConfig  Json?
+  locale         String   @default("en")
+  isGlobal       Boolean  @default(true)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("prompt_templates")
+}
+
 model VideoProductionJob {
   id             String                @id @default(cuid())
   method         VideoProductionMethod
@@ -908,6 +962,14 @@ model VideoProductionJob {
   // Source (Method 2: Face Swap)
   sourceVideoUrl    String?
   sourceVideoGcsPath String?
+
+  // Avatar & Voice (TTS)
+  avatarId               String?
+  voicePresetId          String?
+  ttsAudioUrl            String?
+  ttsAudioGcsPath        String?
+  mergedVideoUrl         String?
+  mergedVideoGcsPath     String?
 
   // External provider
   externalJobId   String?

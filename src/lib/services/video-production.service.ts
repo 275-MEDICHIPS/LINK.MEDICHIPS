@@ -18,6 +18,7 @@ import {
 } from "@/lib/video/providers";
 import { createAsset } from "@/lib/video/mux";
 import { uploadBuffer } from "@/lib/storage/gcs";
+import { runPostProcessing } from "@/lib/video/post-processing";
 import { createVersion } from "@/lib/services/content.service";
 import { Prisma } from "@prisma/client";
 import type {
@@ -34,6 +35,9 @@ export interface CreateJobParams {
   lessonId?: string;
   courseId?: string;
   config?: Record<string, unknown>;
+  // Avatar & Voice
+  avatarId?: string;
+  voicePresetId?: string;
   // Method 2 fields
   sourceVideoUrl?: string;
   sourceVideoGcsPath?: string;
@@ -137,6 +141,8 @@ export async function createJob(params: CreateJobParams, userId: string) {
       status: "DRAFT",
       lessonId: params.lessonId,
       courseId: params.courseId,
+      avatarId: params.avatarId,
+      voicePresetId: params.voicePresetId,
       config: params.config
         ? (params.config as Prisma.InputJsonValue)
         : Prisma.JsonNull,
@@ -319,12 +325,22 @@ export async function submitToProvider(jobId: string, userId: string) {
       }
       const provider = getVideoGenerationProvider(job.provider);
       const config = (job.config as Record<string, unknown>) || {};
+
+      // Resolve avatar image URL if avatar is selected
+      let avatarImageUrl: string | undefined;
+      if (job.avatarId) {
+        const avatar = await prisma.avatar.findUnique({ where: { id: job.avatarId } });
+        if (avatar) avatarImageUrl = avatar.imageUrl;
+      }
+
       const result = await provider.createVideo({
         title: job.script.title,
         script: job.script.rawScript,
         segments: job.script.segments as unknown as import("@/lib/video/providers/types").ScriptSegment[],
-        avatarId: config.avatarId as string | undefined,
+        avatarId: job.avatarId ?? undefined,
+        avatarImageUrl,
         voiceId: config.voiceId as string | undefined,
+        voicePresetId: job.voicePresetId ?? undefined,
         language: job.script.locale,
         aspectRatio: config.aspectRatio as "16:9" | "9:16" | "1:1" | undefined,
         background: config.background as string | undefined,
@@ -476,6 +492,16 @@ export async function downloadAndStoreOutput(jobId: string) {
     },
   });
 
+  // Run TTS post-processing if voice preset is selected
+  if (job.voicePresetId) {
+    try {
+      await runPostProcessing(jobId);
+    } catch (err) {
+      console.error(`[post-processing] TTS merge failed for job ${jobId}:`, err);
+      // Non-fatal: the original video is still available
+    }
+  }
+
   return { gcsPath, publicUrl };
 }
 
@@ -487,11 +513,13 @@ export async function ingestToMux(jobId: string) {
     where: { id: jobId },
   });
   if (!job) throw new ApiError("Job not found", 404, "JOB_NOT_FOUND");
-  if (!job.outputVideoUrl) {
+  // Prefer merged video (TTS + video) over raw output
+  const videoUrl = job.mergedVideoUrl || job.outputVideoUrl;
+  if (!videoUrl) {
     throw new ApiError("No output video URL", 400, "NO_OUTPUT_VIDEO");
   }
 
-  const { assetId, playbackId } = await createAsset(job.outputVideoUrl);
+  const { assetId, playbackId } = await createAsset(videoUrl);
 
   const updated = await prisma.videoProductionJob.update({
     where: { id: jobId },

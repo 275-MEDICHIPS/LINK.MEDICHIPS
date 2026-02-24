@@ -33,7 +33,9 @@ export interface VideoGenerationParams {
   script: string;
   segments?: ScriptSegment[];
   avatarId?: string;
+  avatarImageUrl?: string;
   voiceId?: string;
+  voicePresetId?: string;
   language?: string;
   aspectRatio?: "16:9" | "9:16" | "1:1";
   background?: string;

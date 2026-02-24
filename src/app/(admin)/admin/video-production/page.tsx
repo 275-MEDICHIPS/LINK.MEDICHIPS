@@ -155,12 +155,20 @@ export default function VideoProductionDashboard() {
             AI video production pipeline — generate, review, and publish
           </p>
         </div>
-        <Link href="/admin/video-production/new">
-          <Button className="gap-2 bg-brand-500 hover:bg-brand-600">
-            <Plus className="h-4 w-4" />
-            New Video Job
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/video-production/avatars">
+            <Button variant="outline" className="gap-2">
+              <Video className="h-4 w-4" />
+              Avatar Library
+            </Button>
+          </Link>
+          <Link href="/admin/video-production/new">
+            <Button className="gap-2 bg-brand-500 hover:bg-brand-600">
+              <Plus className="h-4 w-4" />
+              New Video Job
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}

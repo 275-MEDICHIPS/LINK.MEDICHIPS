@@ -12,8 +12,10 @@ import {
   Video,
   Loader2,
   Sparkles,
-  Upload,
   AlertCircle,
+  Play,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,18 +24,21 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
+import VoicePicker from "../_components/VoicePicker";
+import AvatarPicker from "../_components/AvatarPicker";
+import PromptTemplateSelector from "../_components/PromptTemplateSelector";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
-type WizardStep = 1 | 2 | 3 | 4;
+type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 interface JobConfig {
   method: "AI_GENERATED" | "FACE_SWAP" | null;
   provider: string;
-  // AI Generated config
+  // Avatar & Voice
   avatarId: string;
+  voicePresetId: string;
   voiceId: string;
   language: string;
   targetDurationSec: number;
@@ -54,13 +59,21 @@ interface JobConfig {
   lessonId: string;
 }
 
+interface ScriptSegment {
+  speakerLabel: string;
+  text: string;
+  durationSec: number;
+  visualNotes?: string;
+}
+
 // ─── Step Indicator ─────────────────────────────────────────────────
 
 const STEPS = [
   { num: 1, label: "Method" },
-  { num: 2, label: "Configure" },
-  { num: 3, label: "Script" },
-  { num: 4, label: "Review" },
+  { num: 2, label: "Voice & Avatar" },
+  { num: 3, label: "Configure" },
+  { num: 4, label: "Script" },
+  { num: 5, label: "Review" },
 ];
 
 function StepIndicator({ current }: { current: WizardStep }) {
@@ -106,15 +119,21 @@ export default function NewVideoJobWizard() {
   const [scriptGenerating, setScriptGenerating] = useState(false);
   const [generatedScript, setGeneratedScript] = useState<{
     title: string;
-    segments: { speakerLabel: string; text: string; durationSec: number; visualNotes?: string }[];
+    segments: ScriptSegment[];
     totalDurationSec: number;
   } | null>(null);
+  const [editableSegments, setEditableSegments] = useState<ScriptSegment[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Selected voice/avatar names for review display
+  const [selectedVoiceName, setSelectedVoiceName] = useState("");
+  const [selectedAvatarName, setSelectedAvatarName] = useState("");
 
   const [config, setConfig] = useState<JobConfig>({
     method: null,
     provider: "",
     avatarId: "",
+    voicePresetId: "",
     voiceId: "",
     language: "en",
     targetDurationSec: 180,
@@ -141,16 +160,19 @@ export default function NewVideoJobWizard() {
       case 1:
         return config.method !== null && config.provider !== "";
       case 2:
+        // Voice & Avatar are optional
+        return true;
+      case 3:
         if (config.method === "FACE_SWAP") {
           return config.sourceVideoUrl.length > 0;
         }
         return true;
-      case 3:
+      case 4:
         if (config.method === "AI_GENERATED") {
           return config.topic.length >= 5;
         }
         return true;
-      case 4:
+      case 5:
         return true;
       default:
         return false;
@@ -170,8 +192,9 @@ export default function NewVideoJobWizard() {
           provider: config.provider,
           courseId: config.courseId || undefined,
           lessonId: config.lessonId || undefined,
+          avatarId: config.avatarId || undefined,
+          voicePresetId: config.voicePresetId || undefined,
           config: {
-            avatarId: config.avatarId || undefined,
             voiceId: config.voiceId || undefined,
             language: config.language,
             aspectRatio: config.aspectRatio,
@@ -179,7 +202,8 @@ export default function NewVideoJobWizard() {
         }),
       });
       const jobJson = await jobRes.json();
-      if (!jobRes.ok) throw new Error(jobJson.error?.message || "Failed to create job");
+      if (!jobRes.ok)
+        throw new Error(jobJson.error?.message || "Failed to create job");
 
       const jobId = jobJson.data.id;
 
@@ -194,14 +218,22 @@ export default function NewVideoJobWizard() {
             targetLocale: config.language,
             riskLevel: config.riskLevel,
             targetDurationSec: config.targetDurationSec,
-            additionalInstructions: config.additionalInstructions || undefined,
+            additionalInstructions:
+              config.additionalInstructions || undefined,
           }),
         }
       );
       const scriptJson = await scriptRes.json();
-      if (!scriptRes.ok) throw new Error(scriptJson.error?.message || "Script generation failed");
+      if (!scriptRes.ok)
+        throw new Error(
+          scriptJson.error?.message || "Script generation failed"
+        );
 
-      setGeneratedScript(scriptJson.data.script);
+      const script = scriptJson.data.script;
+      setGeneratedScript(script);
+      setEditableSegments(
+        script.segments.map((s: ScriptSegment) => ({ ...s }))
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -209,11 +241,27 @@ export default function NewVideoJobWizard() {
     }
   }
 
+  function updateSegmentText(index: number, text: string) {
+    setEditableSegments((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], text };
+      return next;
+    });
+  }
+
+  function updateSegmentDuration(index: number, delta: number) {
+    setEditableSegments((prev) => {
+      const next = [...prev];
+      const newDur = Math.max(1, next[index].durationSec + delta);
+      next[index] = { ...next[index], durationSec: newDur };
+      return next;
+    });
+  }
+
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
     try {
-      // Create the job
       const res = await fetch("/api/v1/admin/video-production/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -222,16 +270,18 @@ export default function NewVideoJobWizard() {
           provider: config.provider,
           courseId: config.courseId || undefined,
           lessonId: config.lessonId || undefined,
+          avatarId: config.avatarId || undefined,
+          voicePresetId: config.voicePresetId || undefined,
           sourceVideoUrl: config.sourceVideoUrl || undefined,
           config: {
-            avatarId: config.avatarId || undefined,
             voiceId: config.voiceId || undefined,
             language: config.language,
             aspectRatio: config.aspectRatio,
           },
           ...(config.method === "FACE_SWAP" && {
             faceSwapConfig: {
-              targetFaceImageUrl: config.targetFaceImageUrl || undefined,
+              targetFaceImageUrl:
+                config.targetFaceImageUrl || undefined,
               blurOriginalFaces: config.blurOriginalFaces,
               preserveExpressions: config.preserveExpressions,
               resolution: config.resolution,
@@ -241,7 +291,8 @@ export default function NewVideoJobWizard() {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error?.message || "Failed to create job");
+      if (!res.ok)
+        throw new Error(json.error?.message || "Failed to create job");
 
       router.push(`/admin/video-production/${json.data.id}`);
     } catch (err) {
@@ -249,6 +300,12 @@ export default function NewVideoJobWizard() {
       setSubmitting(false);
     }
   }
+
+  // Estimate cost
+  const estimatedCost = config.targetDurationSec * 0.35;
+  const ttsCostEstimate = config.voicePresetId
+    ? (config.targetDurationSec / 60) * 0.016
+    : 0;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -276,7 +333,7 @@ export default function NewVideoJobWizard() {
         </div>
       )}
 
-      {/* Step 1: Method Selection */}
+      {/* ─── Step 1: Method Selection ─────────────────────────────── */}
       {step === 1 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -330,10 +387,10 @@ export default function NewVideoJobWizard() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex gap-3">
-                  <div
-                    className="flex-1 rounded-lg border-2 border-brand-500 bg-brand-50/50 p-3 text-left"
-                  >
-                    <p className="font-medium text-gray-900">Google Veo 3.1</p>
+                  <div className="flex-1 rounded-lg border-2 border-brand-500 bg-brand-50/50 p-3 text-left">
+                    <p className="font-medium text-gray-900">
+                      Google Veo 3.1
+                    </p>
                     <p className="text-xs text-gray-500">GCP 크레딧</p>
                   </div>
                 </div>
@@ -343,41 +400,69 @@ export default function NewVideoJobWizard() {
         </div>
       )}
 
-      {/* Step 2: Configuration */}
+      {/* ─── Step 2: Voice & Avatar (NEW) ─────────────────────────── */}
       {step === 2 && (
+        <div className="space-y-6">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Voice & Avatar
+          </h2>
+
+          {config.method === "AI_GENERATED" ? (
+            <>
+              {/* Avatar Picker */}
+              <Card>
+                <CardContent className="p-5">
+                  <AvatarPicker
+                    selectedAvatarId={config.avatarId}
+                    onSelect={(id) => {
+                      update("avatarId", id);
+                      // Track name for review step
+                      setSelectedAvatarName(id ? "(selected)" : "");
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Voice Picker */}
+              <Card>
+                <CardContent className="p-5">
+                  <VoicePicker
+                    selectedPresetId={config.voicePresetId}
+                    onSelect={(id) => {
+                      update("voicePresetId", id);
+                      setSelectedVoiceName(id ? "(selected)" : "");
+                    }}
+                    language={config.language}
+                  />
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-sm text-gray-500">
+                  Voice and avatar selection is not available for Face Swap
+                  method. The original video&apos;s audio and characters will
+                  be preserved.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* ─── Step 3: Configuration ──────────────────────────────── */}
+      {step === 3 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">
             {config.method === "AI_GENERATED"
-              ? "Avatar & Voice Settings"
+              ? "Video Settings"
               : "Source Video & Face Settings"}
           </h2>
 
           {config.method === "AI_GENERATED" ? (
             <Card>
               <CardContent className="space-y-4 p-6">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                    Avatar ID
-                  </label>
-                  <Input
-                    placeholder="e.g., anna_costume1_cameraA"
-                    value={config.avatarId}
-                    onChange={(e) => update("avatarId", e.target.value)}
-                  />
-                  <p className="mt-1 text-xs text-gray-400">
-                    Leave empty for default avatar
-                  </p>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                    Voice ID
-                  </label>
-                  <Input
-                    placeholder="e.g., en-US-JennyNeural"
-                    value={config.voiceId}
-                    onChange={(e) => update("voiceId", e.target.value)}
-                  />
-                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -402,7 +487,9 @@ export default function NewVideoJobWizard() {
                     </label>
                     <select
                       value={config.aspectRatio}
-                      onChange={(e) => update("aspectRatio", e.target.value)}
+                      onChange={(e) =>
+                        update("aspectRatio", e.target.value)
+                      }
                       className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                     >
                       <option value="16:9">16:9 (Landscape)</option>
@@ -421,7 +508,10 @@ export default function NewVideoJobWizard() {
                     max={1800}
                     value={config.targetDurationSec}
                     onChange={(e) =>
-                      update("targetDurationSec", parseInt(e.target.value) || 180)
+                      update(
+                        "targetDurationSec",
+                        parseInt(e.target.value) || 180
+                      )
                     }
                   />
                 </div>
@@ -437,7 +527,9 @@ export default function NewVideoJobWizard() {
                   <Input
                     placeholder="https://storage.googleapis.com/..."
                     value={config.sourceVideoUrl}
-                    onChange={(e) => update("sourceVideoUrl", e.target.value)}
+                    onChange={(e) =>
+                      update("sourceVideoUrl", e.target.value)
+                    }
                   />
                   <p className="mt-1 text-xs text-gray-400">
                     GCS or publicly accessible video URL
@@ -462,7 +554,9 @@ export default function NewVideoJobWizard() {
                     </label>
                     <select
                       value={config.resolution}
-                      onChange={(e) => update("resolution", e.target.value)}
+                      onChange={(e) =>
+                        update("resolution", e.target.value)
+                      }
                       className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                     >
                       <option value="720p">720p</option>
@@ -476,7 +570,9 @@ export default function NewVideoJobWizard() {
                     </label>
                     <select
                       value={config.fidelityLevel}
-                      onChange={(e) => update("fidelityLevel", e.target.value)}
+                      onChange={(e) =>
+                        update("fidelityLevel", e.target.value)
+                      }
                       className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                     >
                       <option value="low">Low (Faster)</option>
@@ -514,8 +610,8 @@ export default function NewVideoJobWizard() {
         </div>
       )}
 
-      {/* Step 3: Script */}
-      {step === 3 && (
+      {/* ─── Step 4: Script ──────────────────────────────────────── */}
+      {step === 4 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">
             {config.method === "AI_GENERATED"
@@ -526,6 +622,32 @@ export default function NewVideoJobWizard() {
           {config.method === "AI_GENERATED" && (
             <Card>
               <CardContent className="space-y-4 p-6">
+                {/* Prompt Template Selector */}
+                <PromptTemplateSelector
+                  locale={config.language}
+                  onSelect={(template) => {
+                    update("topic", template.promptTemplate);
+                    if (template.defaultConfig?.riskLevel) {
+                      update(
+                        "riskLevel",
+                        template.defaultConfig.riskLevel
+                      );
+                    }
+                    if (template.defaultConfig?.duration) {
+                      update(
+                        "targetDurationSec",
+                        template.defaultConfig.duration
+                      );
+                    }
+                    if (template.description) {
+                      update(
+                        "additionalInstructions",
+                        template.description
+                      );
+                    }
+                  }}
+                />
+
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">
                     Topic / Subject
@@ -544,12 +666,20 @@ export default function NewVideoJobWizard() {
                   </label>
                   <select
                     value={config.riskLevel}
-                    onChange={(e) => update("riskLevel", e.target.value)}
+                    onChange={(e) =>
+                      update("riskLevel", e.target.value)
+                    }
                     className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                   >
-                    <option value="L1">L1 — Low Risk (General knowledge)</option>
-                    <option value="L2">L2 — Medium Risk (Clinical procedures)</option>
-                    <option value="L3">L3 — High Risk (Life-threatening)</option>
+                    <option value="L1">
+                      L1 — Low Risk (General knowledge)
+                    </option>
+                    <option value="L2">
+                      L2 — Medium Risk (Clinical procedures)
+                    </option>
+                    <option value="L3">
+                      L3 — High Risk (Life-threatening)
+                    </option>
                   </select>
                 </div>
                 <div>
@@ -570,7 +700,9 @@ export default function NewVideoJobWizard() {
                 {!generatedScript && (
                   <Button
                     onClick={handleGenerateScript}
-                    disabled={scriptGenerating || config.topic.length < 5}
+                    disabled={
+                      scriptGenerating || config.topic.length < 5
+                    }
                     className="gap-2 bg-brand-500 hover:bg-brand-600"
                   >
                     {scriptGenerating ? (
@@ -587,6 +719,7 @@ export default function NewVideoJobWizard() {
                   </Button>
                 )}
 
+                {/* Editable script segments */}
                 {generatedScript && (
                   <div className="space-y-3 rounded-lg border border-accent-200 bg-accent-50/30 p-4">
                     <div className="flex items-center justify-between">
@@ -594,24 +727,53 @@ export default function NewVideoJobWizard() {
                         {generatedScript.title}
                       </h3>
                       <span className="text-xs text-gray-500">
-                        {Math.round(generatedScript.totalDurationSec / 60)} min
+                        {editableSegments.reduce(
+                          (sum, s) => sum + s.durationSec,
+                          0
+                        )}
+                        s total
                       </span>
                     </div>
-                    <div className="max-h-64 space-y-2 overflow-y-auto">
-                      {generatedScript.segments.map((seg, i) => (
+                    <div className="max-h-72 space-y-2 overflow-y-auto">
+                      {editableSegments.map((seg, i) => (
                         <div
                           key={i}
-                          className="rounded border border-gray-200 bg-white p-2 text-sm"
+                          className="rounded border border-gray-200 bg-white p-2"
                         >
                           <div className="mb-1 flex items-center justify-between">
-                            <span className="font-medium text-brand-600">
+                            <span className="text-xs font-medium text-brand-600">
                               {seg.speakerLabel}
                             </span>
-                            <span className="text-xs text-gray-400">
-                              {seg.durationSec}s
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() =>
+                                  updateSegmentDuration(i, -5)
+                                }
+                                className="rounded p-0.5 hover:bg-gray-100"
+                              >
+                                <Minus className="h-3 w-3 text-gray-400" />
+                              </button>
+                              <span className="w-8 text-center text-xs text-gray-400">
+                                {seg.durationSec}s
+                              </span>
+                              <button
+                                onClick={() =>
+                                  updateSegmentDuration(i, 5)
+                                }
+                                className="rounded p-0.5 hover:bg-gray-100"
+                              >
+                                <Plus className="h-3 w-3 text-gray-400" />
+                              </button>
+                            </div>
                           </div>
-                          <p className="text-gray-700">{seg.text}</p>
+                          <textarea
+                            value={seg.text}
+                            onChange={(e) =>
+                              updateSegmentText(i, e.target.value)
+                            }
+                            rows={2}
+                            className="w-full resize-none rounded border-0 bg-transparent p-0 text-sm text-gray-700 focus:ring-0"
+                          />
                           {seg.visualNotes && (
                             <p className="mt-1 text-xs italic text-gray-400">
                               Visual: {seg.visualNotes}
@@ -630,8 +792,8 @@ export default function NewVideoJobWizard() {
             <Card>
               <CardContent className="p-6">
                 <p className="text-sm text-gray-500">
-                  Scripts are optional for face swap jobs. The existing video
-                  audio will be preserved. You can skip this step.
+                  Scripts are optional for face swap jobs. The existing
+                  video audio will be preserved. You can skip this step.
                 </p>
               </CardContent>
             </Card>
@@ -639,8 +801,8 @@ export default function NewVideoJobWizard() {
         </div>
       )}
 
-      {/* Step 4: Review & Submit */}
-      {step === 4 && (
+      {/* ─── Step 5: Review & Submit ─────────────────────────────── */}
+      {step === 5 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">
             Review & Submit
@@ -665,39 +827,86 @@ export default function NewVideoJobWizard() {
                 {config.method === "AI_GENERATED" && (
                   <>
                     <div>
-                      <dt className="font-medium text-gray-500">Language</dt>
-                      <dd className="mt-1 text-gray-900">{config.language}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-medium text-gray-500">Duration</dt>
+                      <dt className="font-medium text-gray-500">
+                        Avatar
+                      </dt>
                       <dd className="mt-1 text-gray-900">
-                        ~{Math.round(config.targetDurationSec / 60)} minutes
+                        {config.avatarId
+                          ? selectedAvatarName || "Selected"
+                          : "None (Veo default)"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="font-medium text-gray-500">Risk Level</dt>
-                      <dd className="mt-1 text-gray-900">{config.riskLevel}</dd>
+                      <dt className="font-medium text-gray-500">
+                        Voice
+                      </dt>
+                      <dd className="mt-1 flex items-center gap-2 text-gray-900">
+                        {config.voicePresetId
+                          ? selectedVoiceName || "TTS Selected"
+                          : "Veo default audio"}
+                        {config.voicePresetId && (
+                          <Play className="h-3 w-3 text-brand-500" />
+                        )}
+                      </dd>
                     </div>
                     <div>
-                      <dt className="font-medium text-gray-500">Aspect Ratio</dt>
-                      <dd className="mt-1 text-gray-900">{config.aspectRatio}</dd>
+                      <dt className="font-medium text-gray-500">
+                        Language
+                      </dt>
+                      <dd className="mt-1 text-gray-900">
+                        {config.language}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-gray-500">
+                        Duration
+                      </dt>
+                      <dd className="mt-1 text-gray-900">
+                        ~
+                        {Math.round(config.targetDurationSec / 60)}{" "}
+                        minutes
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-gray-500">
+                        Risk Level
+                      </dt>
+                      <dd className="mt-1 text-gray-900">
+                        {config.riskLevel}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium text-gray-500">
+                        Aspect Ratio
+                      </dt>
+                      <dd className="mt-1 text-gray-900">
+                        {config.aspectRatio}
+                      </dd>
                     </div>
                   </>
                 )}
                 {config.method === "FACE_SWAP" && (
                   <>
                     <div className="col-span-2">
-                      <dt className="font-medium text-gray-500">Source Video</dt>
+                      <dt className="font-medium text-gray-500">
+                        Source Video
+                      </dt>
                       <dd className="mt-1 truncate text-gray-900">
                         {config.sourceVideoUrl}
                       </dd>
                     </div>
                     <div>
-                      <dt className="font-medium text-gray-500">Resolution</dt>
-                      <dd className="mt-1 text-gray-900">{config.resolution}</dd>
+                      <dt className="font-medium text-gray-500">
+                        Resolution
+                      </dt>
+                      <dd className="mt-1 text-gray-900">
+                        {config.resolution}
+                      </dd>
                     </div>
                     <div>
-                      <dt className="font-medium text-gray-500">Fidelity</dt>
+                      <dt className="font-medium text-gray-500">
+                        Fidelity
+                      </dt>
                       <dd className="mt-1 text-gray-900">
                         {config.fidelityLevel}
                       </dd>
@@ -706,14 +915,39 @@ export default function NewVideoJobWizard() {
                 )}
               </dl>
 
+              {/* Cost estimate */}
+              {config.method === "AI_GENERATED" && (
+                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <p className="text-sm font-medium text-gray-700">
+                    Estimated Cost
+                  </p>
+                  <div className="mt-1 flex items-baseline gap-4 text-sm">
+                    <span>
+                      Veo: ${estimatedCost.toFixed(2)}
+                    </span>
+                    {ttsCostEstimate > 0 && (
+                      <span>
+                        TTS: ${ttsCostEstimate.toFixed(3)}
+                      </span>
+                    )}
+                    <span className="font-semibold text-gray-900">
+                      Total: $
+                      {(estimatedCost + ttsCostEstimate).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {config.method === "AI_GENERATED" && (
                 <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
                   <p className="flex items-center gap-1.5 font-medium">
                     <AlertCircle className="h-4 w-4" />
-                    AI-generated content requires review before publishing
+                    AI-generated content requires review before
+                    publishing
                   </p>
                   <p className="mt-1 text-amber-600">
-                    The video will enter the risk-based review pipeline after production completes.
+                    The video will enter the risk-based review pipeline
+                    after production completes.
                   </p>
                 </div>
               )}
@@ -722,11 +956,13 @@ export default function NewVideoJobWizard() {
         </div>
       )}
 
-      {/* Navigation Buttons */}
+      {/* ─── Navigation Buttons ────────────────────────────────── */}
       <div className="flex items-center justify-between border-t border-gray-100 pt-4">
         <Button
           variant="outline"
-          onClick={() => step > 1 && setStep((step - 1) as WizardStep)}
+          onClick={() =>
+            step > 1 && setStep((step - 1) as WizardStep)
+          }
           disabled={step === 1}
           className="gap-1"
         >
@@ -734,7 +970,7 @@ export default function NewVideoJobWizard() {
           Back
         </Button>
 
-        {step < 4 ? (
+        {step < 5 ? (
           <Button
             onClick={() => setStep((step + 1) as WizardStep)}
             disabled={!canProceed()}
