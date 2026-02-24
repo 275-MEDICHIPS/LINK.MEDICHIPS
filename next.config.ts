@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin("./src/lib/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  serverExternalPackages: ["fluent-ffmpeg", "@ffmpeg-installer/ffmpeg"],
   eslint: {
     // Lint is checked in CI separately; don't block builds on warnings
     ignoreDuringBuilds: true,
