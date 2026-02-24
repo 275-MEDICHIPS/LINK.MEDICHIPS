@@ -14,10 +14,7 @@ import {
 import crypto from "crypto";
 
 const WEBHOOK_SECRETS: Record<string, string | undefined> = {
-  synthesia: process.env.SYNTHESIA_WEBHOOK_SECRET,
-  heygen: process.env.HEYGEN_WEBHOOK_SECRET,
-  akool: process.env.AKOOL_WEBHOOK_SECRET,
-  wavespeed: process.env.WAVESPEED_WEBHOOK_SECRET,
+  veo: process.env.VEO_WEBHOOK_SECRET,
 };
 
 function verifySignature(
@@ -71,21 +68,11 @@ export async function POST(
     let status: string | undefined;
 
     switch (provider) {
-      case "synthesia":
-        externalJobId = payload.id;
-        status = payload.status;
-        break;
-      case "heygen":
-        externalJobId = payload.data?.video_id || payload.event_data?.video_id;
-        status = payload.data?.status || payload.event_data?.status;
-        break;
-      case "akool":
-        externalJobId = payload.data?._id || payload.data?.id;
-        status = payload.data?.faceswap_status === 3 ? "completed" : "processing";
-        break;
-      case "wavespeed":
-        externalJobId = payload.data?.task_id || payload.task_id;
-        status = payload.data?.status || payload.status;
+      case "veo":
+        externalJobId = payload.name || payload.operationName;
+        status = payload.done === true
+          ? (payload.error ? "failed" : "completed")
+          : "processing";
         break;
     }
 
@@ -129,7 +116,7 @@ export async function POST(
         where: { id: job.id },
         data: {
           status: "FAILED",
-          errorMessage: payload.error || payload.message || "Provider reported failure",
+          errorMessage: payload.error?.message || "Provider reported failure",
         },
       });
 

@@ -123,7 +123,7 @@ export async function createJob(params: CreateJobParams, userId: string) {
       isVideoGenerationProvider(params.provider)
     ) {
       throw new ApiError(
-        "FACE_SWAP method requires VEO, AKOOL, or WAVESPEED_AI provider",
+        "FACE_SWAP method requires VEO provider",
         400,
         "INVALID_PROVIDER"
       );

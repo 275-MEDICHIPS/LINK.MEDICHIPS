@@ -318,7 +318,7 @@ export default function NewVideoJobWizard() {
               </div>
               <h3 className="font-semibold text-gray-900">Face Swap</h3>
               <p className="mt-1 text-sm text-gray-500">
-                기존 영상에서 얼굴 교체. Google Veo 또는 Akool/WaveSpeed 사용.
+                기존 영상에서 얼굴 교체. Google Veo 3.1 사용.
               </p>
             </button>
           </div>
@@ -329,49 +329,14 @@ export default function NewVideoJobWizard() {
                 <CardTitle className="text-sm">Select Provider</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {config.method === "AI_GENERATED" ? (
-                  <div className="flex gap-3">
-                    {[
-                      { id: "VEO", label: "Google Veo 3.1", cost: "GCP 크레딧" },
-                      { id: "SYNTHESIA", label: "Synthesia", cost: "~$3/min" },
-                      { id: "HEYGEN", label: "HeyGen", cost: "~$4/min" },
-                    ].map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => update("provider", p.id)}
-                        className={`flex-1 rounded-lg border-2 p-3 text-left transition-all ${
-                          config.provider === p.id
-                            ? "border-brand-500 bg-brand-50/50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <p className="font-medium text-gray-900">{p.label}</p>
-                        <p className="text-xs text-gray-500">{p.cost}</p>
-                      </button>
-                    ))}
+                <div className="flex gap-3">
+                  <div
+                    className="flex-1 rounded-lg border-2 border-brand-500 bg-brand-50/50 p-3 text-left"
+                  >
+                    <p className="font-medium text-gray-900">Google Veo 3.1</p>
+                    <p className="text-xs text-gray-500">GCP 크레딧</p>
                   </div>
-                ) : (
-                  <div className="flex gap-3">
-                    {[
-                      { id: "VEO", label: "Google Veo 3.1", cost: "GCP 크레딧" },
-                      { id: "AKOOL", label: "Akool", cost: "~$15/5min" },
-                      { id: "WAVESPEED_AI", label: "WaveSpeed AI", cost: "~$6/5min" },
-                    ].map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => update("provider", p.id)}
-                        className={`flex-1 rounded-lg border-2 p-3 text-left transition-all ${
-                          config.provider === p.id
-                            ? "border-brand-500 bg-brand-50/50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <p className="font-medium text-gray-900">{p.label}</p>
-                        <p className="text-xs text-gray-500">{p.cost}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           )}

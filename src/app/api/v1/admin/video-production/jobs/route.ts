@@ -11,7 +11,7 @@ import { createJob, listJobs } from "@/lib/services/video-production.service";
 
 const createJobSchema = z.object({
   method: z.enum(["AI_GENERATED", "FACE_SWAP"]),
-  provider: z.enum(["VEO", "SYNTHESIA", "HEYGEN", "AKOOL", "WAVESPEED_AI"]),
+  provider: z.enum(["VEO"]),
   lessonId: z.string().optional(),
   courseId: z.string().optional(),
   config: z.record(z.unknown()).optional(),

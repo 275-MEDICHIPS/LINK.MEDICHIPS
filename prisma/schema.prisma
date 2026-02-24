@@ -168,10 +168,6 @@ enum VideoProductionMethod {
 }
 
 enum VideoProvider {
-  SYNTHESIA
-  HEYGEN
-  AKOOL
-  WAVESPEED_AI
   VEO
 }
 

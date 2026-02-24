@@ -2,8 +2,8 @@
  * Video production provider interfaces.
  *
  * Two provider categories:
- * - VideoGenerationProvider: AI avatar video generation (Synthesia, HeyGen)
- * - FaceSwapProvider: Face replacement on existing video (Akool, WaveSpeedAI)
+ * - VideoGenerationProvider: AI video generation (Google Veo 3.1)
+ * - FaceSwapProvider: Face replacement on existing video (Google Veo 3.1)
  */
 
 // ─── Shared types ───────────────────────────────────────────────────────
