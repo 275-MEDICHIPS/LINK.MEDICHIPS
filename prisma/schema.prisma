@@ -148,6 +148,32 @@ enum ContentType {
   MIXED
 }
 
+enum VideoProductionStatus {
+  DRAFT
+  SCRIPT_GENERATING
+  SCRIPT_REVIEW
+  QUEUED
+  RENDERING
+  FACE_SWAPPING
+  POST_PROCESSING
+  REVIEW
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum VideoProductionMethod {
+  AI_GENERATED
+  FACE_SWAP
+}
+
+enum VideoProvider {
+  SYNTHESIA
+  HEYGEN
+  AKOOL
+  WAVESPEED_AI
+}
+
 // ==================== ORGANIZATIONS & MULTI-TENANCY ====================
 
 model Organization {
@@ -404,6 +430,7 @@ model Course {
   programCourses ProgramCourse[]
   enrollments    CourseEnrollment[]
   aiJobs         AiCourseJob[]
+  videoJobs      VideoProductionJob[]
 
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
@@ -467,6 +494,7 @@ model Lesson {
   quizAttempts  QuizAttempt[]
   missions      MissionSubmission[]
   tasks         Task[]
+  videoJobs     VideoProductionJob[]
 
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -861,6 +889,141 @@ model AiGeneratedDraft {
 
   @@map("ai_generated_drafts")
 }
+
+// ==================== AI VIDEO PRODUCTION ====================
+
+model VideoProductionJob {
+  id             String                @id @default(cuid())
+  method         VideoProductionMethod
+  provider       VideoProvider
+  status         VideoProductionStatus @default(DRAFT)
+
+  // Content linkage
+  lessonId       String?
+  lesson         Lesson?               @relation(fields: [lessonId], references: [id])
+  courseId        String?
+  course          Course?               @relation(fields: [courseId], references: [id])
+
+  // Script
+  scriptId       String?
+  script         VideoScript?          @relation(fields: [scriptId], references: [id])
+
+  // Source (Method 2: Face Swap)
+  sourceVideoUrl    String?
+  sourceVideoGcsPath String?
+
+  // External provider
+  externalJobId   String?
+  externalStatus  String?
+
+  // Output
+  outputVideoUrl  String?
+  outputGcsPath   String?
+  muxAssetId      String?
+  muxPlaybackId   String?
+  thumbnailUrl    String?
+  durationSec     Int?
+
+  // Config
+  config          Json?
+  errorMessage    String?
+  retryCount      Int                   @default(0)
+  maxRetries      Int                   @default(3)
+
+  // Cost
+  estimatedCostUsd Float?
+  actualCostUsd    Float?
+
+  // Timestamps
+  submittedAt       DateTime?
+  renderStartedAt   DateTime?
+  renderCompletedAt DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  // Relations
+  faceSwapConfig  FaceSwapConfig?
+  statusHistory   VideoJobStatusHistory[]
+
+  @@index([status])
+  @@index([lessonId])
+  @@index([courseId])
+  @@index([externalJobId])
+  @@map("video_production_jobs")
+}
+
+model VideoScript {
+  id              String              @id @default(cuid())
+  title           String
+  locale          String              @default("en")
+  rawScript       String
+  segments        Json?
+  totalDurationSec Int?
+
+  // AI generation
+  isAiGenerated   Boolean             @default(false)
+  aiPromptUsed    String?
+  aiConfidence    Float?
+
+  // Versioning
+  version         Int                 @default(1)
+  previousVersionId String?
+  previousVersion   VideoScript?      @relation("ScriptVersionChain", fields: [previousVersionId], references: [id])
+  nextVersions      VideoScript[]     @relation("ScriptVersionChain")
+
+  // Review
+  status          ContentReviewStatus @default(DRAFT)
+  reviewedById    String?
+  reviewNotes     String?
+
+  // Relations
+  productionJobs  VideoProductionJob[]
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([status])
+  @@map("video_scripts")
+}
+
+model FaceSwapConfig {
+  id                  String             @id @default(cuid())
+  jobId               String             @unique
+  job                 VideoProductionJob @relation(fields: [jobId], references: [id])
+  targetFaceImageUrl  String?
+  faceMapping         Json?
+
+  // Privacy
+  blurOriginalFaces   Boolean            @default(true)
+  preserveExpressions Boolean            @default(true)
+
+  // Quality
+  resolution          String             @default("1080p")
+  fidelityLevel       String             @default("high")
+
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@map("face_swap_configs")
+}
+
+model VideoJobStatusHistory {
+  id          String              @id @default(cuid())
+  jobId       String
+  job         VideoProductionJob  @relation(fields: [jobId], references: [id])
+  fromStatus  VideoProductionStatus
+  toStatus    VideoProductionStatus
+  triggeredBy String
+  metadata    Json?
+
+  createdAt   DateTime            @default(now())
+
+  @@index([jobId, createdAt])
+  @@map("video_job_status_history")
+}
+
+// ==================== TRANSLATIONS ====================
 
 model TranslationJob {
   id           String               @id @default(cuid())
