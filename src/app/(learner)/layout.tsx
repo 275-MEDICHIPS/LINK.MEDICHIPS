@@ -9,7 +9,9 @@ import {
   ClipboardCheck,
   Trophy,
   BarChart3,
+  Settings,
 } from "lucide-react";
+import { useAuthStore } from "@/stores/auth-store";
 
 const tabKeys = [
   { href: "/dashboard", icon: LayoutDashboard, key: "home" as const },
@@ -26,16 +28,29 @@ export default function LearnerLayout({
 }) {
   const t = useTranslations("nav");
   const tc = useTranslations("common");
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = user?.role === "SUPER_ADMIN" || user?.role === "ORG_ADMIN" || user?.role === "INSTRUCTOR";
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       {/* Top header */}
       <header className="sticky top-0 z-40 border-b border-gray-100 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Medichips Link" width={28} height={28} className="rounded-md" data-logo-bounce />
-            <span className="text-sm font-bold text-gray-900">LINK</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <Image src="/logo.png" alt="Medichips Link" width={28} height={28} className="rounded-md" data-logo-bounce />
+              <span className="text-sm font-bold text-gray-900">LINK</span>
+            </Link>
+            {isAdmin && (
+              <Link
+                href="/admin/dashboard"
+                className="flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200"
+              >
+                <Settings className="h-3 w-3" />
+                관리
+              </Link>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             {/* Offline indicator placeholder */}
             <div className="rounded-full bg-accent-100 px-2 py-0.5 text-xs font-medium text-accent-700">
