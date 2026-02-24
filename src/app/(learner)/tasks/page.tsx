@@ -449,6 +449,7 @@ export default function TasksPage() {
       setLoading(true);
       setError(null);
       const res = await fetch("/api/v1/learner/tasks");
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error(`Failed to load tasks (${res.status})`);
       const json: { data: TasksResponse } = await res.json();
       setTasks(json.data.tasks);

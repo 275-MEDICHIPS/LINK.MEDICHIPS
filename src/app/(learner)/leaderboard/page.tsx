@@ -267,6 +267,7 @@ export default function LeaderboardPage() {
       const res = await fetch(
         `/api/v1/learner/leaderboard?${params.toString()}`
       );
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok)
         throw new Error(`Failed to load leaderboard (${res.status})`);
       const json = await res.json();

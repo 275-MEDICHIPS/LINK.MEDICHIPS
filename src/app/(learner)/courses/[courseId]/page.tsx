@@ -290,6 +290,7 @@ export default function CourseDetailPage() {
       setLoading(true);
       setError(null);
       const res = await fetch(`/api/v1/learner/courses/${params.courseId}`);
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error(`Failed to load course (${res.status})`);
       const json = await res.json();
       setCourse(json.data);

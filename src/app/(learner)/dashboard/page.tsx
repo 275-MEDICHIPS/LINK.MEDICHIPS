@@ -134,6 +134,10 @@ export default function LearnerDashboard() {
       setLoading(true);
       setError(null);
       const res = await fetch("/api/v1/learner/dashboard");
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
       if (!res.ok) {
         throw new Error(`Failed to load dashboard (${res.status})`);
       }

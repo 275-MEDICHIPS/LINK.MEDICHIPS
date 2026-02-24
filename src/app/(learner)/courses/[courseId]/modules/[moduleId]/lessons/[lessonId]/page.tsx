@@ -488,6 +488,7 @@ function QuizSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers }),
       });
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error("Failed to submit quiz");
       const json = await res.json();
       setResult(json.data);
@@ -679,6 +680,7 @@ export default function LessonViewerPage() {
       const res = await fetch(
         `/api/v1/learner/courses/${params.courseId}/modules/${params.moduleId}/lessons/${params.lessonId}`
       );
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error(`Failed to load lesson (${res.status})`);
       const json = await res.json();
       setLesson(json.data);
@@ -764,6 +766,7 @@ export default function LessonViewerPage() {
           }),
         }
       );
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error("Failed to mark complete");
       setIsCompleted(true);
       triggerLogoBounce();
@@ -785,7 +788,7 @@ export default function LessonViewerPage() {
     const logo = document.querySelector("[data-logo-bounce]");
     if (logo) {
       logo.classList.add("animate-bounce-logo");
-      setTimeout(() => logo.classList.remove("animate-bounce-logo"), 1500);
+      setTimeout(() => logo.classList.remove("animate-bounce-logo"), 2200);
     }
   };
 

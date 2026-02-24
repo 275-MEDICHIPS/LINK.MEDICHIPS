@@ -159,6 +159,7 @@ export default function AchievementsPage() {
       setLoading(true);
       setError(null);
       const res = await fetch("/api/v1/learner/achievements");
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok)
         throw new Error(`Failed to load achievements (${res.status})`);
       const json = await res.json();

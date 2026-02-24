@@ -251,6 +251,7 @@ export default function CoursesPage() {
       const params = new URLSearchParams();
       if (debouncedSearch) params.set("search", debouncedSearch);
       const res = await fetch(`/api/v1/learner/courses?${params.toString()}`);
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error(`Failed to load courses (${res.status})`);
       const json: { data: CoursesResponse } = await res.json();
       setCourses(json.data.courses);

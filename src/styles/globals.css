@@ -69,14 +69,17 @@
 
 @keyframes bounce-logo {
   0%, 100% { transform: translateY(0) scale(1); }
-  15% { transform: translateY(-12px) scale(1.15); }
-  30% { transform: translateY(0) scale(1); }
-  45% { transform: translateY(-6px) scale(1.08); }
+  10% { transform: translateY(-14px) scale(1.2); }
+  20% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-10px) scale(1.15); }
+  40% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1.1); }
   60% { transform: translateY(0) scale(1); }
-  75% { transform: translateY(-3px) scale(1.04); }
-  90% { transform: translateY(0) scale(1); }
+  70% { transform: translateY(-3px) scale(1.05); }
+  80% { transform: translateY(0) scale(1); }
+  90% { transform: translateY(-1px) scale(1.02); }
 }
 
 .animate-bounce-logo {
-  animation: bounce-logo 1.2s ease-out;
+  animation: bounce-logo 2s ease-out;
 }
