@@ -672,6 +672,7 @@ export default function LessonViewerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [marking, setMarking] = useState(false);
+  const [markError, setMarkError] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const lastPositionRef = useRef(0);
@@ -759,6 +760,7 @@ export default function LessonViewerPage() {
     if (marking || !lesson) return;
     try {
       setMarking(true);
+      setMarkError(false);
       const res = await fetch(
         `/api/v1/learner/courses/${params.courseId}/modules/${params.moduleId}/lessons/${params.lessonId}/progress`,
         {
@@ -776,7 +778,7 @@ export default function LessonViewerPage() {
       setIsCompleted(true);
       triggerLogoBounce();
     } catch {
-      // Show error state briefly then allow retry
+      setMarkError(true);
     } finally {
       setMarking(false);
     }
@@ -990,27 +992,34 @@ export default function LessonViewerPage() {
 
         {/* Mark Complete Button */}
         {!isCompleted && lesson.contentType !== "QUIZ" && (
-          <Button
-            onClick={handleMarkComplete}
-            disabled={marking}
-            className="w-full"
-            size="lg"
-          >
-            {marking ? (
-              <>
-                <Loader2
-                  className="mr-2 h-4 w-4 animate-spin"
-                  aria-hidden="true"
-                />
-                {tl("markingComplete")}
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                {tl("markAsComplete")}
-              </>
+          <div className="space-y-2">
+            {markError && (
+              <div className="rounded-lg bg-red-50 px-3 py-2 text-center text-xs text-red-600" role="alert">
+                {tc("error")}
+              </div>
             )}
-          </Button>
+            <Button
+              onClick={handleMarkComplete}
+              disabled={marking}
+              className="w-full"
+              size="lg"
+            >
+              {marking ? (
+                <>
+                  <Loader2
+                    className="mr-2 h-4 w-4 animate-spin"
+                    aria-hidden="true"
+                  />
+                  {tl("markingComplete")}
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                  {tl("markAsComplete")}
+                </>
+              )}
+            </Button>
+          </div>
         )}
 
         {isCompleted && (

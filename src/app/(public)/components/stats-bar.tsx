@@ -1,33 +1,38 @@
-import { BookOpen, Globe2, WifiOff, Sparkles } from "lucide-react";
+"use client";
 
-const stats = [
-  {
-    icon: BookOpen,
-    value: "10+",
-    label: "Medical Specialties",
-    color: "text-brand-500",
-  },
-  {
-    icon: Globe2,
-    value: "130+",
-    label: "Supported Languages",
-    color: "text-accent-500",
-  },
-  {
-    icon: WifiOff,
-    value: "100%",
-    label: "Offline Learning",
-    color: "text-healthcare-amber",
-  },
-  {
-    icon: Sparkles,
-    value: "AI",
-    label: "Auto Course Generation",
-    color: "text-healthcare-purple",
-  },
-];
+import { BookOpen, Globe2, WifiOff, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function StatsBar() {
+  const t = useTranslations("landing");
+
+  const stats = [
+    {
+      icon: BookOpen,
+      value: "10+",
+      label: t("statSpecialties"),
+      color: "text-brand-500",
+    },
+    {
+      icon: Globe2,
+      value: "130+",
+      label: t("statLanguages"),
+      color: "text-accent-500",
+    },
+    {
+      icon: WifiOff,
+      value: "100%",
+      label: t("statOffline"),
+      color: "text-healthcare-amber",
+    },
+    {
+      icon: Sparkles,
+      value: "AI",
+      label: t("statAi"),
+      color: "text-healthcare-purple",
+    },
+  ];
+
   return (
     <section className="border-y border-gray-100 bg-gray-50/50 py-10">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

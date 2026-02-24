@@ -1,36 +1,53 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-
-const footerLinks = {
-  Platform: [
-    { label: "Microlearning", href: "#features" },
-    { label: "Practice Tasks", href: "#features" },
-    { label: "Verification", href: "#features" },
-    { label: "AI Course Builder", href: "#features" },
-    { label: "Offline Learning", href: "#features" },
-  ],
-  Solutions: [
-    { label: "KOICA Programs", href: "#contact" },
-    { label: "Hospital Training", href: "#contact" },
-    { label: "NGO Partnerships", href: "#contact" },
-    { label: "Community Health", href: "#contact" },
-  ],
-  Resources: [
-    { label: "Documentation", href: "#" },
-    { label: "API Reference", href: "#" },
-    { label: "Blog", href: "#" },
-    { label: "Case Studies", href: "#" },
-  ],
-  Company: [
-    { label: "About", href: "#" },
-    { label: "Contact", href: "#contact" },
-    { label: "Careers", href: "#" },
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
-  ],
-};
+import { useTranslations } from "next-intl";
 
 export function Footer() {
+  const t = useTranslations("landing");
+
+  const footerLinks = [
+    {
+      category: t("footerPlatform"),
+      links: [
+        { label: t("footerMicrolearning"), href: "#features" },
+        { label: t("footerPracticeTasks"), href: "#features" },
+        { label: t("footerVerification"), href: "#features" },
+        { label: t("footerAiCourseBuilder"), href: "#features" },
+        { label: t("footerOfflineLearning"), href: "#features" },
+      ],
+    },
+    {
+      category: t("footerSolutions"),
+      links: [
+        { label: t("footerKoica"), href: "#contact" },
+        { label: t("footerHospital"), href: "#contact" },
+        { label: t("footerNgo"), href: "#contact" },
+        { label: t("footerCommunity"), href: "#contact" },
+      ],
+    },
+    {
+      category: t("footerResources"),
+      links: [
+        { label: t("footerDocs"), href: "#" },
+        { label: t("footerApi"), href: "#" },
+        { label: t("footerBlog"), href: "#" },
+        { label: t("footerCaseStudies"), href: "#" },
+      ],
+    },
+    {
+      category: t("footerCompany"),
+      links: [
+        { label: t("footerAbout"), href: "#" },
+        { label: t("footerContact"), href: "#contact" },
+        { label: t("footerCareers"), href: "#" },
+        { label: t("footerPrivacy"), href: "#" },
+        { label: t("footerTerms"), href: "#" },
+      ],
+    },
+  ];
+
   return (
     <footer className="border-t border-brand-100/50 bg-gradient-to-b from-white to-brand-50/20">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
@@ -44,19 +61,18 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm text-gray-500">
-              Korean medical expertise to the world. AI-powered training for
-              healthcare workers.
+              {t("footerDesc")}
             </p>
           </div>
 
           {/* Link columns */}
-          {Object.entries(footerLinks).map(([category, links]) => (
-            <div key={category}>
+          {footerLinks.map((group) => (
+            <div key={group.category}>
               <h3 className="text-sm font-semibold text-gray-900">
-                {category}
+                {group.category}
               </h3>
               <ul className="mt-4 space-y-3">
-                {links.map((link) => (
+                {group.links.map((link) => (
                   <li key={link.label}>
                     <a
                       href={link.href}
@@ -74,7 +90,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-100 pt-8 sm:flex-row">
           <p className="text-sm text-gray-400">
-            &copy; {new Date().getFullYear()} MEDICHIPS. All rights reserved.
+            &copy; {new Date().getFullYear()} MEDICHIPS. {t("footerRights")}
           </p>
           <div className="flex items-center gap-4 text-sm text-gray-400">
             <span>link.medichips.ai</span>

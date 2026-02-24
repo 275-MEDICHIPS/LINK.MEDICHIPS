@@ -1,88 +1,92 @@
-import { GraduationCap, Users, Shield } from "lucide-react";
+"use client";
 
-const personas = [
-  {
-    icon: GraduationCap,
-    role: "Healthcare Workers",
-    subtitle: "Learners in the Field",
-    color: "border-brand-500 bg-brand-50 text-brand-500",
-    benefits: [
-      "5-minute mobile lessons between shifts",
-      "Download courses for offline learning",
-      "Earn XP, badges, and certificates",
-      "Auto-generated practice tasks",
-      "Track your competency growth",
-      "Learn in your own language",
-    ],
-    preview: {
-      title: "Learner Dashboard",
-      items: [
-        { label: "Today's lesson", value: "Triage Assessment" },
-        { label: "Current streak", value: "12 days" },
-        { label: "XP earned", value: "2,450" },
-      ],
-    },
-  },
-  {
-    icon: Users,
-    role: "Supervisors",
-    subtitle: "On-site Managers",
-    color: "border-accent-500 bg-accent-50 text-accent-500",
-    benefits: [
-      "Monitor learner progress in real-time",
-      "Review task submissions and evidence",
-      "Digitally sign competency verifications",
-      "Assign remedial tasks automatically",
-      "Generate site-level reports",
-      "SMS fallback for low-connectivity alerts",
-    ],
-    preview: {
-      title: "Supervisor Panel",
-      items: [
-        { label: "Pending reviews", value: "8" },
-        { label: "Team completion", value: "73%" },
-        { label: "Verifications today", value: "5" },
-      ],
-    },
-  },
-  {
-    icon: Shield,
-    role: "Administrators",
-    subtitle: "Program & KOICA Managers",
-    color: "border-healthcare-purple bg-purple-50 text-healthcare-purple",
-    benefits: [
-      "AI Course Builder from SOPs",
-      "Multi-country program management",
-      "KOICA impact reporting dashboard",
-      "Cost-per-worker analytics",
-      "Content review workflow",
-      "Organization hierarchy management",
-    ],
-    preview: {
-      title: "Admin Console",
-      items: [
-        { label: "Active programs", value: "6" },
-        { label: "Total workers", value: "2,847" },
-        { label: "Avg. cost/worker", value: "$42" },
-      ],
-    },
-  },
-];
+import { GraduationCap, Users, Shield } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function PersonaColumns() {
+  const t = useTranslations("landing");
+
+  const personas = [
+    {
+      icon: GraduationCap,
+      role: t("personaLearnerRole"),
+      subtitle: t("personaLearnerSubtitle"),
+      color: "border-brand-500 bg-brand-50 text-brand-500",
+      benefits: [
+        t("personaLearnerB1"),
+        t("personaLearnerB2"),
+        t("personaLearnerB3"),
+        t("personaLearnerB4"),
+        t("personaLearnerB5"),
+        t("personaLearnerB6"),
+      ],
+      preview: {
+        title: t("personaLearnerPreview"),
+        items: [
+          { label: t("personaLearnerP1Label"), value: t("personaLearnerP1Value") },
+          { label: t("personaLearnerP2Label"), value: t("personaLearnerP2Value") },
+          { label: t("personaLearnerP3Label"), value: t("personaLearnerP3Value") },
+        ],
+      },
+    },
+    {
+      icon: Users,
+      role: t("personaSuperRole"),
+      subtitle: t("personaSuperSubtitle"),
+      color: "border-accent-500 bg-accent-50 text-accent-500",
+      benefits: [
+        t("personaSuperB1"),
+        t("personaSuperB2"),
+        t("personaSuperB3"),
+        t("personaSuperB4"),
+        t("personaSuperB5"),
+        t("personaSuperB6"),
+      ],
+      preview: {
+        title: t("personaSuperPreview"),
+        items: [
+          { label: t("personaSuperP1Label"), value: t("personaSuperP1Value") },
+          { label: t("personaSuperP2Label"), value: t("personaSuperP2Value") },
+          { label: t("personaSuperP3Label"), value: t("personaSuperP3Value") },
+        ],
+      },
+    },
+    {
+      icon: Shield,
+      role: t("personaAdminRole"),
+      subtitle: t("personaAdminSubtitle"),
+      color: "border-healthcare-purple bg-purple-50 text-healthcare-purple",
+      benefits: [
+        t("personaAdminB1"),
+        t("personaAdminB2"),
+        t("personaAdminB3"),
+        t("personaAdminB4"),
+        t("personaAdminB5"),
+        t("personaAdminB6"),
+      ],
+      preview: {
+        title: t("personaAdminPreview"),
+        items: [
+          { label: t("personaAdminP1Label"), value: t("personaAdminP1Value") },
+          { label: t("personaAdminP2Label"), value: t("personaAdminP2Value") },
+          { label: t("personaAdminP3Label"), value: t("personaAdminP3Value") },
+        ],
+      },
+    },
+  ];
+
   return (
     <section className="bg-gradient-to-b from-white to-brand-50/30 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">
-            For Everyone
+            {t("personasTag")}
           </p>
           <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">
-            Built for Your Role
+            {t("personasTitle")}
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Purpose-built experiences for every stakeholder in the training
-            ecosystem.
+            {t("personasSubtitle")}
           </p>
         </div>
 

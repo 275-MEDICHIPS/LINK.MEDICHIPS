@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export function HeroSection() {
   const [showVideo, setShowVideo] = useState(false);
+  const t = useTranslations("landing");
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-brand-50/30 to-white pt-28 pb-20 sm:pt-36 sm:pb-28">
@@ -20,18 +22,16 @@ export function HeroSection() {
         <div className="mx-auto max-w-4xl text-center">
           {/* Headline */}
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl lg:leading-[1.1]">
-            Turn Medical Expertise
+            {t("heroTitle")}
             <br />
             <span className="bg-gradient-to-r from-brand-600 via-brand-500 to-accent-500 bg-clip-text text-transparent">
-              Into Global Impact
+              {t("heroTitleHighlight")}
             </span>
           </h1>
 
           {/* Sub-headline */}
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-600 sm:text-xl">
-            AI-powered microlearning that systematically trains healthcare
-            workers in developing countries. Deliver consistent, verifiable
-            clinical competency — even offline.
+            {t("heroSubtitle")}
           </p>
 
           {/* Dual CTAs */}
@@ -40,14 +40,14 @@ export function HeroSection() {
               href="/register"
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-brand-500/30 transition-all hover:shadow-xl hover:shadow-brand-500/40 hover:-translate-y-0.5"
             >
-              Request Free Trial
+              {t("requestTrial")}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               href="/login"
               className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-white px-8 py-4 text-base font-semibold text-brand-600 transition-all hover:border-brand-300 hover:bg-brand-50"
             >
-              Try MEDICHIPS-LINK Now
+              {t("tryNow")}
             </Link>
           </div>
         </div>
@@ -102,13 +102,13 @@ export function HeroSection() {
                     <Play className="h-6 w-6 text-brand-600 ml-1" />
                   </div>
                   <span className="relative z-10 text-sm font-medium text-white/80">
-                    Watch 2-min Demo
+                    {t("watchDemo")}
                   </span>
                 </button>
               ) : (
                 <div className="flex h-full items-center justify-center text-white/60">
                   {/* Video embed placeholder - replace with actual Mux or YouTube embed */}
-                  <p className="text-sm">Demo video loading...</p>
+                  <p className="text-sm">{t("demoLoading")}</p>
                 </div>
               )}
             </div>

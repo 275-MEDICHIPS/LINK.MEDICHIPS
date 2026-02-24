@@ -1,44 +1,48 @@
+"use client";
+
 import { Building2, BarChart3, Globe2, DollarSign } from "lucide-react";
 import Link from "next/link";
-
-const orgFeatures = [
-  {
-    icon: Building2,
-    title: "Program Management",
-    description: "Manage multiple programs across countries from a single dashboard.",
-  },
-  {
-    icon: BarChart3,
-    title: "KOICA Reporting",
-    description: "Automated impact reports with cost-per-worker and competency metrics.",
-  },
-  {
-    icon: DollarSign,
-    title: "Cost Tracking",
-    description: "Per-program cost tracking with comparison to in-person training costs.",
-  },
-  {
-    icon: Globe2,
-    title: "Multi-Country Operations",
-    description: "Deploy identical training programs across regions with localized content.",
-  },
-];
+import { useTranslations } from "next-intl";
 
 export function OrganizationsSection() {
+  const t = useTranslations("landing");
+
+  const orgFeatures = [
+    {
+      icon: Building2,
+      title: t("orgProgramTitle"),
+      description: t("orgProgramDesc"),
+    },
+    {
+      icon: BarChart3,
+      title: t("orgReportingTitle"),
+      description: t("orgReportingDesc"),
+    },
+    {
+      icon: DollarSign,
+      title: t("orgCostTitle"),
+      description: t("orgCostDesc"),
+    },
+    {
+      icon: Globe2,
+      title: t("orgMultiTitle"),
+      description: t("orgMultiDesc"),
+    },
+  ];
+
   return (
     <section className="bg-gray-50/50 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">
-              For Organizations
+              {t("orgTag")}
             </p>
             <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">
-              Institutional Partnership
+              {t("orgTitle")}
             </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Purpose-built for KOICA, medical institutions, and NGOs running
-              healthcare capacity-building programs.
+              {t("orgSubtitle")}
             </p>
 
             <div className="mt-8 grid gap-6 sm:grid-cols-2">
@@ -63,7 +67,7 @@ export function OrganizationsSection() {
               href="#contact"
               className="mt-8 inline-flex items-center rounded-xl bg-brand-500 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
             >
-              Contact for Partnership
+              {t("orgContactBtn")}
             </Link>
           </div>
 
@@ -79,15 +83,15 @@ export function OrganizationsSection() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="rounded-lg bg-brand-50 p-4 text-center">
                   <p className="text-2xl font-bold text-brand-600">2,847</p>
-                  <p className="text-xs text-gray-600">Workers Trained</p>
+                  <p className="text-xs text-gray-600">{t("orgWorkersTrained")}</p>
                 </div>
                 <div className="rounded-lg bg-accent-50 p-4 text-center">
                   <p className="text-2xl font-bold text-accent-600">87%</p>
-                  <p className="text-xs text-gray-600">Competency Rate</p>
+                  <p className="text-xs text-gray-600">{t("orgCompetencyRate")}</p>
                 </div>
                 <div className="rounded-lg bg-purple-50 p-4 text-center">
                   <p className="text-2xl font-bold text-purple-600">$42</p>
-                  <p className="text-xs text-gray-600">Cost / Worker</p>
+                  <p className="text-xs text-gray-600">{t("orgCostPerWorker")}</p>
                 </div>
               </div>
               <div className="h-32 rounded-lg bg-gradient-to-r from-brand-50 to-accent-50" />

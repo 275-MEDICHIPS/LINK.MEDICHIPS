@@ -3,18 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Globe } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { LanguageSelector } from "@/components/language-selector";
 
-const navItems = [
-  { label: "Features", href: "#features" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Impact", href: "#impact" },
-  { label: "Partners", href: "#partners" },
-  { label: "Contact", href: "#contact" },
-];
+const navKeys = ["navFeatures", "navHowItWorks", "navImpact", "navPartners", "navContact"] as const;
+const navHrefs = ["#features", "#how-it-works", "#impact", "#partners", "#contact"];
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const t = useTranslations("landing");
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -29,31 +27,25 @@ export function Header() {
 
         {/* Desktop Nav */}
         <nav className="hidden items-center gap-8 md:flex">
-          {navItems.map((item) => (
+          {navKeys.map((key, i) => (
             <a
-              key={item.href}
-              href={item.href}
+              key={key}
+              href={navHrefs[i]}
               className="text-sm font-medium text-gray-600 transition-colors hover:text-brand-500"
             >
-              {item.label}
+              {t(key)}
             </a>
           ))}
         </nav>
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <button
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-sm text-gray-600 hover:bg-gray-100"
-            aria-label="Change language"
-          >
-            <Globe className="h-4 w-4" />
-            <span className="hidden sm:inline">KO</span>
-          </button>
+          <LanguageSelector />
           <Link
             href="/login"
             className="hidden rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-500/20 transition-all hover:shadow-md hover:shadow-brand-500/30 sm:inline-flex"
           >
-            Get Started
+            {t("getStarted")}
           </Link>
 
           {/* Mobile toggle */}
@@ -75,14 +67,14 @@ export function Header() {
       {mobileOpen && (
         <div className="border-t border-gray-100 bg-white md:hidden">
           <nav className="flex flex-col px-4 py-4">
-            {navItems.map((item) => (
+            {navKeys.map((key, i) => (
               <a
-                key={item.href}
-                href={item.href}
+                key={key}
+                href={navHrefs[i]}
                 className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                 onClick={() => setMobileOpen(false)}
               >
-                {item.label}
+                {t(key)}
               </a>
             ))}
             <Link
@@ -90,7 +82,7 @@ export function Header() {
               className="mt-2 rounded-lg bg-gradient-to-r from-brand-500 to-brand-600 px-4 py-2 text-center text-sm font-medium text-white"
               onClick={() => setMobileOpen(false)}
             >
-              Get Started
+              {t("getStarted")}
             </Link>
           </nav>
         </div>
