@@ -2,12 +2,68 @@
 
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 
+const DEMO_INTRO_URL =
+  "https://storage.googleapis.com/medichips-link-assets/videos/demo-intro.mp4";
+
+const ROTATION_VIDEOS = [
+  "https://storage.googleapis.com/medichips-link-assets/videos/dental-resin-treatment.mp4",
+  "https://storage.googleapis.com/medichips-link-assets/videos/dental-production-workflow.mp4",
+  "https://storage.googleapis.com/medichips-link-assets/videos/dental-advanced-procedure.mp4",
+];
+
 export function HeroSection() {
-  const [showVideo, setShowVideo] = useState(false);
   const t = useTranslations("landing");
+
+  // First visit intro
+  const [showIntro, setShowIntro] = useState(false);
+  const [introFading, setIntroFading] = useState(false);
+  const introRef = useRef<HTMLVideoElement>(null);
+
+  // Rotation player
+  const [showRotation, setShowRotation] = useState(false);
+  const [rotationIndex, setRotationIndex] = useState(0);
+  const rotationRef = useRef<HTMLVideoElement>(null);
+
+  // Check first visit on mount
+  useEffect(() => {
+    const visited = localStorage.getItem("medichips_visited");
+    if (!visited) {
+      setShowIntro(true);
+      localStorage.setItem("medichips_visited", "1");
+    }
+  }, []);
+
+  // Intro: skip last 0.5s + fade out
+  const handleIntroTimeUpdate = useCallback(() => {
+    const v = introRef.current;
+    if (!v || introFading) return;
+    if (v.duration > 0 && v.currentTime >= v.duration - 0.5) {
+      v.pause();
+      setIntroFading(true);
+      setTimeout(() => setShowIntro(false), 800);
+    }
+  }, [introFading]);
+
+  // Rotation: on video end, move to next
+  const handleRotationEnded = useCallback(() => {
+    setRotationIndex((prev) => (prev + 1) % ROTATION_VIDEOS.length);
+  }, []);
+
+  // Auto-play rotation video when index changes
+  useEffect(() => {
+    if (showRotation && rotationRef.current) {
+      rotationRef.current.load();
+      rotationRef.current.play().catch(() => {});
+    }
+  }, [rotationIndex, showRotation]);
+
+  const startRotation = () => {
+    setShowIntro(false);
+    setShowRotation(true);
+  };
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-brand-50/30 to-white pt-28 pb-20 sm:pt-36 sm:pb-28">
@@ -65,12 +121,66 @@ export function HeroSection() {
               </div>
             </div>
 
-            {/* Product screenshot / video area */}
+            {/* Video area */}
             <div className="relative aspect-video bg-gradient-to-br from-brand-900 to-gray-900">
-              {!showVideo ? (
+              {/* First-visit intro video */}
+              {showIntro && (
+                <div
+                  className={`absolute inset-0 z-20 transition-opacity duration-700 ${
+                    introFading ? "opacity-0" : "opacity-100"
+                  }`}
+                >
+                  <video
+                    ref={introRef}
+                    src={DEMO_INTRO_URL}
+                    className="h-full w-full object-cover"
+                    autoPlay
+                    muted
+                    playsInline
+                    onTimeUpdate={handleIntroTimeUpdate}
+                    onEnded={() => {
+                      setIntroFading(true);
+                      setTimeout(() => setShowIntro(false), 800);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Rotation video player */}
+              {showRotation && !showIntro && (
+                <div className="absolute inset-0 z-10">
+                  <video
+                    ref={rotationRef}
+                    src={ROTATION_VIDEOS[rotationIndex]}
+                    className="h-full w-full object-cover"
+                    autoPlay
+                    muted
+                    playsInline
+                    onEnded={handleRotationEnded}
+                  />
+                  {/* Video indicator dots */}
+                  <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+                    {ROTATION_VIDEOS.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setRotationIndex(i)}
+                        className={`h-1.5 rounded-full transition-all ${
+                          i === rotationIndex
+                            ? "w-6 bg-white"
+                            : "w-1.5 bg-white/40"
+                        }`}
+                        aria-label={`Video ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Default: play button overlay */}
+              {!showRotation && !showIntro && (
                 <button
-                  onClick={() => setShowVideo(true)}
-                  className="group absolute inset-0 flex flex-col items-center justify-center gap-4"
+                  onClick={startRotation}
+                  className="group absolute inset-0 z-10 flex flex-col items-center justify-center gap-4"
                   aria-label="Play demo video"
                 >
                   {/* Mock dashboard preview */}
@@ -105,11 +215,6 @@ export function HeroSection() {
                     {t("watchDemo")}
                   </span>
                 </button>
-              ) : (
-                <div className="flex h-full items-center justify-center text-white/60">
-                  {/* Video embed placeholder - replace with actual Mux or YouTube embed */}
-                  <p className="text-sm">{t("demoLoading")}</p>
-                </div>
               )}
             </div>
           </div>
