@@ -31,6 +31,7 @@ interface Props {
   onCourseChange: (courseId: string) => void;
   onLessonChange: (lessonId: string) => void;
   onSettingsLoaded?: (settings: VideoSettings) => void;
+  locked?: boolean;
 }
 
 export default function CourseLessonPicker({
@@ -39,6 +40,7 @@ export default function CourseLessonPicker({
   onCourseChange,
   onLessonChange,
   onSettingsLoaded,
+  locked = false,
 }: Props) {
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [lessons, setLessons] = useState<LessonOption[]>([]);
@@ -118,7 +120,7 @@ export default function CourseLessonPicker({
     <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50/50 p-4">
       <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
         <BookOpen className="h-4 w-4" />
-        Link to Course (optional)
+        {locked ? "Linked Course" : "Link to Course (optional)"}
       </div>
 
       <div className="space-y-3">
@@ -130,6 +132,10 @@ export default function CourseLessonPicker({
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               Loading courses...
+            </div>
+          ) : locked ? (
+            <div className="flex h-10 w-full items-center rounded-lg border border-gray-200 bg-gray-100 px-3 text-sm text-gray-700">
+              {courses.find((c) => c.id === courseId)?.title || courseId}
             </div>
           ) : (
             <select
@@ -159,6 +165,12 @@ export default function CourseLessonPicker({
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Loading lessons...
+              </div>
+            ) : locked ? (
+              <div className="flex h-10 w-full items-center rounded-lg border border-gray-200 bg-gray-100 px-3 text-sm text-gray-700">
+                {lessons.find((l) => l.lessonId === lessonId)
+                  ? `[${lessons.find((l) => l.lessonId === lessonId)!.moduleTitle}] ${lessons.find((l) => l.lessonId === lessonId)!.lessonTitle}`
+                  : lessonId}
               </div>
             ) : (
               <select

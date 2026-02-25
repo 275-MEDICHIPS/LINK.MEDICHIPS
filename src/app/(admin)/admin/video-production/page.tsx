@@ -382,7 +382,7 @@ export default function VideoProductionDashboard() {
                         <ArrowUpDown className="h-3 w-3" />
                       </span>
                     </th>
-                    <th className="px-4 py-3 font-medium text-gray-500">Method / Provider</th>
+                    <th className="px-4 py-3 text-center font-medium text-gray-500">Method / Provider</th>
                     <th className="px-4 py-3 font-medium text-gray-500">Title / Lesson</th>
                     <th className="px-4 py-3 font-medium text-gray-500">Course</th>
                     <th className="px-4 py-3 font-medium text-gray-500">Cost</th>
@@ -400,10 +400,10 @@ export default function VideoProductionDashboard() {
                         <StatusBadge status={job.status} />
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col items-center gap-1">
                           <MethodBadge method={job.method} />
                           <span className="text-xs text-gray-400">
-                            {job.provider.replace(/_/g, " ")}
+                            {job.provider === "VEO" ? "Veo 3.1" : job.provider.replace(/_/g, " ")}
                           </span>
                         </div>
                       </td>

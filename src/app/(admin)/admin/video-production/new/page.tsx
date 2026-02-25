@@ -158,6 +158,8 @@ export default function NewVideoJobWizard() {
   });
 
   // Pre-fill from URL parameters (from Course Editor's "Generate AI Video")
+  const isFromCourse = !!(searchParams.get("courseId") || searchParams.get("lessonId"));
+
   useEffect(() => {
     const urlCourseId = searchParams.get("courseId");
     const urlLessonId = searchParams.get("lessonId");
@@ -166,8 +168,6 @@ export default function NewVideoJobWizard() {
         ...prev,
         courseId: urlCourseId || prev.courseId,
         lessonId: urlLessonId || prev.lessonId,
-        method: "AI_GENERATED" as const,
-        provider: "VEO",
       }));
     }
   }, [searchParams]);
@@ -357,6 +357,23 @@ export default function NewVideoJobWizard() {
       {/* ─── Step 1: Method Selection ─────────────────────────────── */}
       {step === 1 && (
         <div className="space-y-4">
+          {/* Show linked course info first when coming from course editor */}
+          {isFromCourse && (
+            <CourseLessonPicker
+              courseId={config.courseId}
+              lessonId={config.lessonId}
+              onCourseChange={(id) => update("courseId", id)}
+              onLessonChange={(id) => update("lessonId", id)}
+              onSettingsLoaded={(settings) => {
+                if (settings.avatarId) update("avatarId", settings.avatarId);
+                if (settings.voicePresetId) update("voicePresetId", settings.voicePresetId);
+                if (settings.targetLocale) update("language", settings.targetLocale);
+                setCourseSettingsInherited(true);
+              }}
+              locked
+            />
+          )}
+
           <h2 className="text-lg font-semibold text-gray-900">
             Choose Production Method
           </h2>
@@ -419,15 +436,14 @@ export default function NewVideoJobWizard() {
             </Card>
           )}
 
-          {/* Course & Lesson Picker */}
-          {config.method && (
+          {/* Course & Lesson Picker (only when NOT from course editor) */}
+          {config.method && !isFromCourse && (
             <CourseLessonPicker
               courseId={config.courseId}
               lessonId={config.lessonId}
               onCourseChange={(id) => update("courseId", id)}
               onLessonChange={(id) => update("lessonId", id)}
               onSettingsLoaded={(settings) => {
-                // Auto-inherit course video settings
                 if (settings.avatarId) update("avatarId", settings.avatarId);
                 if (settings.voicePresetId) update("voicePresetId", settings.voicePresetId);
                 if (settings.targetLocale) update("language", settings.targetLocale);

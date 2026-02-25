@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   Video,
@@ -8,7 +7,6 @@ import {
   ExternalLink,
   Loader2,
   Sparkles,
-  Upload,
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,8 +43,6 @@ export default function LessonVideoSection({
   lessonId,
   latestJob,
 }: Props) {
-  const [showUpload] = useState(false);
-
   const isGenerating = latestJob && [
     "DRAFT", "SCRIPT_GENERATING", "QUEUED", "RENDERING",
     "FACE_SWAPPING", "POST_PROCESSING",
@@ -186,9 +182,9 @@ export default function LessonVideoSection({
             No video yet
           </p>
           <p className="mt-1 text-xs text-gray-400">
-            Generate an AI video or upload a video file
+            Generate an AI video for this lesson
           </p>
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4">
             <Link
               href={`/admin/video-production/new?courseId=${courseId}&lessonId=${lessonId}`}
             >
@@ -200,12 +196,6 @@ export default function LessonVideoSection({
                 Generate AI Video
               </Button>
             </Link>
-            {!showUpload && (
-              <Button variant="outline" size="sm" className="gap-1.5" disabled>
-                <Upload className="h-3.5 w-3.5" />
-                Upload Video
-              </Button>
-            )}
           </div>
         </div>
       </div>
