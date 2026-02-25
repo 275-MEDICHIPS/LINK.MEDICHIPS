@@ -1,11 +1,9 @@
 import { NextRequest } from "next/server";
 import { authenticate } from "@/lib/auth/guards";
 import { success, handleError } from "@/lib/utils/api-response";
-import { getCourse } from "@/lib/services/course.service";
-import { getCourseProgress } from "@/lib/services/progress.service";
 import { prisma } from "@/lib/db/prisma";
 
-const DEFAULT_LOCALE = "en";
+const DEFAULT_LOCALE = "ko";
 
 export async function GET(
   req: NextRequest,
@@ -16,8 +14,49 @@ export async function GET(
     const userId = payload.sub;
     const { courseId } = await params;
 
-    const course = await getCourse(courseId, DEFAULT_LOCALE);
-    const progress = await getCourseProgress(userId, courseId);
+    // Fetch course with creator and all nested data
+    const course = await prisma.course.findFirst({
+      where: { id: courseId, deletedAt: null },
+      include: {
+        translations: { where: { locale: DEFAULT_LOCALE } },
+        specialtyTags: { include: { specialty: true } },
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+            creatorTitle: true,
+            creatorBio: true,
+            creatorField: true,
+          },
+        },
+        modules: {
+          where: { deletedAt: null },
+          orderBy: { orderIndex: "asc" },
+          include: {
+            translations: { where: { locale: DEFAULT_LOCALE } },
+            lessons: {
+              where: { deletedAt: null },
+              orderBy: { orderIndex: "asc" },
+              include: {
+                translations: { where: { locale: DEFAULT_LOCALE } },
+                videoJobs: {
+                  where: { status: "COMPLETED" },
+                  select: { thumbnailUrl: true },
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!course) {
+      return new Response(JSON.stringify({ error: "Course not found" }), {
+        status: 404,
+      });
+    }
 
     // Check enrollment
     const enrollment = await prisma.courseEnrollment.findUnique({
@@ -72,6 +111,33 @@ export async function GET(
 
     const courseT = course.translations[0];
 
+    // Content breakdown
+    let videoCount = 0;
+    let totalDurationMin = 0;
+    for (const mod of course.modules) {
+      for (const lesson of mod.lessons) {
+        if (lesson.contentType === "VIDEO" || lesson.contentType === "MIXED") {
+          videoCount++;
+        }
+        totalDurationMin += lesson.durationMin ?? 0;
+      }
+    }
+
+    // Creator course count and enrollment count
+    let creatorCourseCount = 0;
+    let creatorEnrollmentCount = 0;
+    if (course.creator) {
+      const creatorStats = await prisma.course.findMany({
+        where: { creatorId: course.creator.id, status: "PUBLISHED", deletedAt: null },
+        select: { _count: { select: { enrollments: true } } },
+      });
+      creatorCourseCount = creatorStats.length;
+      creatorEnrollmentCount = creatorStats.reduce(
+        (sum, c) => sum + c._count.enrollments,
+        0
+      );
+    }
+
     const modules = course.modules.map((mod) => {
       const modT = mod.translations[0];
       const lessons = mod.lessons.map((lesson) => {
@@ -84,6 +150,7 @@ export async function GET(
           isRequired: lesson.isRequired,
           title: lessonT?.title ?? "Untitled",
           description: lessonT?.description ?? null,
+          thumbnailUrl: lesson.videoJobs[0]?.thumbnailUrl ?? null,
           isCompleted: progressMap.get(lesson.id) === "COMPLETED",
           isUnlocked: lessonUnlockMap.get(lesson.id) ?? false,
         };
@@ -100,15 +167,7 @@ export async function GET(
       };
     });
 
-    // Get instructor info
-    const instructor = await prisma.organizationMembership.findFirst({
-      where: {
-        organizationId: course.organizationId,
-        role: "INSTRUCTOR",
-        isActive: true,
-      },
-      include: { user: { select: { name: true } } },
-    });
+    const progressPct = enrollment?.progressPct ?? 0;
 
     return success({
       id: course.id,
@@ -122,9 +181,21 @@ export async function GET(
         id: st.specialty.id,
         name: st.specialty.name,
       })),
-      instructorName: instructor?.user.name ?? null,
+      creator: course.creator
+        ? {
+            id: course.creator.id,
+            name: course.creator.name,
+            avatarUrl: course.creator.avatarUrl,
+            creatorTitle: course.creator.creatorTitle,
+            creatorBio: course.creator.creatorBio,
+            creatorField: course.creator.creatorField,
+            courseCount: creatorCourseCount,
+            enrollmentCount: creatorEnrollmentCount,
+          }
+        : null,
+      contentBreakdown: { videoCount, totalDurationMin },
       modules,
-      progressPct: progress.progressPct,
+      progressPct,
       isEnrolled: !!enrollment,
       continueLesson,
     });

@@ -83,7 +83,9 @@
     "modules": "모듈 {count}개",
     "goalAchieved": "목표 달성!",
     "dailyGoal": "오늘의 목표",
-    "lessonsToday": "오늘 {count}개 레슨 완료"
+    "lessonsToday": "오늘 {count}개 레슨 완료",
+    "completed": "완료",
+    "min": "분"
   },
   "course": {
     "searchCourses": "코스 검색...",
@@ -125,7 +127,9 @@
     "sort": "정렬",
     "latest": "최신순",
     "titleAZ": "제목 A-Z",
-    "titleZA": "제목 Z-A"
+    "titleZA": "제목 Z-A",
+    "courseCount": "코스 {count}개",
+    "videos": "영상 {count}개"
   },
   "lesson": {
     "min": "{count}분",

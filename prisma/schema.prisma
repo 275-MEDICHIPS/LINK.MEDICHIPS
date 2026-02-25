@@ -267,6 +267,11 @@ model User {
   isActive          Boolean          @default(true)
   lastActiveAt      DateTime?
 
+  // Creator profile fields
+  creatorTitle      String?          // "내과 전문의", "간호학 교수"
+  creatorBio        String?          // 한줄 소개
+  creatorField      String?          // "내과", "간호", "치위생" 등
+
   authMethods       UserAuth[]
   sessions          UserSession[]
   memberships       OrganizationMembership[]
@@ -289,6 +294,7 @@ model User {
   reviewComments    ReviewComment[]
   contentAuditLogs  ContentAuditLog[]
   outcomeRecords    OutcomeRecord[]
+  createdCourses    Course[]         @relation("CourseCreator")
 
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
@@ -413,6 +419,8 @@ model Course {
   id             String              @id @default(cuid())
   organizationId String
   organization   Organization        @relation(fields: [organizationId], references: [id])
+  creatorId      String?
+  creator        User?               @relation("CourseCreator", fields: [creatorId], references: [id])
   slug           String              @unique
   riskLevel      RiskLevel           @default(L1)
   status         ContentReviewStatus @default(DRAFT)

@@ -119,7 +119,7 @@ function getYouTubeId(url: string): string | null {
 
 function YouTubePlayer({ videoId }: { videoId: string }) {
   return (
-    <div className="overflow-hidden rounded-xl bg-black">
+    <div className="-mx-4 bg-black">
       <div className="relative aspect-video">
         <iframe
           src={`https://www.youtube.com/embed/${videoId}?rel=0`}
@@ -238,7 +238,7 @@ function VideoPlayer({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl bg-black">
+    <div className="-mx-4 bg-black">
       <div className="relative aspect-video">
         <video
           ref={videoRef}
@@ -882,29 +882,24 @@ export default function LessonViewerPage() {
         {lesson.courseTitle}
       </button>
 
-      {/* Lesson Header */}
+      {/* Lesson Header — minimal */}
       <header>
-        <div className="mb-1 flex items-center gap-2">
-          <span className="text-[10px] font-medium uppercase text-gray-400">
-            {lesson.contentType}
-          </span>
+        <h1 className="text-base font-bold text-gray-900">{lesson.title}</h1>
+        <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+          <span>{lesson.courseTitle}</span>
           {lesson.durationMin && (
-            <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
+            <span className="flex items-center gap-0.5">
               <Clock className="h-2.5 w-2.5" aria-hidden="true" />
-              {tl("min", { count: lesson.durationMin })}
+              {lesson.durationMin}m
             </span>
           )}
           {isCompleted && (
-            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-accent-600">
+            <span className="flex items-center gap-0.5 font-semibold text-accent-600">
               <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
               {tl("completed")}
             </span>
           )}
         </div>
-        <h1 className="text-lg font-bold text-gray-900">{lesson.title}</h1>
-        {lesson.description && (
-          <p className="mt-1 text-sm text-gray-500">{lesson.description}</p>
-        )}
       </header>
 
       {/* Offline Indicator */}
@@ -954,51 +949,42 @@ export default function LessonViewerPage() {
             </div>
           )}
 
-        {/* Notes / Key Points */}
+        {/* Key Points — collapsible (default closed) */}
         {lesson.keyPoints.length > 0 && (
-          <section
-            className="rounded-xl border border-gray-100 bg-brand-50/50 p-4 shadow-sm"
-            aria-labelledby="key-points-heading"
-          >
-            <h2
-              id="key-points-heading"
-              className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900"
-            >
+          <details className="rounded-xl border border-gray-100 bg-brand-50/30 shadow-sm">
+            <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-900 select-none">
               <BookOpen className="h-4 w-4 text-brand-500" aria-hidden="true" />
               {tl("keyPoints")}
-            </h2>
-            <ul className="space-y-2">
+              <ChevronRight className="ml-auto h-4 w-4 text-gray-400 transition-transform [[open]>&]:rotate-90" aria-hidden="true" />
+            </summary>
+            <ul className="space-y-2 px-4 pb-4">
               {lesson.keyPoints.map((point, i) => (
                 <li
                   key={i}
                   className="flex items-start gap-2 text-sm text-gray-700"
                 >
-                  <span className="mt-1 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-[9px] font-bold text-brand-600">
+                  <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-[9px] font-bold text-brand-600">
                     {i + 1}
                   </span>
                   {point}
                 </li>
               ))}
             </ul>
-          </section>
+          </details>
         )}
 
-        {/* Lesson Notes */}
+        {/* Lesson Notes — collapsible */}
         {lesson.body.notes && (
-          <section
-            className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
-            aria-labelledby="notes-heading"
-          >
-            <h2
-              id="notes-heading"
-              className="mb-2 text-sm font-semibold text-gray-900"
-            >
+          <details className="rounded-xl border border-gray-100 bg-white shadow-sm">
+            <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-900 select-none">
+              <FileText className="h-4 w-4 text-gray-400" aria-hidden="true" />
               {tl("lessonNotes")}
-            </h2>
-            <div className="text-sm leading-relaxed text-gray-600">
+              <ChevronRight className="ml-auto h-4 w-4 text-gray-400 transition-transform [[open]>&]:rotate-90" aria-hidden="true" />
+            </summary>
+            <div className="px-4 pb-4 text-sm leading-relaxed text-gray-600">
               {lesson.body.notes}
             </div>
-          </section>
+          </details>
         )}
 
         {/* Quiz Section */}

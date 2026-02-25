@@ -16,12 +16,25 @@ import {
   CheckCircle2,
   Lock,
   Clock,
+  Video,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+interface CreatorDetail {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  creatorTitle: string | null;
+  creatorBio: string | null;
+  creatorField: string | null;
+  courseCount: number;
+  enrollmentCount: number;
+}
 
 interface LessonItem {
   id: string;
@@ -31,6 +44,7 @@ interface LessonItem {
   isRequired: boolean;
   title: string;
   description: string | null;
+  thumbnailUrl: string | null;
   isCompleted: boolean;
   isUnlocked: boolean;
 }
@@ -54,7 +68,8 @@ interface CourseDetail {
   title: string;
   description: string | null;
   specialties: Array<{ id: string; name: string }>;
-  instructorName: string | null;
+  creator: CreatorDetail | null;
+  contentBreakdown: { videoCount: number; totalDurationMin: number };
   modules: ModuleItem[];
   progressPct: number;
   isEnrolled: boolean;
@@ -97,16 +112,13 @@ function SkeletonBlock({ className }: { className?: string }) {
 
 function CourseDetailSkeleton() {
   return (
-    <div className="space-y-6" role="status" aria-label="Loading course details">
-      <SkeletonBlock className="h-5 w-24" />
-      <div className="space-y-2">
-        <SkeletonBlock className="h-7 w-3/4" />
-        <SkeletonBlock className="h-4 w-full" />
-        <SkeletonBlock className="h-4 w-2/3" />
-      </div>
-      <SkeletonBlock className="h-3 w-full rounded-full" />
+    <div className="space-y-4" role="status" aria-label="Loading course details">
+      <SkeletonBlock className="h-5 w-16" />
+      <SkeletonBlock className="aspect-video w-full rounded-2xl" />
+      <SkeletonBlock className="h-12 w-full rounded-xl" />
+      <SkeletonBlock className="h-5 w-3/4" />
       {Array.from({ length: 3 }).map((_, i) => (
-        <SkeletonBlock key={i} className="h-16 w-full rounded-xl" />
+        <SkeletonBlock key={i} className="h-14 w-full rounded-xl" />
       ))}
       <span className="sr-only">Loading...</span>
     </div>
@@ -120,39 +132,32 @@ function ModuleAccordion({
   courseId,
   isExpanded,
   onToggle,
-  t,
 }: {
   module: ModuleItem;
   courseId: string;
   isExpanded: boolean;
   onToggle: () => void;
-  t: ReturnType<typeof useTranslations>;
 }) {
   const allCompleted = module.completedLessons === module.totalLessons && module.totalLessons > 0;
-  const progressPct =
-    module.totalLessons > 0
-      ? Math.round((module.completedLessons / module.totalLessons) * 100)
-      : 0;
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
       {/* Module Header */}
       <button
         onClick={onToggle}
-        className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500"
+        className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-gray-50"
         aria-expanded={isExpanded}
-        aria-controls={`module-${module.id}-lessons`}
       >
         <div
           className={cn(
-            "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold",
+            "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold",
             allCompleted
               ? "bg-accent-100 text-accent-700"
               : "bg-brand-50 text-brand-600"
           )}
         >
           {allCompleted ? (
-            <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
           ) : (
             module.orderIndex + 1
           )}
@@ -162,67 +167,47 @@ function ModuleAccordion({
             {module.title}
           </h3>
           <p className="text-[10px] text-gray-400">
-            {t("lessonsCount", { completed: module.completedLessons, total: module.totalLessons })}
-            {module.description && ` - ${module.description}`}
+            {module.completedLessons}/{module.totalLessons}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-medium text-gray-400">
-            {progressPct}%
-          </span>
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 text-gray-400 transition-transform",
-              isExpanded && "rotate-180"
-            )}
-            aria-hidden="true"
-          />
-        </div>
-      </button>
-
-      {/* Module Progress Bar */}
-      <div className="mx-4 mb-0 h-1 overflow-hidden rounded-full bg-gray-100">
-        <div
+        <ChevronDown
           className={cn(
-            "h-full rounded-full transition-all duration-300",
-            allCompleted ? "bg-accent-500" : "bg-brand-500"
+            "h-4 w-4 text-gray-400 transition-transform",
+            isExpanded && "rotate-180"
           )}
-          style={{ width: `${progressPct}%` }}
+          aria-hidden="true"
         />
-      </div>
+      </button>
 
       {/* Lesson List */}
       {isExpanded && (
-        <ul
-          id={`module-${module.id}-lessons`}
-          className="border-t border-gray-50"
-          role="list"
-        >
+        <ul className="border-t border-gray-50">
           {module.lessons.map((lesson) => (
-            <li key={lesson.id} role="listitem">
+            <li key={lesson.id}>
               {lesson.isUnlocked ? (
                 <Link
                   href={`/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}`}
                   className={cn(
-                    "flex items-center gap-3 border-b border-gray-50 px-4 py-3 transition-colors last:border-b-0",
+                    "flex items-center gap-3 border-b border-gray-50 px-3 py-2.5 transition-colors last:border-b-0",
                     lesson.isCompleted
                       ? "bg-accent-50/50 hover:bg-accent-50"
                       : "hover:bg-gray-50"
                   )}
-                  aria-label={`${lesson.title}. ${lesson.contentType.toLowerCase()} lesson${lesson.durationMin ? `. ${lesson.durationMin} minutes` : ""}${lesson.isCompleted ? ". Completed" : ""}`}
                 >
                   <div
                     className={cn(
-                      "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full",
+                      "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full",
                       lesson.isCompleted
                         ? "bg-accent-100 text-accent-600"
                         : "bg-gray-100 text-gray-400"
                     )}
                   >
                     {lesson.isCompleted ? (
-                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    ) : lesson.contentType === "VIDEO" || lesson.contentType === "MIXED" ? (
+                      <Play className="ml-0.5 h-3 w-3" aria-hidden="true" />
                     ) : (
-                      <ContentTypeIcon type={lesson.contentType} />
+                      <ContentTypeIcon type={lesson.contentType} className="h-3 w-3" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -236,37 +221,21 @@ function ModuleAccordion({
                     >
                       {lesson.title}
                     </p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] capitalize text-gray-400">
-                        {lesson.contentType.toLowerCase()}
-                      </span>
-                      {lesson.durationMin && (
-                        <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
-                          <Clock className="h-2.5 w-2.5" aria-hidden="true" />
-                          {lesson.durationMin}m
-                        </span>
-                      )}
-                    </div>
                   </div>
-                  <ChevronRight
-                    className="h-4 w-4 flex-shrink-0 text-gray-300"
-                    aria-hidden="true"
-                  />
+                  {lesson.durationMin && (
+                    <span className="text-[10px] text-gray-400">
+                      {lesson.durationMin}m
+                    </span>
+                  )}
                 </Link>
               ) : (
-                <div
-                  className="flex items-center gap-3 border-b border-gray-50 px-4 py-3 opacity-50 last:border-b-0"
-                  aria-label={`${lesson.title}. Locked. Complete previous lessons to unlock.`}
-                >
-                  <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-300">
-                    <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                <div className="flex items-center gap-3 border-b border-gray-50 px-3 py-2.5 opacity-40 last:border-b-0">
+                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-300">
+                    <Lock className="h-3 w-3" aria-hidden="true" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium text-gray-400">
-                      {lesson.title}
-                    </p>
-                    <span className="text-[10px] text-gray-300">{t("locked")}</span>
-                  </div>
+                  <p className="flex-1 truncate text-sm font-medium text-gray-400">
+                    {lesson.title}
+                  </p>
                 </div>
               )}
             </li>
@@ -346,7 +315,6 @@ export default function CourseDetailPage() {
       });
       if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error("Enrollment failed");
-      // Refresh course data to show enrolled state
       await fetchCourse();
     } catch {
       // Allow retry
@@ -370,153 +338,170 @@ export default function CourseDetailPage() {
 
   if (!course) return null;
 
-  const totalLessons = course.modules.reduce(
-    (sum, m) => sum + m.totalLessons,
-    0
-  );
-  const completedLessons = course.modules.reduce(
-    (sum, m) => sum + m.completedLessons,
-    0
-  );
+  // Find first video lesson thumbnail for preview
+  const firstVideoLesson = course.modules
+    .flatMap((m) => m.lessons)
+    .find((l) => l.contentType === "VIDEO" || l.contentType === "MIXED");
+
+  const previewThumb =
+    course.thumbnailUrl ||
+    firstVideoLesson?.thumbnailUrl ||
+    null;
+
+  const { videoCount, totalDurationMin } = course.contentBreakdown;
+  const hours = Math.floor(totalDurationMin / 60);
+  const mins = totalDurationMin % 60;
+  const durationStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-4 pb-24">
       {/* Back Button */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-        aria-label="Go back to courses"
+        className="flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900"
+        aria-label="Go back"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         {tc("back")}
       </button>
 
-      {/* Course Header */}
-      <header className="space-y-3">
-        <div className="flex items-start gap-2">
-          <h1 className="flex-1 text-xl font-bold text-gray-900">
-            {course.title}
-          </h1>
-          <span
-            className={cn(
-              "mt-1 flex-shrink-0 rounded px-2 py-0.5 text-xs font-semibold",
-              course.riskLevel === "L1" && "bg-green-100 text-green-700",
-              course.riskLevel === "L2" && "bg-amber-100 text-amber-700",
-              course.riskLevel === "L3" && "bg-red-100 text-red-700"
+      {/* ─── Video Preview ─── */}
+      <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-gray-900">
+        {previewThumb ? (
+          <img
+            src={previewThumb}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+            <Video className="h-12 w-12 text-gray-600" aria-hidden="true" />
+          </div>
+        )}
+        {/* Play button */}
+        {course.isEnrolled && course.continueLesson && (
+          <Link
+            href={`/courses/${course.id}/modules/${course.continueLesson.moduleId}/lessons/${course.continueLesson.lessonId}`}
+            className="absolute inset-0 flex items-center justify-center"
+          >
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur-sm transition-transform hover:scale-110">
+              <Play className="ml-1 h-6 w-6 text-gray-900" aria-hidden="true" />
+            </div>
+          </Link>
+        )}
+      </div>
+
+      {/* ─── Creator Profile ─── */}
+      {course.creator && (
+        <div className="flex items-center gap-3">
+          {course.creator.avatarUrl ? (
+            <img
+              src={course.creator.avatarUrl}
+              alt=""
+              className="h-12 w-12 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-lg font-bold text-brand-600">
+              {course.creator.name.charAt(0)}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900">
+              {course.creator.name}
+            </p>
+            {course.creator.creatorTitle && (
+              <p className="text-xs text-gray-500">
+                {course.creator.creatorTitle}
+              </p>
             )}
-          >
-            {course.riskLevel}
-          </span>
-        </div>
-
-        {course.description && (
-          <p className="text-sm leading-relaxed text-gray-600">
-            {course.description}
-          </p>
-        )}
-
-        {/* Meta */}
-        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
-          {course.instructorName && (
-            <span>{t("by", { name: course.instructorName })}</span>
-          )}
-          {course.estimatedHours && (
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" aria-hidden="true" />
-              {course.estimatedHours}h
-            </span>
-          )}
-          <span>
-            {course.modules.length} module{course.modules.length !== 1 ? "s" : ""} / {totalLessons} lesson{totalLessons !== 1 ? "s" : ""}
-          </span>
-        </div>
-
-        {/* Specialty Tags */}
-        {course.specialties.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {course.specialties.map((s) => (
-              <span
-                key={s.id}
-                className="rounded-full bg-healthcare-purple/10 px-2 py-0.5 text-[10px] font-medium text-healthcare-purple"
-              >
-                {s.name}
+            <div className="flex items-center gap-3 text-[10px] text-gray-400">
+              <span>{t("courseCount", { count: course.creator.courseCount })}</span>
+              <span className="flex items-center gap-0.5">
+                <Users className="h-2.5 w-2.5" aria-hidden="true" />
+                {course.creator.enrollmentCount.toLocaleString()}
               </span>
-            ))}
+            </div>
           </div>
-        )}
-      </header>
+        </div>
+      )}
 
-      {/* Progress Overview */}
+      {/* ─── Course Info Line ─── */}
+      <div className="flex items-center gap-3 text-xs text-gray-500">
+        {videoCount > 0 && (
+          <span className="flex items-center gap-1">
+            <Video className="h-3.5 w-3.5" aria-hidden="true" />
+            {videoCount}
+          </span>
+        )}
+        <span className="flex items-center gap-1">
+          <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+          {durationStr}
+        </span>
+        <span
+          className={cn(
+            "rounded px-1.5 py-0.5 text-[10px] font-semibold",
+            course.riskLevel === "L1" && "bg-green-100 text-green-700",
+            course.riskLevel === "L2" && "bg-amber-100 text-amber-700",
+            course.riskLevel === "L3" && "bg-red-100 text-red-700"
+          )}
+        >
+          {course.riskLevel}
+        </span>
+      </div>
+
+      {/* Course Title */}
+      <h1 className="text-lg font-bold text-gray-900">{course.title}</h1>
+
+      {course.description && (
+        <p className="text-sm text-gray-500 leading-relaxed">
+          {course.description}
+        </p>
+      )}
+
+      {/* ─── Progress (enrolled only) ─── */}
       {course.isEnrolled && (
-        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium text-gray-900">{t("yourProgress")}</span>
-            <span className="font-semibold text-brand-600">
-              {Math.round(course.progressPct)}%
-            </span>
-          </div>
-          <div
-            className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100"
-            role="progressbar"
-            aria-valuenow={Math.round(course.progressPct)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Course progress: ${Math.round(course.progressPct)}%`}
-          >
+        <div className="flex items-center gap-3">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
             <div
               className={cn(
                 "h-full rounded-full transition-all duration-500",
                 course.progressPct >= 100
                   ? "bg-accent-500"
-                  : "bg-gradient-to-r from-brand-400 to-brand-600"
+                  : "bg-brand-500"
               )}
               style={{ width: `${course.progressPct}%` }}
             />
           </div>
-          <p className="mt-1.5 text-[10px] text-gray-400">
-            {t("lessonsCompleted", { completed: completedLessons, total: totalLessons })}
-          </p>
+          <span className="text-xs font-semibold text-brand-600">
+            {Math.round(course.progressPct)}%
+          </span>
         </div>
       )}
 
-      {/* Module List */}
-      <section aria-labelledby="modules-heading">
-        <h2
-          id="modules-heading"
-          className="mb-3 text-sm font-semibold text-gray-900"
-        >
-          {t("courseContent")}
-        </h2>
-        <div className="space-y-3">
-          {course.modules.map((module) => (
-            <ModuleAccordion
-              key={module.id}
-              module={module}
-              courseId={course.id}
-              isExpanded={expandedModules.has(module.id)}
-              onToggle={() => toggleModule(module.id)}
-              t={t}
-            />
-          ))}
-        </div>
-      </section>
+      {/* ─── Module List ─── */}
+      <div className="space-y-2">
+        {course.modules.map((module) => (
+          <ModuleAccordion
+            key={module.id}
+            module={module}
+            courseId={course.id}
+            isExpanded={expandedModules.has(module.id)}
+            onToggle={() => toggleModule(module.id)}
+          />
+        ))}
+      </div>
 
-      {/* Continue Learning Floating Button */}
-      {course.isEnrolled && course.continueLesson && (
-        <div className="fixed bottom-20 left-0 right-0 z-30 px-4">
+      {/* ─── CTA Button ─── */}
+      <div className="fixed bottom-20 left-0 right-0 z-30 px-4">
+        {course.isEnrolled && course.continueLesson ? (
           <Link
             href={`/courses/${course.id}/modules/${course.continueLesson.moduleId}/lessons/${course.continueLesson.lessonId}`}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-brand-600"
           >
             <Play className="h-4 w-4" aria-hidden="true" />
             {t("continueLearning")}
           </Link>
-        </div>
-      )}
-
-      {/* Enroll Button (if not enrolled) */}
-      {!course.isEnrolled && (
-        <div className="fixed bottom-20 left-0 right-0 z-30 px-4">
+        ) : !course.isEnrolled ? (
           <Button
             onClick={handleEnroll}
             disabled={enrolling}
@@ -524,8 +509,8 @@ export default function CourseDetailPage() {
           >
             {enrolling ? tc("loading") : t("enrollInCourse")}
           </Button>
-        </div>
-      )}
+        ) : null}
+      </div>
     </div>
   );
 }

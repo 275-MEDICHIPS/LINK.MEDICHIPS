@@ -36,14 +36,13 @@ export async function GET(req: NextRequest) {
     // Level calculation (100 XP per level)
     const XP_PER_LEVEL = 100;
     const level = Math.floor(totalXp / XP_PER_LEVEL) + 1;
-    const progress = (totalXp % XP_PER_LEVEL) / XP_PER_LEVEL;
 
     // Streak
     const streak = await prisma.streak.findFirst({
       where: { userId },
     });
 
-    // Continue learning
+    // Continue learning — with creator info
     let continueLearning = null;
     const enrollment = await prisma.courseEnrollment.findFirst({
       where: { userId, completedAt: null },
@@ -52,6 +51,9 @@ export async function GET(req: NextRequest) {
         course: {
           include: {
             translations: true,
+            creator: {
+              select: { name: true, avatarUrl: true, creatorTitle: true },
+            },
           },
         },
       },
@@ -88,6 +90,13 @@ export async function GET(req: NextRequest) {
           lessonIndex: lessonProgress.lesson.orderIndex,
           durationMin: lessonProgress.lesson.durationMin,
           lastStudiedAt: enrollment.updatedAt.toISOString(),
+          creator: enrollment.course.creator
+            ? {
+                name: enrollment.course.creator.name,
+                avatarUrl: enrollment.course.creator.avatarUrl,
+                creatorTitle: enrollment.course.creator.creatorTitle,
+              }
+            : null,
         };
       }
     }
@@ -118,14 +127,14 @@ export async function GET(req: NextRequest) {
       lessonsToday: todayCompletedLessons.length,
     };
 
-    // Pending tasks
+    // Pending tasks (max 2 for compact dashboard)
     const rawTasks = await prisma.task.findMany({
       where: {
         assigneeId: userId,
         status: { in: ["PENDING", "IN_PROGRESS"] },
       },
       orderBy: { dueDate: "asc" },
-      take: 5,
+      take: 2,
       select: {
         id: true,
         title: true,
@@ -149,92 +158,74 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Weekly progress
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 6);
-    weekAgo.setHours(0, 0, 0, 0);
-
-    const completedLessons = await prisma.lessonProgress.findMany({
-      where: { userId, status: "COMPLETED", updatedAt: { gte: weekAgo } },
-      select: { updatedAt: true },
-    });
-
-    const weeklyProgress = Array(7).fill(0) as number[];
-    const today = new Date();
-    for (const lp of completedLessons) {
-      const dayDiff = Math.floor(
-        (today.getTime() - lp.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      const idx = 6 - dayDiff;
-      if (idx >= 0 && idx < 7) weeklyProgress[idx]++;
-    }
-
-    // Recent badges
-    const recentBadges = await prisma.earnedBadge.findMany({
-      where: { userId },
-      orderBy: { earnedAt: "desc" },
-      take: 5,
-      include: {
-        badge: { select: { id: true, name: true, iconUrl: true } },
-      },
-    });
-
-    // Recommended course
+    // Recommended courses (up to 6) — with creator info
     const enrolledCourseIds = await prisma.courseEnrollment.findMany({
       where: { userId },
       select: { courseId: true },
     });
     const enrolledIds = enrolledCourseIds.map((e) => e.courseId);
 
-    let recommendedCourse = null;
-    const course = await prisma.course.findFirst({
+    const recommendedRaw = await prisma.course.findMany({
       where: {
         status: "PUBLISHED",
         ...(enrolledIds.length > 0 ? { id: { notIn: enrolledIds } } : {}),
       },
       include: {
         translations: true,
-        modules: { select: { id: true } },
+        modules: {
+          where: { deletedAt: null },
+          include: {
+            lessons: {
+              where: { deletedAt: null },
+              select: { id: true, contentType: true },
+            },
+          },
+        },
+        creator: {
+          select: { name: true, avatarUrl: true, creatorTitle: true },
+        },
       },
       orderBy: { createdAt: "desc" },
+      take: 6,
     });
 
-    if (course) {
+    const recommendedCourses = recommendedRaw.map((course) => {
       const courseT = getTranslation(course.translations);
-      recommendedCourse = {
+      const videoCount = course.modules.reduce(
+        (sum, m) =>
+          sum +
+          m.lessons.filter(
+            (l) => l.contentType === "VIDEO" || l.contentType === "MIXED"
+          ).length,
+        0
+      );
+      return {
         id: course.id,
         title: courseT?.title ?? "Untitled",
-        description: courseT?.description ?? "",
         thumbnailUrl: course.thumbnailUrl,
-        moduleCount: course.modules.length,
         riskLevel: course.riskLevel,
+        videoCount,
+        creator: course.creator
+          ? {
+              name: course.creator.name,
+              avatarUrl: course.creator.avatarUrl,
+              creatorTitle: course.creator.creatorTitle,
+            }
+          : null,
       };
-    }
+    });
 
     return success({
       user: { name: user.name, avatarUrl: user.avatarUrl },
       totalXp,
-      level: {
-        level,
-        currentXp: totalXp,
-        nextLevelXp: level * XP_PER_LEVEL,
-        progress,
-      },
+      level,
       streak: {
         currentStreak: streak?.currentStreak ?? 0,
-        longestStreak: streak?.longestStreak ?? 0,
       },
       continueLearning,
       dailyGoal,
       pendingTasks,
-      weeklyProgress,
-      recentBadges: recentBadges.map((eb) => ({
-        id: eb.badge.id,
-        name: eb.badge.name,
-        iconUrl: eb.badge.iconUrl,
-        earnedAt: eb.earnedAt.toISOString(),
-      })),
-      recommendedCourse,
+      recommendedCourses,
     });
   } catch (error) {
     return handleError(error);
@@ -245,13 +236,11 @@ function buildEmptyDashboard(name: string) {
   return {
     user: { name, avatarUrl: null },
     totalXp: 0,
-    level: { level: 1, currentXp: 0, nextLevelXp: 100, progress: 0 },
-    streak: { currentStreak: 0, longestStreak: 0 },
+    level: 1,
+    streak: { currentStreak: 0 },
     continueLearning: null,
     dailyGoal: { targetMin: 15, completedMin: 0, lessonsToday: 0 },
     pendingTasks: [],
-    weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
-    recentBadges: [],
-    recommendedCourse: null,
+    recommendedCourses: [],
   };
 }

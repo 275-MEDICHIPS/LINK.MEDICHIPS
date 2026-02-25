@@ -83,7 +83,9 @@
     "modules": "{count} modules",
     "goalAchieved": "Goal Achieved!",
     "dailyGoal": "Daily Goal",
-    "lessonsToday": "{count} lessons completed today"
+    "lessonsToday": "{count} lessons completed today",
+    "completed": "complete",
+    "min": "min"
   },
   "course": {
     "searchCourses": "Search courses...",
@@ -125,7 +127,9 @@
     "sort": "Sort",
     "latest": "Latest",
     "titleAZ": "Title A-Z",
-    "titleZA": "Title Z-A"
+    "titleZA": "Title Z-A",
+    "courseCount": "{count} courses",
+    "videos": "{count} videos"
   },
   "lesson": {
     "min": "{count} min",
