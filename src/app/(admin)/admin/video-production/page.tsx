@@ -382,9 +382,9 @@ export default function VideoProductionDashboard() {
                         <ArrowUpDown className="h-3 w-3" />
                       </span>
                     </th>
-                    <th className="px-4 py-3 font-medium text-gray-500">Method</th>
+                    <th className="px-4 py-3 font-medium text-gray-500">Method / Provider</th>
                     <th className="px-4 py-3 font-medium text-gray-500">Title / Lesson</th>
-                    <th className="px-4 py-3 font-medium text-gray-500">Provider</th>
+                    <th className="px-4 py-3 font-medium text-gray-500">Course</th>
                     <th className="px-4 py-3 font-medium text-gray-500">Cost</th>
                     <th className="px-4 py-3 font-medium text-gray-500">Created</th>
                     <th className="px-4 py-3 font-medium text-gray-500">Actions</th>
@@ -400,7 +400,12 @@ export default function VideoProductionDashboard() {
                         <StatusBadge status={job.status} />
                       </td>
                       <td className="px-4 py-3">
-                        <MethodBadge method={job.method} />
+                        <div className="flex flex-col gap-1">
+                          <MethodBadge method={job.method} />
+                          <span className="text-xs text-gray-400">
+                            {job.provider.replace(/_/g, " ")}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="max-w-xs truncate font-medium text-gray-900">
@@ -408,20 +413,21 @@ export default function VideoProductionDashboard() {
                             job.lesson?.translations?.[0]?.title ||
                             "Untitled"}
                         </div>
-                        {job.course?.translations?.[0]?.title && (
-                          <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-400">
-                            <BookOpen className="h-3 w-3" />
-                            <Link
-                              href={`/admin/courses/${job.courseId}/edit`}
-                              className="hover:text-brand-600 hover:underline"
-                            >
-                              {job.course.translations[0].title}
-                            </Link>
-                          </div>
-                        )}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {job.provider.replace(/_/g, " ")}
+                      <td className="px-4 py-3">
+                        {job.course?.translations?.[0]?.title ? (
+                          <Link
+                            href={`/admin/courses/${job.courseId}/edit`}
+                            className="group flex items-center gap-1.5"
+                          >
+                            <BookOpen className="h-3.5 w-3.5 flex-shrink-0 text-brand-500" />
+                            <span className="max-w-[180px] truncate text-sm text-gray-700 group-hover:text-brand-600 group-hover:underline">
+                              {job.course.translations[0].title}
+                            </span>
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-gray-300">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-gray-600">
                         {job.estimatedCostUsd

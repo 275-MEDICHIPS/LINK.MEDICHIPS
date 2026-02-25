@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -18,15 +18,15 @@ import {
   CheckSquare,
   X,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,103 +48,37 @@ interface Course {
 }
 
 // ---------------------------------------------------------------------------
-// Mock Data
-// ---------------------------------------------------------------------------
-
-const mockCourses: Course[] = [
-  {
-    id: "crs_001",
-    title: "Emergency Triage Protocol",
-    status: "published",
-    modules: 6,
-    enrollments: 342,
-    riskLevel: "L3",
-    updatedAt: "2026-02-22",
-    author: "Dr. Kim",
-    specialty: "Emergency Medicine",
-  },
-  {
-    id: "crs_002",
-    title: "Pediatric Assessment Fundamentals",
-    status: "review",
-    modules: 4,
-    enrollments: 0,
-    riskLevel: "L2",
-    updatedAt: "2026-02-21",
-    author: "Dr. Osei",
-    specialty: "Pediatrics",
-  },
-  {
-    id: "crs_003",
-    title: "Wound Care Basics",
-    status: "published",
-    modules: 5,
-    enrollments: 528,
-    riskLevel: "L1",
-    updatedAt: "2026-02-20",
-    author: "Nurse Mpho",
-    specialty: "General Nursing",
-  },
-  {
-    id: "crs_004",
-    title: "Infection Control in Resource-Limited Settings",
-    status: "draft",
-    modules: 3,
-    enrollments: 0,
-    riskLevel: "L2",
-    updatedAt: "2026-02-19",
-    author: "Dr. Tanaka",
-    specialty: "Infectious Disease",
-  },
-  {
-    id: "crs_005",
-    title: "Maternal Health: Prenatal Care",
-    status: "published",
-    modules: 8,
-    enrollments: 215,
-    riskLevel: "L3",
-    updatedAt: "2026-02-18",
-    author: "Dr. Amina",
-    specialty: "Obstetrics",
-  },
-  {
-    id: "crs_006",
-    title: "Basic Pharmacology for Nurses",
-    status: "draft",
-    modules: 7,
-    enrollments: 0,
-    riskLevel: "L2",
-    updatedAt: "2026-02-17",
-    author: "Dr. Park",
-    specialty: "Pharmacology",
-  },
-  {
-    id: "crs_007",
-    title: "Mental Health First Aid",
-    status: "review",
-    modules: 4,
-    enrollments: 0,
-    riskLevel: "L1",
-    updatedAt: "2026-02-16",
-    author: "Dr. Williams",
-    specialty: "Psychiatry",
-  },
-  {
-    id: "crs_008",
-    title: "Diabetes Management in Primary Care",
-    status: "published",
-    modules: 5,
-    enrollments: 189,
-    riskLevel: "L2",
-    updatedAt: "2026-02-15",
-    author: "Dr. Chen",
-    specialty: "Endocrinology",
-  },
-];
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+function mapApiStatus(status: string): CourseStatus {
+  switch (status) {
+    case "PUBLISHED":
+      return "published";
+    case "IN_REVIEW":
+    case "APPROVED":
+      return "review";
+    case "ARCHIVED":
+      return "archived";
+    default:
+      return "draft";
+  }
+}
+
+function apiStatusValue(status: CourseStatus | "all"): string | undefined {
+  switch (status) {
+    case "draft":
+      return "DRAFT";
+    case "review":
+      return "IN_REVIEW";
+    case "published":
+      return "PUBLISHED";
+    case "archived":
+      return "ARCHIVED";
+    default:
+      return undefined;
+  }
+}
 
 const statusConfig: Record<CourseStatus, { label: string; className: string }> = {
   draft: { label: "Draft", className: "bg-gray-100 text-gray-700" },
@@ -184,14 +118,55 @@ function RiskBadge({ level }: { level: RiskLevel }) {
 function CreateCourseDialog({
   open,
   onClose,
+  onCreated,
 }: {
   open: boolean;
   onClose: () => void;
+  onCreated: () => void;
 }) {
   const [title, setTitle] = useState("");
   const [specialty, setSpecialty] = useState("");
+  const [riskLevel, setRiskLevel] = useState("L1");
+  const [language, setLanguage] = useState("en");
+  const [creating, setCreating] = useState(false);
 
   if (!open) return null;
+
+  const handleCreate = async () => {
+    if (!title.trim()) return;
+    setCreating(true);
+    try {
+      const slug = title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .slice(0, 80);
+
+      const res = await fetch("/api/v1/courses", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          slug: slug || `course-${Date.now()}`,
+          riskLevel,
+          locale: language,
+          title: title.trim(),
+          description: specialty ? `${specialty} course` : undefined,
+        }),
+      });
+
+      if (res.ok) {
+        setTitle("");
+        setSpecialty("");
+        onClose();
+        onCreated();
+      }
+    } catch {
+      // Handle error
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -237,6 +212,8 @@ function CreateCourseDialog({
             </label>
             <select
               id="risk-level"
+              value={riskLevel}
+              onChange={(e) => setRiskLevel(e.target.value)}
               className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <option value="L1">L1 - Low Risk</option>
@@ -250,6 +227,8 @@ function CreateCourseDialog({
             </label>
             <select
               id="language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
               className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <option value="en">English</option>
@@ -265,9 +244,13 @@ function CreateCourseDialog({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={!title.trim()}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Course
+          <Button disabled={!title.trim() || creating} onClick={handleCreate}>
+            {creating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="mr-2 h-4 w-4" />
+            )}
+            {creating ? "Creating..." : "Create Course"}
           </Button>
         </div>
       </div>
@@ -318,23 +301,72 @@ function RowActions({ courseId }: { courseId: string }) {
 // ---------------------------------------------------------------------------
 
 export default function CoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<CourseStatus | "all">("all");
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const filtered = useMemo(() => {
-    return mockCourses.filter((c) => {
-      const matchesSearch =
-        !search ||
-        c.title.toLowerCase().includes(search.toLowerCase()) ||
-        c.author.toLowerCase().includes(search.toLowerCase()) ||
-        c.specialty.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === "all" || c.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [search, statusFilter]);
+  const fetchCourses = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        locale: "en",
+      });
+      const apiStatus = apiStatusValue(statusFilter);
+      if (apiStatus) params.set("status", apiStatus);
+      if (search) params.set("search", search);
+
+      const res = await fetch(`/api/v1/courses?${params.toString()}`);
+      const json = await res.json();
+
+      if (json.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapped: Course[] = json.data.map((c: any) => ({
+          id: c.id,
+          title: c.translations?.[0]?.title || "Untitled",
+          status: mapApiStatus(c.status),
+          modules: c._count?.modules || 0,
+          enrollments: c._count?.enrollments || 0,
+          riskLevel: (c.riskLevel || "L1") as RiskLevel,
+          updatedAt: new Date(c.updatedAt || c.createdAt).toLocaleDateString(),
+          author: c.specialtyTags?.[0]?.specialty?.name || "",
+          specialty: c.specialtyTags?.[0]?.specialty?.name || "",
+        }));
+        setCourses(mapped);
+        setTotal(json.pagination?.total || 0);
+      }
+    } catch {
+      // Handle error
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, statusFilter, search]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  // Debounced search
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    if (searchTimeout) clearTimeout(searchTimeout);
+    setSearchTimeout(
+      setTimeout(() => {
+        setPage(1);
+      }, 300)
+    );
+  };
+
+  const totalPages = Math.ceil(total / pageSize);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -346,10 +378,10 @@ export default function CoursesPage() {
   };
 
   const toggleAll = () => {
-    if (selectedIds.size === filtered.length) {
+    if (selectedIds.size === courses.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filtered.map((c) => c.id)));
+      setSelectedIds(new Set(courses.map((c) => c.id)));
     }
   };
 
@@ -377,8 +409,8 @@ export default function CoursesPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search courses by title, author, or specialty..."
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Search courses by title..."
                 className="pl-9"
               />
             </div>
@@ -401,6 +433,7 @@ export default function CoursesPage() {
                         key={s}
                         onClick={() => {
                           setStatusFilter(s);
+                          setPage(1);
                           setFilterOpen(false);
                         }}
                         className={`flex w-full items-center px-3 py-2 text-sm ${
@@ -456,7 +489,7 @@ export default function CoursesPage() {
                 <th className="px-4 py-3 text-left">
                   <input
                     type="checkbox"
-                    checked={selectedIds.size === filtered.length && filtered.length > 0}
+                    checked={selectedIds.size === courses.length && courses.length > 0}
                     onChange={toggleAll}
                     className="h-4 w-4 rounded border-gray-300"
                     aria-label="Select all courses"
@@ -486,7 +519,14 @@ export default function CoursesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-500" />
+                    <p className="mt-2 text-sm text-gray-500">Loading courses...</p>
+                  </td>
+                </tr>
+              ) : courses.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center">
                     <BookOpen className="mx-auto h-10 w-10 text-gray-300" />
@@ -499,7 +539,7 @@ export default function CoursesPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((course) => (
+                courses.map((course) => (
                   <tr
                     key={course.id}
                     className="border-b border-gray-50 transition-colors hover:bg-gray-50/50"
@@ -521,9 +561,11 @@ export default function CoursesPage() {
                         <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600">
                           {course.title}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {course.specialty} &middot; {course.author}
-                        </p>
+                        {course.specialty && (
+                          <p className="text-xs text-gray-500">
+                            {course.specialty}
+                          </p>
+                        )}
                       </Link>
                     </td>
                     <td className="px-4 py-3">
@@ -552,19 +594,29 @@ export default function CoursesPage() {
         </div>
 
         {/* Pagination */}
-        {filtered.length > 0 && (
+        {totalPages > 0 && (
           <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
             <p className="text-xs text-gray-500">
-              Showing 1-{filtered.length} of {filtered.length} courses
+              Page {page} of {totalPages || 1} ({total} courses)
             </p>
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="sm" className="bg-brand-50 text-brand-700">
-                1
+                {page}
               </Button>
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage(page + 1)}
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -573,7 +625,11 @@ export default function CoursesPage() {
       </Card>
 
       {/* Create Dialog */}
-      <CreateCourseDialog open={createOpen} onClose={() => setCreateOpen(false)} />
+      <CreateCourseDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={fetchCourses}
+      />
     </div>
   );
 }
