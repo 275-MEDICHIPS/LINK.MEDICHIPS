@@ -4,7 +4,7 @@
  *
  * Usage: npx tsx prisma/seed-sample-courses.ts
  */
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, RiskLevel } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -13,7 +13,7 @@ async function seedCourse(
   creatorId: string,
   courseData: {
     slug: string;
-    riskLevel: string;
+    riskLevel: RiskLevel;
     thumbnailUrl: string;
     estimatedHours: number;
     translations: { locale: string; title: string; description: string }[];
