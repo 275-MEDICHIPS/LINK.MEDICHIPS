@@ -28,6 +28,7 @@ import {
 import VoicePicker from "../_components/VoicePicker";
 import AvatarPicker from "../_components/AvatarPicker";
 import PromptTemplateSelector from "../_components/PromptTemplateSelector";
+import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -186,7 +187,7 @@ export default function NewVideoJobWizard() {
       // First create the job
       const jobRes = await fetch("/api/v1/admin/video-production/jobs", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           method: config.method,
           provider: config.provider,
@@ -212,7 +213,7 @@ export default function NewVideoJobWizard() {
         `/api/v1/admin/video-production/jobs/${jobId}/generate-script`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             topic: config.topic,
             targetLocale: config.language,
@@ -264,7 +265,7 @@ export default function NewVideoJobWizard() {
     try {
       const res = await fetch("/api/v1/admin/video-production/jobs", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           method: config.method,
           provider: config.provider,

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Play, Pause, Loader2, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -92,7 +93,7 @@ export default function VoicePicker({
         "/api/v1/admin/video-production/voices/preview",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             voiceName: preset.ttsVoiceName,
             languageCode: preset.languageCode,

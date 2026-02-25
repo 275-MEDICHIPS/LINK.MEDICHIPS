@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Plus, User, Loader2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -61,7 +62,7 @@ export default function AvatarPicker({
         "/api/v1/admin/video-production/avatars/upload",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             fileName: file.name,
             contentType: file.type,
@@ -85,7 +86,7 @@ export default function AvatarPicker({
         "/api/v1/admin/video-production/avatars",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             name: newName.trim(),
             imageUrl: publicUrl,
