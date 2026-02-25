@@ -12,16 +12,38 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding Voice Presets & Prompt Templates...\n");
 
-  // ─── Voice Presets ───────────────────────────────────────────────────────
+  // ─── Delete old Neural2/Studio presets ──────────────────────────────────
+  const deleted = await prisma.voicePreset.deleteMany({
+    where: {
+      voiceType: { in: ["Neural2", "Studio"] },
+    },
+  });
+  if (deleted.count > 0) {
+    console.log(`Deleted ${deleted.count} old Neural2/Studio presets`);
+  }
+
+  // ─── Voice Presets (Chirp3-HD — latest, highest quality) ────────────────
   const voicePresetData = [
-    { name: "Kim Professor (Female)", ttsVoiceName: "ko-KR-Neural2-A", languageCode: "ko-KR", gender: "FEMALE", voiceType: "Neural2" },
-    { name: "Park Doctor (Male)", ttsVoiceName: "ko-KR-Neural2-C", languageCode: "ko-KR", gender: "MALE", voiceType: "Neural2" },
-    { name: "Sarah (Female)", ttsVoiceName: "en-US-Neural2-C", languageCode: "en-US", gender: "FEMALE", voiceType: "Neural2" },
-    { name: "James (Male)", ttsVoiceName: "en-US-Neural2-D", languageCode: "en-US", gender: "MALE", voiceType: "Neural2" },
-    { name: "Dr. Miller (Female, Studio)", ttsVoiceName: "en-US-Studio-O", languageCode: "en-US", gender: "FEMALE", voiceType: "Studio" },
-    { name: "Dr. Anderson (Male, Studio)", ttsVoiceName: "en-US-Studio-Q", languageCode: "en-US", gender: "MALE", voiceType: "Studio" },
-    { name: "Marie (Female)", ttsVoiceName: "fr-FR-Neural2-A", languageCode: "fr-FR", gender: "FEMALE", voiceType: "Neural2" },
-    { name: "Carmen (Female)", ttsVoiceName: "es-ES-Neural2-A", languageCode: "es-ES", gender: "FEMALE", voiceType: "Neural2" },
+    // Korean
+    { name: "김 교수 (여성)", ttsVoiceName: "ko-KR-Chirp3-HD-Leda", languageCode: "ko-KR", gender: "FEMALE", voiceType: "Chirp3-HD" },
+    { name: "이 교수 (여성, 차분)", ttsVoiceName: "ko-KR-Chirp3-HD-Aoede", languageCode: "ko-KR", gender: "FEMALE", voiceType: "Chirp3-HD" },
+    { name: "박 의사 (남성)", ttsVoiceName: "ko-KR-Chirp3-HD-Achird", languageCode: "ko-KR", gender: "MALE", voiceType: "Chirp3-HD" },
+    { name: "정 의사 (남성, 차분)", ttsVoiceName: "ko-KR-Chirp3-HD-Puck", languageCode: "ko-KR", gender: "MALE", voiceType: "Chirp3-HD" },
+    { name: "최 간호사 (여성)", ttsVoiceName: "ko-KR-Chirp3-HD-Achernar", languageCode: "ko-KR", gender: "FEMALE", voiceType: "Chirp3-HD" },
+    { name: "한 원장 (남성)", ttsVoiceName: "ko-KR-Chirp3-HD-Fenrir", languageCode: "ko-KR", gender: "MALE", voiceType: "Chirp3-HD" },
+    // English
+    { name: "Dr. Sarah (Female)", ttsVoiceName: "en-US-Chirp3-HD-Leda", languageCode: "en-US", gender: "FEMALE", voiceType: "Chirp3-HD" },
+    { name: "Dr. Emily (Female, Calm)", ttsVoiceName: "en-US-Chirp3-HD-Zephyr", languageCode: "en-US", gender: "FEMALE", voiceType: "Chirp3-HD" },
+    { name: "Dr. James (Male)", ttsVoiceName: "en-US-Chirp3-HD-Achird", languageCode: "en-US", gender: "MALE", voiceType: "Chirp3-HD" },
+    { name: "Dr. Michael (Male, Deep)", ttsVoiceName: "en-US-Chirp3-HD-Charon", languageCode: "en-US", gender: "MALE", voiceType: "Chirp3-HD" },
+    { name: "Nurse Amy (Female)", ttsVoiceName: "en-US-Chirp3-HD-Aoede", languageCode: "en-US", gender: "FEMALE", voiceType: "Chirp3-HD" },
+    { name: "Prof. Anderson (Male)", ttsVoiceName: "en-US-Chirp3-HD-Fenrir", languageCode: "en-US", gender: "MALE", voiceType: "Chirp3-HD" },
+    // French
+    { name: "Dr. Marie (Femme)", ttsVoiceName: "fr-FR-Chirp3-HD-Leda", languageCode: "fr-FR", gender: "FEMALE", voiceType: "Chirp3-HD" },
+    { name: "Dr. Pierre (Homme)", ttsVoiceName: "fr-FR-Chirp3-HD-Achird", languageCode: "fr-FR", gender: "MALE", voiceType: "Chirp3-HD" },
+    // Spanish
+    { name: "Dra. Carmen (Mujer)", ttsVoiceName: "es-ES-Chirp3-HD-Leda", languageCode: "es-ES", gender: "FEMALE", voiceType: "Chirp3-HD" },
+    { name: "Dr. Carlos (Hombre)", ttsVoiceName: "es-ES-Chirp3-HD-Achird", languageCode: "es-ES", gender: "MALE", voiceType: "Chirp3-HD" },
   ];
 
   for (const vp of voicePresetData) {
@@ -36,7 +58,7 @@ async function main() {
       create: vp,
     });
   }
-  console.log(`Voice presets: ${voicePresetData.length} upserted`);
+  console.log(`Voice presets: ${voicePresetData.length} upserted (Chirp3-HD)`);
 
   // ─── Prompt Templates ──────────────────────────────────────────────────
   const templateData = [
