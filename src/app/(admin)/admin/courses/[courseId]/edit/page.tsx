@@ -8,7 +8,6 @@ import {
   Save,
   Send,
   Globe,
-  ChevronRight,
   GripVertical,
   Plus,
   Video,
@@ -20,8 +19,9 @@ import {
   AlertCircle,
   ChevronDown,
   X,
-  Eye,
   Loader2,
+  BookOpen,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,12 +49,6 @@ interface QuizQuestion {
   correctIndex: number;
 }
 
-interface LessonTranslation {
-  locale: string;
-  title: string;
-  description?: string;
-}
-
 interface LatestVideoJob {
   id: string;
   status: string;
@@ -70,7 +64,6 @@ interface Lesson {
   content: string;
   videoUrl?: string;
   quizQuestions?: QuizQuestion[];
-  translations: { lang: string; status: "pending" | "in_progress" | "done" }[];
   latestVideoJob?: LatestVideoJob;
 }
 
@@ -114,13 +107,6 @@ const lessonStatusConfig: Record<LessonStatus, { icon: React.ElementType; color:
   needs_review: { icon: AlertCircle, color: "text-amber-500" },
 };
 
-const translationStatusColors: Record<string, string> = {
-  pending: "bg-gray-200",
-  in_progress: "bg-amber-400",
-  done: "bg-accent-500",
-};
-
-// Video status badge colors for module tree
 const VIDEO_STATUS_BADGE: Record<string, string> = {
   COMPLETED: "bg-accent-500",
   REVIEW: "bg-amber-500",
@@ -134,7 +120,6 @@ const VIDEO_STATUS_BADGE: Record<string, string> = {
   FAILED: "bg-red-500",
 };
 
-// Map API status to our local status
 function mapCourseStatus(status: string): "draft" | "review" | "published" {
   switch (status) {
     case "PUBLISHED":
@@ -147,7 +132,6 @@ function mapCourseStatus(status: string): "draft" | "review" | "published" {
   }
 }
 
-// Map API content type to local
 function mapContentType(ct: string): ContentType {
   switch (ct) {
     case "VIDEO":
@@ -171,70 +155,64 @@ function MetadataPanel({
   onChange: (updates: Partial<CourseData>) => void;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
-        <label htmlFor="course-title" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <label htmlFor="course-title" className="mb-1 block text-xs font-medium text-gray-500">
           Title
         </label>
         <Input
           id="course-title"
           value={course.title}
           onChange={(e) => onChange({ title: e.target.value })}
+          className="h-9 text-sm"
         />
       </div>
       <div>
-        <label htmlFor="course-desc" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500">
+        <label htmlFor="course-desc" className="mb-1 block text-xs font-medium text-gray-500">
           Description
         </label>
         <textarea
           id="course-desc"
           value={course.description}
           onChange={(e) => onChange({ description: e.target.value })}
-          rows={4}
+          rows={3}
+          placeholder="Brief description of the course..."
           className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
         />
       </div>
-      <div>
-        <label htmlFor="course-specialty" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500">
-          Specialty
-        </label>
-        <Input
-          id="course-specialty"
-          value={course.specialty}
-          onChange={(e) => onChange({ specialty: e.target.value })}
-        />
-      </div>
-      <div>
-        <label htmlFor="risk-level" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500">
-          Risk Level
-        </label>
-        <select
-          id="risk-level"
-          value={course.riskLevel}
-          onChange={(e) => onChange({ riskLevel: e.target.value as CourseData["riskLevel"] })}
-          className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-        >
-          <option value="L1">L1 - Low Risk</option>
-          <option value="L2">L2 - Medium Risk</option>
-          <option value="L3">L3 - High Risk</option>
-        </select>
-      </div>
-      <div>
-        <label htmlFor="language" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500">
-          Primary Language
-        </label>
-        <select
-          id="language"
-          value={course.language}
-          onChange={(e) => onChange({ language: e.target.value })}
-          className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-        >
-          <option value="en">English</option>
-          <option value="ko">Korean</option>
-          <option value="fr">French</option>
-          <option value="sw">Swahili</option>
-          <option value="am">Amharic</option>
-        </select>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="risk-level" className="mb-1 block text-xs font-medium text-gray-500">
+            Risk Level
+          </label>
+          <select
+            id="risk-level"
+            value={course.riskLevel}
+            onChange={(e) => onChange({ riskLevel: e.target.value as CourseData["riskLevel"] })}
+            className="flex h-9 w-full rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm"
+          >
+            <option value="L1">L1 - Low</option>
+            <option value="L2">L2 - Medium</option>
+            <option value="L3">L3 - High</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="language" className="mb-1 block text-xs font-medium text-gray-500">
+            Language
+          </label>
+          <select
+            id="language"
+            value={course.language}
+            onChange={(e) => onChange({ language: e.target.value })}
+            className="flex h-9 w-full rounded-lg border border-gray-200 bg-white px-2 py-1 text-sm"
+          >
+            <option value="en">English</option>
+            <option value="ko">Korean</option>
+            <option value="fr">French</option>
+            <option value="sw">Swahili</option>
+            <option value="am">Amharic</option>
+          </select>
+        </div>
       </div>
     </div>
   );
@@ -245,15 +223,26 @@ function ModuleTree({
   selectedLessonId,
   onSelectLesson,
   videoStatus,
+  courseId,
+  courseLanguage,
+  onRefresh,
 }: {
   modules: Module[];
   selectedLessonId: string | null;
   onSelectLesson: (lessonId: string) => void;
   videoStatus: Map<string, string>;
+  courseId: string;
+  courseLanguage: string;
+  onRefresh: () => void;
 }) {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(
     new Set(modules.map((m) => m.id))
   );
+  const [addingModule, setAddingModule] = useState(false);
+  const [newModuleTitle, setNewModuleTitle] = useState("");
+  const [addingLessonFor, setAddingLessonFor] = useState<string | null>(null);
+  const [newLessonTitle, setNewLessonTitle] = useState("");
+  const [newLessonType, setNewLessonType] = useState<"TEXT" | "VIDEO" | "QUIZ">("TEXT");
 
   const toggleModule = (id: string) => {
     setExpandedModules((prev) => {
@@ -263,6 +252,68 @@ function ModuleTree({
       return next;
     });
   };
+
+  const handleAddModule = async () => {
+    if (!newModuleTitle.trim()) return;
+    try {
+      await fetch(`/api/v1/courses/${courseId}/modules`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          locale: courseLanguage,
+          title: newModuleTitle.trim(),
+        }),
+      });
+      setNewModuleTitle("");
+      setAddingModule(false);
+      onRefresh();
+    } catch {
+      // Handle error
+    }
+  };
+
+  const handleAddLesson = async (moduleId: string) => {
+    if (!newLessonTitle.trim()) return;
+    try {
+      await fetch(`/api/v1/courses/${courseId}/modules/${moduleId}/lessons`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          locale: courseLanguage,
+          title: newLessonTitle.trim(),
+          contentType: newLessonType,
+          body: {},
+        }),
+      });
+      setNewLessonTitle("");
+      setNewLessonType("TEXT");
+      setAddingLessonFor(null);
+      onRefresh();
+    } catch {
+      // Handle error
+    }
+  };
+
+  if (modules.length === 0 && !addingModule) {
+    return (
+      <div className="rounded-xl border-2 border-dashed border-gray-200 p-6 text-center">
+        <Layers className="mx-auto h-8 w-8 text-gray-300" />
+        <p className="mt-2 text-sm font-medium text-gray-600">No modules yet</p>
+        <p className="mt-1 text-xs text-gray-400">
+          Create your first module to start adding lessons
+        </p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-3"
+          onClick={() => setAddingModule(true)}
+        >
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          Add Module
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-1">
@@ -280,6 +331,7 @@ function ModuleTree({
             />
             <span className="mr-1 text-xs font-bold text-gray-400">M{modIdx + 1}</span>
             <span className="truncate">{mod.title}</span>
+            <span className="ml-auto text-xs text-gray-300">{mod.lessons.length}</span>
           </button>
 
           {expandedModules.has(mod.id) && (
@@ -319,18 +371,114 @@ function ModuleTree({
                   </button>
                 );
               })}
-              <button className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs text-gray-400 hover:bg-gray-50 hover:text-gray-600">
-                <Plus className="h-3 w-3" />
-                Add Lesson
-              </button>
+
+              {/* Add Lesson inline form */}
+              {addingLessonFor === mod.id ? (
+                <div className="space-y-2 rounded-lg border border-brand-200 bg-brand-50/30 p-2">
+                  <Input
+                    value={newLessonTitle}
+                    onChange={(e) => setNewLessonTitle(e.target.value)}
+                    placeholder="Lesson title..."
+                    className="h-8 text-xs"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAddLesson(mod.id);
+                      if (e.key === "Escape") setAddingLessonFor(null);
+                    }}
+                  />
+                  <div className="flex gap-1">
+                    {(["TEXT", "VIDEO", "QUIZ"] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setNewLessonType(t)}
+                        className={`rounded px-2 py-0.5 text-[10px] font-medium ${
+                          newLessonType === t
+                            ? "bg-brand-500 text-white"
+                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setAddingLessonFor(null)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => handleAddLesson(mod.id)}
+                      disabled={!newLessonTitle.trim()}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setAddingLessonFor(mod.id);
+                    setNewLessonTitle("");
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+                >
+                  <Plus className="h-3 w-3" />
+                  Add Lesson
+                </button>
+              )}
             </div>
           )}
         </div>
       ))}
-      <button className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-gray-400 hover:bg-gray-50 hover:text-gray-600">
-        <Plus className="h-4 w-4" />
-        Add Module
-      </button>
+
+      {/* Add Module inline form */}
+      {addingModule ? (
+        <div className="space-y-2 rounded-lg border border-brand-200 bg-brand-50/30 p-2">
+          <Input
+            value={newModuleTitle}
+            onChange={(e) => setNewModuleTitle(e.target.value)}
+            placeholder="Module title..."
+            className="h-8 text-xs"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleAddModule();
+              if (e.key === "Escape") setAddingModule(false);
+            }}
+          />
+          <div className="flex justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => setAddingModule(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              onClick={handleAddModule}
+              disabled={!newModuleTitle.trim()}
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setAddingModule(true)}
+          className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+        >
+          <Plus className="h-4 w-4" />
+          Add Module
+        </button>
+      )}
     </div>
   );
 }
@@ -506,30 +654,6 @@ function LessonEditor({
           </div>
         </div>
       )}
-
-      {/* Translation Status */}
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-          Translation Status
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {lesson.translations.map((t) => (
-            <div
-              key={t.lang}
-              className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5"
-            >
-              <span className="text-xs font-semibold uppercase text-gray-600">
-                {t.lang}
-              </span>
-              <span
-                className={`h-2 w-2 rounded-full ${translationStatusColors[t.status]}`}
-                title={t.status}
-              />
-              <span className="text-xs capitalize text-gray-400">{t.status.replace("_", " ")}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -544,11 +668,12 @@ export default function CourseEditPage() {
 
   const [course, setCourse] = useState<CourseData | null>(null);
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
-  const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showBatchDialog, setShowBatchDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showVideoSettings, setShowVideoSettings] = useState(false);
 
   // Video status per lesson: lessonId -> latest job status
   const [videoStatus, setVideoStatus] = useState<Map<string, string>>(new Map());
@@ -574,7 +699,6 @@ export default function CourseEditPage() {
           contentType: mapContentType(l.contentType),
           status: "draft" as LessonStatus,
           content: "",
-          translations: [],
         })),
       }));
 
@@ -659,6 +783,8 @@ export default function CourseEditPage() {
     .flatMap((m) => m.lessons)
     .find((l) => l.id === selectedLessonId);
 
+  const totalLessons = course?.modules.reduce((sum, m) => sum + m.lessons.length, 0) ?? 0;
+
   const handleCourseUpdate = (updates: Partial<CourseData>) => {
     setCourse((prev) => (prev ? { ...prev, ...updates } : prev));
   };
@@ -666,6 +792,7 @@ export default function CourseEditPage() {
   const handleSave = async () => {
     if (!course) return;
     setSaving(true);
+    setSaveStatus("idle");
     try {
       const res = await fetch(`/api/v1/courses/${courseId}`, {
         method: "PATCH",
@@ -677,18 +804,46 @@ export default function CourseEditPage() {
           description: course.description || null,
         }),
       });
+      setSaveStatus(res.ok ? "saved" : "error");
       if (res.ok) {
-        // Brief success feedback
-        const btn = document.getElementById("save-btn");
-        if (btn) {
-          btn.textContent = "Saved!";
-          setTimeout(() => { btn.textContent = "Save Draft"; }, 1500);
-        }
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      }
+    } catch {
+      setSaveStatus("error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSubmitForReview = async () => {
+    if (!course) return;
+    try {
+      const res = await fetch(`/api/v1/courses/${courseId}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ status: "IN_REVIEW" }),
+      });
+      if (res.ok) {
+        handleCourseUpdate({ status: "review" });
       }
     } catch {
       // Handle error
-    } finally {
-      setSaving(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!course) return;
+    try {
+      const res = await fetch(`/api/v1/courses/${courseId}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ publish: true }),
+      });
+      if (res.ok) {
+        handleCourseUpdate({ status: "published" });
+      }
+    } catch {
+      // Handle error
     }
   };
 
@@ -721,10 +876,12 @@ export default function CourseEditPage() {
     );
   }
 
+  const saveButtonText = saving ? "Saving..." : saveStatus === "saved" ? "Saved!" : saveStatus === "error" ? "Error" : "Save Draft";
+
   return (
     <div className="-m-4 flex h-[calc(100vh-3.5rem)] flex-col lg:-m-6">
       {/* Top Bar */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/courses"
@@ -741,35 +898,29 @@ export default function CourseEditPage() {
               </span>
             </div>
             <p className="text-xs text-gray-400">
-              {course.specialty ? `${course.specialty} · ` : ""}Risk {course.riskLevel}
+              {course.modules.length} modules · {totalLessons} lessons · Risk {course.riskLevel}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={() => setShowVersionHistory(!showVersionHistory)}
+            onClick={handleSave}
+            disabled={saving}
+            className={saveStatus === "saved" ? "border-accent-300 text-accent-600" : saveStatus === "error" ? "border-red-300 text-red-600" : ""}
           >
-            <Clock className="mr-1.5 h-3.5 w-3.5" />
-            History
-          </Button>
-          <Button variant="outline" size="sm">
-            <Eye className="mr-1.5 h-3.5 w-3.5" />
-            Preview
-          </Button>
-          <Button id="save-btn" variant="outline" size="sm" onClick={handleSave} disabled={saving}>
             <Save className="mr-1.5 h-3.5 w-3.5" />
-            {saving ? "Saving..." : "Save Draft"}
+            {saveButtonText}
           </Button>
           {course.status === "draft" && (
-            <Button size="sm">
+            <Button size="sm" onClick={handleSubmitForReview}>
               <Send className="mr-1.5 h-3.5 w-3.5" />
               Submit for Review
             </Button>
           )}
           {course.status === "review" && (
-            <Button size="sm">
+            <Button size="sm" onClick={handlePublish}>
               <Globe className="mr-1.5 h-3.5 w-3.5" />
               Publish
             </Button>
@@ -781,9 +932,6 @@ export default function CourseEditPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Metadata + Video Settings */}
         <div className="w-72 shrink-0 overflow-y-auto border-r border-gray-100 bg-white p-4">
-          <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
-            Course Details
-          </h2>
           <CourseThumbnailEditor
             courseId={courseId}
             courseTitle={course.title}
@@ -791,19 +939,37 @@ export default function CourseEditPage() {
             onThumbnailChange={(url) => handleCourseUpdate({ thumbnailUrl: url })}
           />
 
-          {/* Divider */}
-          <div className="my-5 border-t border-gray-100" />
+          <div className="my-4 border-t border-gray-100" />
 
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">
+            Course Details
+          </h2>
           <MetadataPanel course={course} onChange={handleCourseUpdate} />
 
-          {/* Divider */}
-          <div className="my-5 border-t border-gray-100" />
+          <div className="my-4 border-t border-gray-100" />
 
-          {/* Video Settings Panel */}
-          <CourseVideoSettingsPanel
-            courseId={courseId}
-            onBatchGenerate={() => setShowBatchDialog(true)}
-          />
+          {/* Video Settings - Collapsible */}
+          <button
+            onClick={() => setShowVideoSettings(!showVideoSettings)}
+            className="flex w-full items-center justify-between"
+          >
+            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Video Settings
+            </h2>
+            <ChevronDown
+              className={`h-3.5 w-3.5 text-gray-400 transition-transform ${
+                showVideoSettings ? "" : "-rotate-90"
+              }`}
+            />
+          </button>
+          {showVideoSettings && (
+            <div className="mt-3">
+              <CourseVideoSettingsPanel
+                courseId={courseId}
+                onBatchGenerate={() => setShowBatchDialog(true)}
+              />
+            </div>
+          )}
         </div>
 
         {/* Center: Module Tree */}
@@ -816,6 +982,9 @@ export default function CourseEditPage() {
             selectedLessonId={selectedLessonId}
             onSelectLesson={setSelectedLessonId}
             videoStatus={videoStatus}
+            courseId={courseId}
+            courseLanguage={course.language}
+            onRefresh={fetchCourse}
           />
         </div>
 
@@ -830,40 +999,32 @@ export default function CourseEditPage() {
           ) : (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <FileText className="mx-auto h-12 w-12 text-gray-200" />
-                <p className="mt-3 text-sm font-medium text-gray-500">
-                  Select a lesson to edit
-                </p>
-                <p className="mt-1 text-xs text-gray-400">
-                  Choose from the structure panel on the left
-                </p>
+                {totalLessons === 0 ? (
+                  <>
+                    <BookOpen className="mx-auto h-12 w-12 text-gray-200" />
+                    <p className="mt-3 text-sm font-medium text-gray-500">
+                      Start building your course
+                    </p>
+                    <p className="mt-1 max-w-xs text-xs text-gray-400">
+                      Add a module in the Structure panel, then create lessons within it.
+                      Each lesson can be text, video, or quiz content.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="mx-auto h-12 w-12 text-gray-200" />
+                    <p className="mt-3 text-sm font-medium text-gray-500">
+                      Select a lesson to edit
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">
+                      Choose from the structure panel on the left
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           )}
         </div>
-
-        {/* Version History Sidebar */}
-        {showVersionHistory && (
-          <div className="w-72 shrink-0 overflow-y-auto border-l border-gray-100 bg-white p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                Version History
-              </h2>
-              <button
-                onClick={() => setShowVersionHistory(false)}
-                className="text-gray-400 hover:text-gray-600"
-                aria-label="Close version history"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              <p className="text-xs text-gray-400">
-                Version history will be loaded from the API.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Batch Video Dialog */}
