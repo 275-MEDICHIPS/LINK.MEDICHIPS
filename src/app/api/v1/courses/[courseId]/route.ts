@@ -32,6 +32,10 @@ const updateCourseSchema = z.object({
     .enum(["DRAFT", "IN_REVIEW", "APPROVED", "PUBLISHED", "ARCHIVED"])
     .optional(),
   publish: z.boolean().optional(),
+  // Translation fields
+  locale: z.string().min(2).max(10).optional(),
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).nullable().optional(),
 });
 
 type RouteContext = {
@@ -89,7 +93,20 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       return success(published);
     }
 
-    const { publish: _, ...updateData } = data;
+    const { publish: _, locale, title, description, ...updateData } = data;
+
+    // Update translation if title/description provided
+    if (locale && (title || description !== undefined)) {
+      await prisma.courseTranslation.upsert({
+        where: { courseId_locale: { courseId, locale } },
+        create: { courseId, locale, title: title ?? "", description },
+        update: {
+          ...(title !== undefined && { title }),
+          ...(description !== undefined && { description }),
+        },
+      });
+    }
+
     const updated = await updateCourse(courseId, updateData);
 
     return success(updated);

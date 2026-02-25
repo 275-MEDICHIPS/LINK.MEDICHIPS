@@ -45,6 +45,7 @@ interface Course {
   updatedAt: string;
   author: string;
   specialty: string;
+  thumbnailUrl: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -92,6 +93,48 @@ const riskConfig: Record<RiskLevel, { label: string; className: string }> = {
   L2: { label: "L2", className: "bg-amber-50 text-amber-700 border border-amber-200" },
   L3: { label: "L3", className: "bg-red-50 text-red-700 border border-red-200" },
 };
+
+const GRADIENT_PRESETS = [
+  { from: "#0ea5e9", to: "#6366f1" },
+  { from: "#10b981", to: "#0d9488" },
+  { from: "#f59e0b", to: "#ef4444" },
+  { from: "#8b5cf6", to: "#ec4899" },
+  { from: "#06b6d4", to: "#3b82f6" },
+  { from: "#f97316", to: "#eab308" },
+];
+
+function getGradient(title: string) {
+  const idx = title.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % GRADIENT_PRESETS.length;
+  return GRADIENT_PRESETS[idx];
+}
+
+function CourseThumbnail({ course }: { course: Course }) {
+  const gradient = getGradient(course.title);
+  const initials = course.title
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0] || "")
+    .join("")
+    .toUpperCase();
+
+  if (course.thumbnailUrl) {
+    return (
+      <img
+        src={course.thumbnailUrl}
+        alt=""
+        className="h-12 w-20 rounded-md object-cover"
+      />
+    );
+  }
+  return (
+    <div
+      className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md"
+      style={{ background: `linear-gradient(135deg, ${gradient.from}, ${gradient.to})` }}
+    >
+      <span className="text-xs font-bold text-white/90">{initials}</span>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -339,6 +382,7 @@ export default function CoursesPage() {
           updatedAt: new Date(c.updatedAt || c.createdAt).toLocaleDateString(),
           author: c.specialtyTags?.[0]?.specialty?.name || "",
           specialty: c.specialtyTags?.[0]?.specialty?.name || "",
+          thumbnailUrl: c.thumbnailUrl || null,
         }));
         setCourses(mapped);
         setTotal(json.pagination?.total || 0);
@@ -556,16 +600,19 @@ export default function CoursesPage() {
                     <td className="px-4 py-3">
                       <Link
                         href={`/admin/courses/${course.id}/edit`}
-                        className="group"
+                        className="group flex items-center gap-3"
                       >
-                        <p className="text-sm font-medium text-gray-900 group-hover:text-brand-600">
-                          {course.title}
-                        </p>
-                        {course.specialty && (
-                          <p className="text-xs text-gray-500">
-                            {course.specialty}
+                        <CourseThumbnail course={course} />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-gray-900 group-hover:text-brand-600">
+                            {course.title}
                           </p>
-                        )}
+                          {course.specialty && (
+                            <p className="truncate text-xs text-gray-500">
+                              {course.specialty}
+                            </p>
+                          )}
+                        </div>
                       </Link>
                     </td>
                     <td className="px-4 py-3">

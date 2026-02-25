@@ -33,6 +33,7 @@ import { csrfHeaders } from "@/lib/utils/csrf";
 import CourseVideoSettingsPanel from "./_components/CourseVideoSettingsPanel";
 import LessonVideoSection from "./_components/LessonVideoSection";
 import BatchVideoDialog from "./_components/BatchVideoDialog";
+import CourseThumbnailEditor from "./_components/CourseThumbnailEditor";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -87,6 +88,7 @@ interface CourseData {
   riskLevel: "L1" | "L2" | "L3";
   language: string;
   status: "draft" | "review" | "published";
+  thumbnailUrl: string | null;
   modules: Module[];
 }
 
@@ -584,6 +586,7 @@ export default function CourseEditPage() {
         riskLevel: raw.riskLevel || "L1",
         language: raw.translations?.[0]?.locale || "en",
         status: mapCourseStatus(raw.status),
+        thumbnailUrl: raw.thumbnailUrl || null,
         modules,
       };
 
@@ -664,13 +667,24 @@ export default function CourseEditPage() {
     if (!course) return;
     setSaving(true);
     try {
-      await fetch(`/api/v1/courses/${courseId}`, {
+      const res = await fetch(`/api/v1/courses/${courseId}`, {
         method: "PATCH",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           riskLevel: course.riskLevel,
+          locale: course.language,
+          title: course.title,
+          description: course.description || null,
         }),
       });
+      if (res.ok) {
+        // Brief success feedback
+        const btn = document.getElementById("save-btn");
+        if (btn) {
+          btn.textContent = "Saved!";
+          setTimeout(() => { btn.textContent = "Save Draft"; }, 1500);
+        }
+      }
     } catch {
       // Handle error
     } finally {
@@ -708,7 +722,7 @@ export default function CourseEditPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col">
+    <div className="-m-4 flex h-[calc(100vh-3.5rem)] flex-col lg:-m-6">
       {/* Top Bar */}
       <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
         <div className="flex items-center gap-3">
@@ -744,7 +758,7 @@ export default function CourseEditPage() {
             <Eye className="mr-1.5 h-3.5 w-3.5" />
             Preview
           </Button>
-          <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
+          <Button id="save-btn" variant="outline" size="sm" onClick={handleSave} disabled={saving}>
             <Save className="mr-1.5 h-3.5 w-3.5" />
             {saving ? "Saving..." : "Save Draft"}
           </Button>
@@ -770,6 +784,16 @@ export default function CourseEditPage() {
           <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
             Course Details
           </h2>
+          <CourseThumbnailEditor
+            courseId={courseId}
+            courseTitle={course.title}
+            thumbnailUrl={course.thumbnailUrl}
+            onThumbnailChange={(url) => handleCourseUpdate({ thumbnailUrl: url })}
+          />
+
+          {/* Divider */}
+          <div className="my-5 border-t border-gray-100" />
+
           <MetadataPanel course={course} onChange={handleCourseUpdate} />
 
           {/* Divider */}
