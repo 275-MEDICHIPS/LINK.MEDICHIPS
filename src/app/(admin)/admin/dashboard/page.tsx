@@ -303,7 +303,13 @@ export default function AdminDashboard() {
             <Link href="/admin/content-review">
               <Button variant="outline" size="sm">
                 <Clock className="mr-2 h-4 w-4" />
-                Review Content
+                Content Review
+              </Button>
+            </Link>
+            <Link href="/admin/translations">
+              <Button variant="outline" size="sm">
+                <FileBarChart className="mr-2 h-4 w-4" />
+                Translations
               </Button>
             </Link>
           </div>

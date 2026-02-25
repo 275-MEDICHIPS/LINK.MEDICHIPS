@@ -12,6 +12,7 @@ import {
   Building2,
   BarChart3,
   Languages,
+  ClipboardCheck,
   Settings,
   Home,
   Menu,
@@ -28,6 +29,7 @@ const sidebarItems = [
   { href: "/admin/orgs", icon: Building2, label: "Organizations" },
   { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },
   { href: "/admin/translations", icon: Languages, label: "Translations" },
+  { href: "/admin/content-review", icon: ClipboardCheck, label: "Content Review" },
 ];
 
 const bottomItems = [
@@ -84,13 +86,22 @@ export default function AdminLayout({
 
         {/* Bottom section */}
         <div className="border-t border-gray-100 px-2 py-3 space-y-0.5">
-          <Link
-            href="/admin/settings"
-            className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          >
-            <Settings className="h-4 w-4 text-gray-400" />
-            Settings
-          </Link>
+          {(() => {
+            const settingsActive = pathname.startsWith("/admin/settings");
+            return (
+              <Link
+                href="/admin/settings"
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  settingsActive
+                    ? "bg-brand-50 text-brand-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <Settings className={`h-4 w-4 ${settingsActive ? "text-brand-500" : "text-gray-400"}`} />
+                Settings
+              </Link>
+            );
+          })()}
           <Link
             href="/dashboard"
             className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"

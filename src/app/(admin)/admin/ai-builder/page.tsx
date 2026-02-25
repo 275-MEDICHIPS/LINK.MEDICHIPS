@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Upload,
   FileText,
@@ -305,7 +305,7 @@ function AnalysisStep({ onNext }: { onNext: () => void }) {
     { label: "Finalizing course", threshold: 100 },
   ];
 
-  useState(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       setProgress((p) => {
         if (p >= 100) {
@@ -316,7 +316,7 @@ function AnalysisStep({ onNext }: { onNext: () => void }) {
       });
     }, 100);
     return () => clearInterval(interval);
-  });
+  }, []);
 
   const currentProcessStep = processingSteps.findIndex((s) => progress < s.threshold);
   const activeStepIdx = currentProcessStep === -1 ? processingSteps.length - 1 : currentProcessStep;
