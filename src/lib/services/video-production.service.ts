@@ -729,12 +729,14 @@ export async function listJobs(filters: {
   method?: VideoProductionMethod;
   status?: VideoProductionStatus;
   search?: string;
+  courseId?: string;
 }) {
-  const { page = 1, pageSize = 20, method, status, search } = filters;
+  const { page = 1, pageSize = 20, method, status, search, courseId } = filters;
 
   const where: Record<string, unknown> = {};
   if (method) where.method = method;
   if (status) where.status = status;
+  if (courseId) where.courseId = courseId;
   if (search) {
     where.OR = [
       { script: { title: { contains: search, mode: "insensitive" } } },
@@ -748,6 +750,11 @@ export async function listJobs(filters: {
       include: {
         script: { select: { id: true, title: true } },
         lesson: {
+          include: {
+            translations: { where: { locale: "en" }, take: 1 },
+          },
+        },
+        course: {
           include: {
             translations: { where: { locale: "en" }, take: 1 },
           },

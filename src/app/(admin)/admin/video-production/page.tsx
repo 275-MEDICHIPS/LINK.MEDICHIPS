@@ -17,6 +17,7 @@ import {
   Video,
   Wand2,
   ArrowUpDown,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,9 +45,17 @@ interface JobListItem {
   status: string;
   script?: { id: string; title: string } | null;
   lesson?: { translations: { title: string }[] } | null;
+  course?: { id: string; translations: { title: string }[] } | null;
+  courseId?: string | null;
+  batchId?: string | null;
   estimatedCostUsd?: number | null;
   durationSec?: number | null;
   createdAt: string;
+}
+
+interface CourseOption {
+  id: string;
+  title: string;
 }
 
 // ─── Status badge helper ────────────────────────────────────────────
@@ -101,6 +110,28 @@ export default function VideoProductionDashboard() {
   const [search, setSearch] = useState("");
   const [filterMethod, setFilterMethod] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterCourseId, setFilterCourseId] = useState<string>("");
+  const [courseOptions, setCourseOptions] = useState<CourseOption[]>([]);
+
+  // Fetch course options for filter
+  const fetchCourseOptions = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/courses?pageSize=100");
+      const json = await res.json();
+      if (json.data) {
+        setCourseOptions(
+          json.data.map(
+            (c: { id: string; translations: { title: string }[] }) => ({
+              id: c.id,
+              title: c.translations?.[0]?.title || "Untitled",
+            })
+          )
+        );
+      }
+    } catch {
+      // Silent
+    }
+  }, []);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -121,6 +152,7 @@ export default function VideoProductionDashboard() {
       });
       if (filterMethod) params.set("method", filterMethod);
       if (filterStatus) params.set("status", filterStatus);
+      if (filterCourseId) params.set("courseId", filterCourseId);
       if (search) params.set("search", search);
 
       const res = await fetch(
@@ -136,12 +168,13 @@ export default function VideoProductionDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, filterMethod, filterStatus, search]);
+  }, [page, pageSize, filterMethod, filterStatus, filterCourseId, search]);
 
   useEffect(() => {
     fetchStats();
     fetchJobs();
-  }, [fetchStats, fetchJobs]);
+    fetchCourseOptions();
+  }, [fetchStats, fetchJobs, fetchCourseOptions]);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -268,6 +301,21 @@ export default function VideoProductionDashboard() {
               <option value="FACE_SWAP">Face Swap</option>
             </select>
             <select
+              value={filterCourseId}
+              onChange={(e) => {
+                setFilterCourseId(e.target.value);
+                setPage(1);
+              }}
+              className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            >
+              <option value="">All Courses</option>
+              {courseOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+            <select
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value);
@@ -360,6 +408,17 @@ export default function VideoProductionDashboard() {
                             job.lesson?.translations?.[0]?.title ||
                             "Untitled"}
                         </div>
+                        {job.course?.translations?.[0]?.title && (
+                          <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-400">
+                            <BookOpen className="h-3 w-3" />
+                            <Link
+                              href={`/admin/courses/${job.courseId}/edit`}
+                              className="hover:text-brand-600 hover:underline"
+                            >
+                              {job.course.translations[0].title}
+                            </Link>
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-gray-600">
                         {job.provider.replace(/_/g, " ")}

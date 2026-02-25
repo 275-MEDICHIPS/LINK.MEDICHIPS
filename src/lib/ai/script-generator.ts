@@ -9,6 +9,17 @@ import { VIDEO_SCRIPT_SYSTEM } from "./prompts/script-generator";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
+export interface CourseContext {
+  courseTitle: string;
+  courseDescription: string;
+  moduleName: string;
+  lessonIndex: number;
+  totalLessons: number;
+  previousLessonTopics: string[];
+  sharedSpeakerName?: string;
+  sharedVisualStyle?: string;
+}
+
 export interface ScriptGenerationInput {
   topic: string;
   lessonContext?: string;
@@ -17,6 +28,7 @@ export interface ScriptGenerationInput {
   targetDurationSec?: number;
   speakerName?: string;
   additionalInstructions?: string;
+  courseContext?: CourseContext;
 }
 
 export interface GeneratedScriptSegment {
@@ -51,7 +63,33 @@ export async function generateVideoScript(
     targetDurationSec = 180,
     speakerName,
     additionalInstructions,
+    courseContext,
   } = input;
+
+  // Build course context section if available
+  const courseContextSection = courseContext
+    ? [
+        `COURSE CONTEXT:`,
+        `- Course: "${courseContext.courseTitle}"`,
+        courseContext.courseDescription
+          ? `- Description: ${courseContext.courseDescription.slice(0, 500)}`
+          : "",
+        `- Module: "${courseContext.moduleName}"`,
+        `- This is lesson ${courseContext.lessonIndex} of ${courseContext.totalLessons} in this course`,
+        courseContext.previousLessonTopics.length > 0
+          ? `- Previous lessons covered: ${courseContext.previousLessonTopics.map((t) => `"${t}"`).join(", ")}`
+          : "",
+        `- Maintain consistent tone and character with previous lessons`,
+        courseContext.sharedSpeakerName
+          ? `- Speaker: ${courseContext.sharedSpeakerName} (consistent across all course videos)`
+          : "",
+        courseContext.sharedVisualStyle
+          ? `- Visual style: ${courseContext.sharedVisualStyle}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "";
 
   const userPrompt = [
     `Generate a video script for the following medical education topic.`,
@@ -68,6 +106,7 @@ export async function generateVideoScript(
         ? `NOTE: This is L2 (medium-risk) content. Include safety precautions prominently. Flag specific procedural steps.`
         : `NOTE: This is L1 (low-risk) content. Standard script with general knowledge.`,
     ``,
+    courseContextSection ? `\n${courseContextSection}\n` : "",
     lessonContext
       ? `LESSON CONTEXT:\n${lessonContext.slice(0, 20_000)}`
       : "",

@@ -428,6 +428,7 @@ model Course {
   enrollments    CourseEnrollment[]
   aiJobs         AiCourseJob[]
   videoJobs      VideoProductionJob[]
+  videoSettings  CourseVideoSettings?
 
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
@@ -983,6 +984,9 @@ model VideoProductionJob {
   thumbnailUrl    String?
   durationSec     Int?
 
+  // Batch
+  batchId              String?
+
   // Config
   config          Json?
   errorMessage    String?
@@ -1009,6 +1013,7 @@ model VideoProductionJob {
   @@index([lessonId])
   @@index([courseId])
   @@index([externalJobId])
+  @@index([batchId])
   @@map("video_production_jobs")
 }
 
@@ -1080,6 +1085,24 @@ model VideoJobStatusHistory {
 
   @@index([jobId, createdAt])
   @@map("video_job_status_history")
+}
+
+model CourseVideoSettings {
+  id                     String   @id @default(cuid())
+  courseId                String   @unique
+  course                  Course   @relation(fields: [courseId], references: [id])
+
+  avatarId                String?
+  voicePresetId           String?
+  speakerName             String?
+  visualStyle             String?
+  targetLocale            String   @default("en")
+  additionalInstructions  String?
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("course_video_settings")
 }
 
 // ==================== TRANSLATIONS ====================

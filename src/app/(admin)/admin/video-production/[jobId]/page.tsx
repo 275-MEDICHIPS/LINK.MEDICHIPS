@@ -71,11 +71,14 @@ interface JobDetail {
     metadata?: Record<string, unknown> | null;
     createdAt: string;
   }[];
+  courseId?: string | null;
+  lessonId?: string | null;
+  course?: { id: string; translations: { title: string }[] } | null;
   lesson?: {
     translations: { title: string; locale: string }[];
     module?: {
       translations: { title: string }[];
-      course?: { translations: { title: string }[] };
+      course?: { id: string; translations: { title: string }[] };
     };
   } | null;
 }
@@ -290,6 +293,23 @@ export default function JobDetailPage() {
             <p className="text-sm text-gray-500">
               {job.method.replace(/_/g, " ")} via{" "}
               {job.provider.replace(/_/g, " ")}
+              {(job.courseId || job.course || job.lesson?.module?.course) && (
+                <span className="ml-2">
+                  &middot;{" "}
+                  <Link
+                    href={`/admin/courses/${
+                      job.courseId ||
+                      job.course?.id ||
+                      job.lesson?.module?.course?.id
+                    }/edit`}
+                    className="text-brand-600 hover:underline"
+                  >
+                    {job.course?.translations?.[0]?.title ||
+                      job.lesson?.module?.course?.translations?.[0]?.title ||
+                      "View Course"}
+                  </Link>
+                </span>
+              )}
             </p>
           </div>
         </div>

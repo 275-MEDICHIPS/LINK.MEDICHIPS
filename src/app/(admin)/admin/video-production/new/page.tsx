@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -28,6 +28,7 @@ import {
 import VoicePicker from "../_components/VoicePicker";
 import AvatarPicker from "../_components/AvatarPicker";
 import PromptTemplateSelector from "../_components/PromptTemplateSelector";
+import CourseLessonPicker from "../_components/CourseLessonPicker";
 import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -115,6 +116,7 @@ function StepIndicator({ current }: { current: WizardStep }) {
 
 export default function NewVideoJobWizard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<WizardStep>(1);
   const [submitting, setSubmitting] = useState(false);
   const [scriptGenerating, setScriptGenerating] = useState(false);
@@ -129,6 +131,9 @@ export default function NewVideoJobWizard() {
   // Selected voice/avatar names for review display
   const [selectedVoiceName, setSelectedVoiceName] = useState("");
   const [selectedAvatarName, setSelectedAvatarName] = useState("");
+
+  // Course settings inherited info
+  const [courseSettingsInherited, setCourseSettingsInherited] = useState(false);
 
   const [config, setConfig] = useState<JobConfig>({
     method: null,
@@ -151,6 +156,21 @@ export default function NewVideoJobWizard() {
     courseId: "",
     lessonId: "",
   });
+
+  // Pre-fill from URL parameters (from Course Editor's "Generate AI Video")
+  useEffect(() => {
+    const urlCourseId = searchParams.get("courseId");
+    const urlLessonId = searchParams.get("lessonId");
+    if (urlCourseId || urlLessonId) {
+      setConfig((prev) => ({
+        ...prev,
+        courseId: urlCourseId || prev.courseId,
+        lessonId: urlLessonId || prev.lessonId,
+        method: "AI_GENERATED" as const,
+        provider: "VEO",
+      }));
+    }
+  }, [searchParams]);
 
   function update(key: keyof JobConfig, value: unknown) {
     setConfig((prev) => ({ ...prev, [key]: value }));
@@ -397,6 +417,23 @@ export default function NewVideoJobWizard() {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Course & Lesson Picker */}
+          {config.method && (
+            <CourseLessonPicker
+              courseId={config.courseId}
+              lessonId={config.lessonId}
+              onCourseChange={(id) => update("courseId", id)}
+              onLessonChange={(id) => update("lessonId", id)}
+              onSettingsLoaded={(settings) => {
+                // Auto-inherit course video settings
+                if (settings.avatarId) update("avatarId", settings.avatarId);
+                if (settings.voicePresetId) update("voicePresetId", settings.voicePresetId);
+                if (settings.targetLocale) update("language", settings.targetLocale);
+                setCourseSettingsInherited(true);
+              }}
+            />
           )}
         </div>
       )}
@@ -825,6 +862,18 @@ export default function NewVideoJobWizard() {
                     {config.provider?.replace(/_/g, " ")}
                   </dd>
                 </div>
+                {(config.courseId || config.lessonId) && (
+                  <div className="col-span-2">
+                    <dt className="font-medium text-gray-500">Linked Course</dt>
+                    <dd className="mt-1 text-gray-900">
+                      {config.courseId ? `Course: ${config.courseId.slice(0, 12)}...` : ""}
+                      {config.lessonId ? ` / Lesson: ${config.lessonId.slice(0, 12)}...` : ""}
+                      {courseSettingsInherited && (
+                        <span className="ml-2 text-xs text-blue-600">(settings inherited)</span>
+                      )}
+                    </dd>
+                  </div>
+                )}
                 {config.method === "AI_GENERATED" && (
                   <>
                     <div>

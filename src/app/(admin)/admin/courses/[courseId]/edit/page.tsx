@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -20,15 +21,18 @@ import {
   ChevronDown,
   X,
   Eye,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { csrfHeaders } from "@/lib/utils/csrf";
+import CourseVideoSettingsPanel from "./_components/CourseVideoSettingsPanel";
+import LessonVideoSection from "./_components/LessonVideoSection";
+import BatchVideoDialog from "./_components/BatchVideoDialog";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -44,6 +48,19 @@ interface QuizQuestion {
   correctIndex: number;
 }
 
+interface LessonTranslation {
+  locale: string;
+  title: string;
+  description?: string;
+}
+
+interface LatestVideoJob {
+  id: string;
+  status: string;
+  thumbnailUrl?: string | null;
+  muxPlaybackId?: string | null;
+}
+
 interface Lesson {
   id: string;
   title: string;
@@ -53,6 +70,7 @@ interface Lesson {
   videoUrl?: string;
   quizQuestions?: QuizQuestion[];
   translations: { lang: string; status: "pending" | "in_progress" | "done" }[];
+  latestVideoJob?: LatestVideoJob;
 }
 
 interface Module {
@@ -71,130 +89,6 @@ interface CourseData {
   status: "draft" | "review" | "published";
   modules: Module[];
 }
-
-// ---------------------------------------------------------------------------
-// Mock Data
-// ---------------------------------------------------------------------------
-
-const initialCourse: CourseData = {
-  id: "crs_001",
-  title: "Emergency Triage Protocol",
-  description:
-    "Comprehensive training on emergency triage procedures for healthcare workers in resource-limited settings. Covers the START triage system and adaptations for low-resource environments.",
-  specialty: "Emergency Medicine",
-  riskLevel: "L3",
-  language: "en",
-  status: "draft",
-  modules: [
-    {
-      id: "mod_1",
-      title: "Introduction to Triage",
-      lessons: [
-        {
-          id: "les_1",
-          title: "What is Triage?",
-          contentType: "text",
-          status: "complete",
-          content:
-            "Triage is a process of prioritizing patients based on the severity of their condition. In emergency settings, effective triage ensures that limited resources are directed to those who need them most.",
-          translations: [
-            { lang: "ko", status: "done" },
-            { lang: "fr", status: "in_progress" },
-            { lang: "sw", status: "pending" },
-          ],
-        },
-        {
-          id: "les_2",
-          title: "History of Triage Systems",
-          contentType: "video",
-          status: "complete",
-          content: "",
-          videoUrl: "https://stream.mux.com/example",
-          translations: [
-            { lang: "ko", status: "done" },
-            { lang: "fr", status: "pending" },
-            { lang: "sw", status: "pending" },
-          ],
-        },
-        {
-          id: "les_3",
-          title: "Knowledge Check",
-          contentType: "quiz",
-          status: "draft",
-          content: "",
-          quizQuestions: [
-            {
-              id: "q1",
-              question: "What is the primary purpose of triage?",
-              options: [
-                "To diagnose patients",
-                "To prioritize patients by severity",
-                "To assign doctors",
-                "To manage inventory",
-              ],
-              correctIndex: 1,
-            },
-          ],
-          translations: [
-            { lang: "ko", status: "pending" },
-            { lang: "fr", status: "pending" },
-            { lang: "sw", status: "pending" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "mod_2",
-      title: "START Triage System",
-      lessons: [
-        {
-          id: "les_4",
-          title: "START Method Overview",
-          contentType: "text",
-          status: "complete",
-          content:
-            "The START (Simple Triage And Rapid Treatment) system classifies patients into four categories: Immediate (Red), Delayed (Yellow), Minor (Green), and Deceased (Black).",
-          translations: [
-            { lang: "ko", status: "in_progress" },
-            { lang: "fr", status: "pending" },
-            { lang: "sw", status: "pending" },
-          ],
-        },
-        {
-          id: "les_5",
-          title: "Assessment Steps",
-          contentType: "video",
-          status: "needs_review",
-          content: "",
-          videoUrl: "https://stream.mux.com/example2",
-          translations: [
-            { lang: "ko", status: "pending" },
-            { lang: "fr", status: "pending" },
-            { lang: "sw", status: "pending" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "mod_3",
-      title: "Adaptations for Low-Resource Settings",
-      lessons: [
-        {
-          id: "les_6",
-          title: "Resource Assessment",
-          contentType: "text",
-          status: "draft",
-          content: "",
-          translations: [
-            { lang: "ko", status: "pending" },
-            { lang: "fr", status: "pending" },
-            { lang: "sw", status: "pending" },
-          ],
-        },
-      ],
-    },
-  ],
-};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -223,6 +117,45 @@ const translationStatusColors: Record<string, string> = {
   in_progress: "bg-amber-400",
   done: "bg-accent-500",
 };
+
+// Video status badge colors for module tree
+const VIDEO_STATUS_BADGE: Record<string, string> = {
+  COMPLETED: "bg-accent-500",
+  REVIEW: "bg-amber-500",
+  SCRIPT_REVIEW: "bg-amber-500",
+  RENDERING: "bg-brand-500",
+  QUEUED: "bg-brand-500",
+  SCRIPT_GENERATING: "bg-brand-500",
+  FACE_SWAPPING: "bg-brand-500",
+  POST_PROCESSING: "bg-brand-500",
+  DRAFT: "bg-gray-300",
+  FAILED: "bg-red-500",
+};
+
+// Map API status to our local status
+function mapCourseStatus(status: string): "draft" | "review" | "published" {
+  switch (status) {
+    case "PUBLISHED":
+      return "published";
+    case "IN_REVIEW":
+    case "APPROVED":
+      return "review";
+    default:
+      return "draft";
+  }
+}
+
+// Map API content type to local
+function mapContentType(ct: string): ContentType {
+  switch (ct) {
+    case "VIDEO":
+      return "video";
+    case "QUIZ":
+      return "quiz";
+    default:
+      return "text";
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -309,10 +242,12 @@ function ModuleTree({
   modules,
   selectedLessonId,
   onSelectLesson,
+  videoStatus,
 }: {
   modules: Module[];
   selectedLessonId: string | null;
   onSelectLesson: (lessonId: string) => void;
+  videoStatus: Map<string, string>;
 }) {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(
     new Set(modules.map((m) => m.id))
@@ -351,6 +286,10 @@ function ModuleTree({
                 const StatusIcon = lessonStatusConfig[lesson.status].icon;
                 const ContentIcon = contentTypeIcons[lesson.contentType];
                 const isSelected = selectedLessonId === lesson.id;
+                const videoStat = videoStatus.get(lesson.id);
+                const videoBadgeColor = videoStat
+                  ? VIDEO_STATUS_BADGE[videoStat] || "bg-gray-300"
+                  : null;
                 return (
                   <button
                     key={lesson.id}
@@ -364,9 +303,17 @@ function ModuleTree({
                     <GripVertical className="h-3 w-3 shrink-0 cursor-grab text-gray-200" />
                     <ContentIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
                     <span className="truncate">{lesson.title}</span>
-                    <StatusIcon
-                      className={`ml-auto h-3.5 w-3.5 shrink-0 ${lessonStatusConfig[lesson.status].color}`}
-                    />
+                    <div className="ml-auto flex items-center gap-1">
+                      {videoBadgeColor && (
+                        <span
+                          className={`h-2 w-2 shrink-0 rounded-full ${videoBadgeColor}`}
+                          title={`Video: ${videoStat}`}
+                        />
+                      )}
+                      <StatusIcon
+                        className={`h-3.5 w-3.5 shrink-0 ${lessonStatusConfig[lesson.status].color}`}
+                      />
+                    </div>
                   </button>
                 );
               })}
@@ -386,7 +333,13 @@ function ModuleTree({
   );
 }
 
-function LessonEditor({ lesson }: { lesson: Lesson }) {
+function LessonEditor({
+  lesson,
+  courseId,
+}: {
+  lesson: Lesson;
+  courseId: string;
+}) {
   const [contentType, setContentType] = useState<ContentType>(lesson.contentType);
   const [content, setContent] = useState(lesson.content);
   const [questions, setQuestions] = useState<QuizQuestion[]>(lesson.quizQuestions || []);
@@ -445,32 +398,11 @@ function LessonEditor({ lesson }: { lesson: Lesson }) {
       )}
 
       {contentType === "video" && (
-        <div>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Video
-          </p>
-          <div className="flex items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-12">
-            <div className="text-center">
-              <Video className="mx-auto h-10 w-10 text-gray-300" />
-              <p className="mt-3 text-sm font-medium text-gray-600">
-                Drag & drop a video file or click to upload
-              </p>
-              <p className="mt-1 text-xs text-gray-400">
-                MP4, MOV, or WebM up to 2GB. Processed via Mux.
-              </p>
-              <Button variant="outline" size="sm" className="mt-4">
-                Choose File
-              </Button>
-            </div>
-          </div>
-          {lesson.videoUrl && (
-            <div className="mt-3 rounded-lg bg-accent-50 px-3 py-2">
-              <p className="text-xs font-medium text-accent-700">
-                Current video: {lesson.videoUrl}
-              </p>
-            </div>
-          )}
-        </div>
+        <LessonVideoSection
+          courseId={courseId}
+          lessonId={lesson.id}
+          latestJob={lesson.latestVideoJob}
+        />
       )}
 
       {contentType === "quiz" && (
@@ -605,23 +537,175 @@ function LessonEditor({ lesson }: { lesson: Lesson }) {
 // ---------------------------------------------------------------------------
 
 export default function CourseEditPage() {
-  const [course, setCourse] = useState<CourseData>(initialCourse);
-  const [selectedLessonId, setSelectedLessonId] = useState<string | null>("les_1");
-  const [showVersionHistory, setShowVersionHistory] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const params = useParams();
+  const courseId = params.courseId as string;
 
-  const selectedLesson = course.modules
+  const [course, setCourse] = useState<CourseData | null>(null);
+  const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showBatchDialog, setShowBatchDialog] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Video status per lesson: lessonId -> latest job status
+  const [videoStatus, setVideoStatus] = useState<Map<string, string>>(new Map());
+
+  // Fetch course data from API
+  const fetchCourse = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/v1/courses/${courseId}?locale=en`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error?.message || "Failed to load course");
+
+      const raw = json.data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const modules: Module[] = (raw.modules || []).map((m: any) => ({
+        id: m.id,
+        title: m.translations?.[0]?.title || "Untitled Module",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        lessons: (m.lessons || []).map((l: any) => ({
+          id: l.id,
+          title: l.translations?.[0]?.title || "Untitled Lesson",
+          contentType: mapContentType(l.contentType),
+          status: "draft" as LessonStatus,
+          content: "",
+          translations: [],
+        })),
+      }));
+
+      const courseData: CourseData = {
+        id: raw.id,
+        title: raw.translations?.[0]?.title || "Untitled Course",
+        description: raw.translations?.[0]?.description || "",
+        specialty: raw.specialtyTags?.[0]?.specialty?.name || "",
+        riskLevel: raw.riskLevel || "L1",
+        language: raw.translations?.[0]?.locale || "en",
+        status: mapCourseStatus(raw.status),
+        modules,
+      };
+
+      setCourse(courseData);
+
+      // Select first lesson if none selected
+      if (!selectedLessonId && modules.length > 0 && modules[0].lessons.length > 0) {
+        setSelectedLessonId(modules[0].lessons[0].id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load");
+    } finally {
+      setLoading(false);
+    }
+  }, [courseId, selectedLessonId]);
+
+  // Fetch video status for all lessons
+  const fetchVideoStatus = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/v1/courses/${courseId}/video-status`);
+      const json = await res.json();
+      if (json.data?.lessons) {
+        const map = new Map<string, string>();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        json.data.lessons.forEach((l: any) => {
+          if (l.latestJob) {
+            map.set(l.lessonId, l.latestJob.status);
+          }
+        });
+        setVideoStatus(map);
+
+        // Also update lesson latestVideoJob in course data
+        if (course) {
+          setCourse((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              modules: prev.modules.map((m) => ({
+                ...m,
+                lessons: m.lessons.map((lesson) => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const statusLesson = json.data.lessons.find((sl: any) => sl.lessonId === lesson.id);
+                  return {
+                    ...lesson,
+                    latestVideoJob: statusLesson?.latestJob || undefined,
+                  };
+                }),
+              })),
+            };
+          });
+        }
+      }
+    } catch {
+      // Non-critical
+    }
+  }, [courseId, course]);
+
+  useEffect(() => {
+    fetchCourse();
+  }, [fetchCourse]);
+
+  useEffect(() => {
+    if (course) {
+      fetchVideoStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, loading]);
+
+  const selectedLesson = course?.modules
     .flatMap((m) => m.lessons)
     .find((l) => l.id === selectedLessonId);
 
   const handleCourseUpdate = (updates: Partial<CourseData>) => {
-    setCourse((prev) => ({ ...prev, ...updates }));
+    setCourse((prev) => (prev ? { ...prev, ...updates } : prev));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!course) return;
     setSaving(true);
-    setTimeout(() => setSaving(false), 1000);
+    try {
+      await fetch(`/api/v1/courses/${courseId}`, {
+        method: "PATCH",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          riskLevel: course.riskLevel,
+        }),
+      });
+    } catch {
+      // Handle error
+    } finally {
+      setSaving(false);
+    }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-brand-500" />
+          <p className="mt-3 text-sm text-gray-500">Loading course...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !course) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-8 w-8 text-red-400" />
+          <p className="mt-3 text-sm text-red-600">{error || "Course not found"}</p>
+          <Link href="/admin/courses">
+            <Button variant="outline" size="sm" className="mt-4">
+              Back to Courses
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col">
@@ -643,7 +727,7 @@ export default function CourseEditPage() {
               </span>
             </div>
             <p className="text-xs text-gray-400">
-              {course.specialty} &middot; Risk {course.riskLevel}
+              {course.specialty ? `${course.specialty} · ` : ""}Risk {course.riskLevel}
             </p>
           </div>
         </div>
@@ -681,12 +765,21 @@ export default function CourseEditPage() {
 
       {/* Editor Body */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: Metadata */}
+        {/* Left: Metadata + Video Settings */}
         <div className="w-72 shrink-0 overflow-y-auto border-r border-gray-100 bg-white p-4">
           <h2 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
             Course Details
           </h2>
           <MetadataPanel course={course} onChange={handleCourseUpdate} />
+
+          {/* Divider */}
+          <div className="my-5 border-t border-gray-100" />
+
+          {/* Video Settings Panel */}
+          <CourseVideoSettingsPanel
+            courseId={courseId}
+            onBatchGenerate={() => setShowBatchDialog(true)}
+          />
         </div>
 
         {/* Center: Module Tree */}
@@ -698,13 +791,18 @@ export default function CourseEditPage() {
             modules={course.modules}
             selectedLessonId={selectedLessonId}
             onSelectLesson={setSelectedLessonId}
+            videoStatus={videoStatus}
           />
         </div>
 
         {/* Right: Lesson Editor */}
         <div className="flex-1 overflow-y-auto p-6">
           {selectedLesson ? (
-            <LessonEditor key={selectedLesson.id} lesson={selectedLesson} />
+            <LessonEditor
+              key={selectedLesson.id}
+              lesson={selectedLesson}
+              courseId={courseId}
+            />
           ) : (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
@@ -736,27 +834,23 @@ export default function CourseEditPage() {
               </button>
             </div>
             <div className="space-y-3">
-              {[
-                { version: "v3", date: "Feb 24, 2026 10:32 AM", author: "Dr. Kim", note: "Updated quiz questions" },
-                { version: "v2", date: "Feb 23, 2026 3:15 PM", author: "Dr. Kim", note: "Added Module 3" },
-                { version: "v1", date: "Feb 22, 2026 9:00 AM", author: "AI Builder", note: "Initial generation from SOP" },
-              ].map((v) => (
-                <button
-                  key={v.version}
-                  className="w-full rounded-lg border border-gray-100 p-3 text-left transition-colors hover:border-brand-200 hover:bg-brand-50/50"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-900">{v.version}</span>
-                    <span className="text-xs text-gray-400">{v.date}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">{v.note}</p>
-                  <p className="mt-0.5 text-xs text-gray-400">by {v.author}</p>
-                </button>
-              ))}
+              <p className="text-xs text-gray-400">
+                Version history will be loaded from the API.
+              </p>
             </div>
           </div>
         )}
       </div>
+
+      {/* Batch Video Dialog */}
+      <BatchVideoDialog
+        courseId={courseId}
+        open={showBatchDialog}
+        onClose={() => {
+          setShowBatchDialog(false);
+          fetchVideoStatus();
+        }}
+      />
     </div>
   );
 }
