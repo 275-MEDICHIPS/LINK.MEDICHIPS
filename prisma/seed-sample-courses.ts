@@ -190,10 +190,11 @@ async function main() {
   console.log(`✅ 크리에이터: ${creator.name} (${creator.id})`);
 
   // ─── 코스 1: 내시경 기초 마스터 ──────────────────────────────
+  // 모든 영상: 오형태내과의원 YouTube 채널 (UC74FDMxha8Y00LCaOOCf_8w)
   await seedCourse(org.id, creator.id, {
     slug: "endoscopy-basics-master",
     riskLevel: "L1",
-    thumbnailUrl: "https://img.youtube.com/vi/LdbZAiwERPQ/hqdefault.jpg",
+    thumbnailUrl: "https://img.youtube.com/vi/kr-4DUZwuI8/hqdefault.jpg",
     estimatedHours: 1.5,
     translations: [
       {
@@ -213,21 +214,21 @@ async function main() {
         title_en: "Colonoscopy Basics",
         lessons: [
           {
-            title_ko: "대장내시경의 이해",
-            title_en: "Understanding Colonoscopy",
-            videoUrl: "https://www.youtube.com/watch?v=LdbZAiwERPQ",
+            title_ko: "정상대장내시경 1",
+            title_en: "Normal Colonoscopy 1",
+            videoUrl: "https://www.youtube.com/watch?v=kr-4DUZwuI8",
             durationMin: 5,
           },
           {
-            title_ko: "대장내시경 시술 과정",
-            title_en: "Colonoscopy Procedure",
-            videoUrl: "https://www.youtube.com/watch?v=mh90RPA-C10",
+            title_ko: "정상대장내시경 2",
+            title_en: "Normal Colonoscopy 2",
+            videoUrl: "https://www.youtube.com/watch?v=-wUGfK0Gekc",
             durationMin: 7,
           },
           {
-            title_ko: "대장내시경 수행 방법",
-            title_en: "How Colonoscopy is Performed",
-            videoUrl: "https://www.youtube.com/watch?v=JdbLEYSRLMA",
+            title_ko: "정상 대장내시경소견",
+            title_en: "Normal Colonoscopic Finding",
+            videoUrl: "https://www.youtube.com/watch?v=H-idXHz12C4",
             durationMin: 4,
           },
         ],
@@ -239,7 +240,7 @@ async function main() {
           {
             title_ko: "대장용종절제술",
             title_en: "Colon Polypectomy",
-            videoUrl: "https://www.youtube.com/watch?v=ewCIqAAJGPg",
+            videoUrl: "https://www.youtube.com/watch?v=jZObjc2TsGg",
             durationMin: 8,
           },
         ],
@@ -249,15 +250,15 @@ async function main() {
         title_en: "Gastroscopy",
         lessons: [
           {
-            title_ko: "위산 분비와 위염",
-            title_en: "Gastric Acid Physiology",
-            videoUrl: "https://www.youtube.com/watch?v=Rcb6I7gsl-Y",
+            title_ko: "위염 소견",
+            title_en: "Gastritis Findings",
+            videoUrl: "https://www.youtube.com/watch?v=ltM2kJ0dYfQ",
             durationMin: 6,
           },
           {
-            title_ko: "헬리코박터 파일로리와 궤양",
-            title_en: "H. Pylori and Ulcers",
-            videoUrl: "https://www.youtube.com/watch?v=y-shOXdsJeA",
+            title_ko: "만성표재성위염",
+            title_en: "Chronic Superficial Gastritis",
+            videoUrl: "https://www.youtube.com/watch?v=CW0x6GGjsyo",
             durationMin: 5,
           },
         ],
@@ -266,10 +267,11 @@ async function main() {
   });
 
   // ─── 코스 2: 초음파 진단 입문 ──────────────────────────────
+  // 모든 영상: 오형태내과의원 YouTube 채널 (UC74FDMxha8Y00LCaOOCf_8w)
   await seedCourse(org.id, creator.id, {
     slug: "ultrasound-diagnosis-intro",
     riskLevel: "L1",
-    thumbnailUrl: "https://img.youtube.com/vi/0nzZT46Dmw0/hqdefault.jpg",
+    thumbnailUrl: "https://img.youtube.com/vi/T7CZiISKumk/hqdefault.jpg",
     estimatedHours: 2.0,
     translations: [
       {
@@ -289,9 +291,9 @@ async function main() {
         title_en: "Thyroid Ultrasound",
         lessons: [
           {
-            title_ko: "갑상선 초음파 해부학",
-            title_en: "Thyroid Ultrasound Anatomy",
-            videoUrl: "https://www.youtube.com/watch?v=0nzZT46Dmw0",
+            title_ko: "정상갑상선초음파",
+            title_en: "Normal Thyroid Ultrasound",
+            videoUrl: "https://www.youtube.com/watch?v=T7CZiISKumk",
             durationMin: 10,
           },
         ],
@@ -301,15 +303,15 @@ async function main() {
         title_en: "Abdominal Ultrasound",
         lessons: [
           {
-            title_ko: "정상 복부 초음파",
+            title_ko: "정상복부초음파",
             title_en: "Normal Abdominal Ultrasound",
-            videoUrl: "https://www.youtube.com/watch?v=3pIL7c-8UH8",
+            videoUrl: "https://www.youtube.com/watch?v=l5eEdR2OH0w",
             durationMin: 12,
           },
           {
-            title_ko: "간 초음파 해부학",
-            title_en: "Liver Ultrasound Anatomy",
-            videoUrl: "https://www.youtube.com/watch?v=x6hXhLNc-jU",
+            title_ko: "정상 상복부초음파",
+            title_en: "Normal Upper Abdominal Ultrasound",
+            videoUrl: "https://www.youtube.com/watch?v=eb-nbW4SnaU",
             durationMin: 8,
           },
         ],
@@ -319,9 +321,9 @@ async function main() {
         title_en: "Pain Procedures",
         lessons: [
           {
-            title_ko: "초음파 유도 신경차단술",
-            title_en: "Ultrasound-Guided Nerve Block",
-            videoUrl: "https://www.youtube.com/watch?v=tMy978ZwaDU",
+            title_ko: "상견갑신경차단술",
+            title_en: "Suprascapular Nerve Block",
+            videoUrl: "https://www.youtube.com/watch?v=qFDJY_tV2hQ",
             durationMin: 15,
           },
         ],
