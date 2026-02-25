@@ -47,6 +47,7 @@ export default function VoicePicker({
   const [genderFilter, setGenderFilter] = useState<string>("");
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const fetchPresets = useCallback(async () => {
@@ -85,6 +86,7 @@ export default function VoicePicker({
     }
 
     setPreviewLoading(preset.id);
+    setPreviewError(null);
     try {
       const res = await fetch(
         "/api/v1/admin/video-production/voices/preview",
@@ -98,7 +100,12 @@ export default function VoicePicker({
         }
       );
       const json = await res.json();
-      if (!json.data?.audioBase64) return;
+      if (!res.ok) {
+        throw new Error(json.error?.message || "Preview failed");
+      }
+      if (!json.data?.audioBase64) {
+        throw new Error("No audio data returned");
+      }
 
       const audio = new Audio(
         `data:audio/mpeg;base64,${json.data.audioBase64}`
@@ -107,8 +114,10 @@ export default function VoicePicker({
       audioRef.current = audio;
       await audio.play();
       setPlayingId(preset.id);
-    } catch {
-      // Preview failed silently
+    } catch (err) {
+      setPreviewError(
+        err instanceof Error ? err.message : "Preview failed"
+      );
     } finally {
       setPreviewLoading(null);
     }
@@ -152,6 +161,13 @@ export default function VoicePicker({
           ))}
         </div>
       </div>
+
+      {/* Error message */}
+      {previewError && (
+        <div className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">
+          Preview error: {previewError}
+        </div>
+      )}
 
       {/* No voice option */}
       <button
