@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Plus,
@@ -161,60 +162,74 @@ function RiskBadge({ level }: { level: RiskLevel }) {
 function CreateCourseDialog({
   open,
   onClose,
-  onCreated,
 }: {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const router = useRouter();
   const [title, setTitle] = useState("");
-  const [specialty, setSpecialty] = useState("");
-  const [riskLevel, setRiskLevel] = useState("L1");
   const [language, setLanguage] = useState("en");
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
 
   if (!open) return null;
 
   const handleCreate = async () => {
     if (!title.trim()) return;
     setCreating(true);
+    setError("");
     try {
-      const slug = title
+      // Generate slug: transliterate to ASCII, fallback to timestamp
+      const asciiSlug = title
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, "")
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "")
         .slice(0, 80);
+      const slug = asciiSlug.length >= 3 ? asciiSlug : `course-${Date.now()}`;
 
       const res = await fetch("/api/v1/courses", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          slug: slug || `course-${Date.now()}`,
-          riskLevel,
+          slug,
           locale: language,
           title: title.trim(),
-          description: specialty ? `${specialty} course` : undefined,
         }),
       });
 
       if (res.ok) {
+        const json = await res.json();
+        const newId = json.data?.id;
         setTitle("");
-        setSpecialty("");
         onClose();
-        onCreated();
+        // Navigate directly to the edit page
+        if (newId) {
+          router.push(`/admin/courses/${newId}/edit`);
+        }
+      } else {
+        const json = await res.json();
+        setError(json.error?.message || "Failed to create course");
       }
     } catch {
-      // Handle error
+      setError("Network error. Please try again.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && title.trim() && !creating) {
+      handleCreate();
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+      <div className="relative z-10 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Create New Course</h2>
           <button
@@ -226,7 +241,11 @@ function CreateCourseDialog({
           </button>
         </div>
 
-        <div className="mt-6 space-y-4">
+        <p className="mt-2 text-sm text-gray-500">
+          Enter a title to get started. You can set thumbnail, description, risk level, and modules in the editor.
+        </p>
+
+        <div className="mt-5 space-y-4">
           <div>
             <label htmlFor="course-title" className="mb-1.5 block text-sm font-medium text-gray-700">
               Course Title
@@ -235,34 +254,10 @@ function CreateCourseDialog({
               id="course-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="e.g., Emergency Triage Protocol"
+              autoFocus
             />
-          </div>
-          <div>
-            <label htmlFor="course-specialty" className="mb-1.5 block text-sm font-medium text-gray-700">
-              Specialty
-            </label>
-            <Input
-              id="course-specialty"
-              value={specialty}
-              onChange={(e) => setSpecialty(e.target.value)}
-              placeholder="e.g., Emergency Medicine"
-            />
-          </div>
-          <div>
-            <label htmlFor="risk-level" className="mb-1.5 block text-sm font-medium text-gray-700">
-              Risk Level
-            </label>
-            <select
-              id="risk-level"
-              value={riskLevel}
-              onChange={(e) => setRiskLevel(e.target.value)}
-              className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            >
-              <option value="L1">L1 - Low Risk</option>
-              <option value="L2">L2 - Medium Risk</option>
-              <option value="L3">L3 - High Risk</option>
-            </select>
           </div>
           <div>
             <label htmlFor="language" className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -283,6 +278,10 @@ function CreateCourseDialog({
           </div>
         </div>
 
+        {error && (
+          <p className="mt-3 text-sm text-red-600">{error}</p>
+        )}
+
         <div className="mt-6 flex justify-end gap-3">
           <Button variant="outline" onClick={onClose}>
             Cancel
@@ -293,7 +292,7 @@ function CreateCourseDialog({
             ) : (
               <Plus className="mr-2 h-4 w-4" />
             )}
-            {creating ? "Creating..." : "Create Course"}
+            {creating ? "Creating..." : "Create & Edit"}
           </Button>
         </div>
       </div>
