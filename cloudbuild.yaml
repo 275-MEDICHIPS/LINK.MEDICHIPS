@@ -1,9 +1,10 @@
 steps:
+  # Step 1: Build Docker image
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "build"
       - "-f"
-      - "Dockerfile"
+      - "docker/Dockerfile.web"
       - "-t"
       - "asia-northeast3-docker.pkg.dev/medichips-new/medichips-link/web:latest"
       - "-t"
@@ -11,11 +12,29 @@ steps:
       - "."
     timeout: "600s"
 
-images:
-  - "asia-northeast3-docker.pkg.dev/medichips-new/medichips-link/web:latest"
-  - "asia-northeast3-docker.pkg.dev/medichips-new/medichips-link/web:${SHORT_SHA}"
+  # Step 2: Push image to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "asia-northeast3-docker.pkg.dev/medichips-new/medichips-link/web:${SHORT_SHA}"]
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "asia-northeast3-docker.pkg.dev/medichips-new/medichips-link/web:latest"]
+
+  # Step 3: Deploy to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "medichips-link-web"
+      - "--image"
+      - "asia-northeast3-docker.pkg.dev/medichips-new/medichips-link/web:${SHORT_SHA}"
+      - "--region"
+      - "asia-northeast3"
+      - "--platform"
+      - "managed"
+    timeout: "300s"
 
 options:
   machineType: "E2_HIGHCPU_8"
   logging: CLOUD_LOGGING_ONLY
-timeout: "900s"
+timeout: "1200s"
