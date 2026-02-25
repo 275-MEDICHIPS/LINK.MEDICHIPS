@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search,
   Languages,
@@ -14,39 +14,40 @@ import {
   AlertTriangle,
   ArrowRight,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
+import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type TranslationStatus = "pending" | "in_progress" | "done" | "verified";
+type TranslationStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "VERIFIED";
 
-interface TranslationItem {
+interface TranslationJob {
   id: string;
-  contentTitle: string;
-  contentPath: string;
-  sourceLang: string;
-  targetLang: string;
+  sourceLocale: string;
+  targetLocale: string;
+  entityType: string;
+  entityId: string;
   status: TranslationStatus;
-  translator: string | null;
-  originalText: string;
-  translatedText: string;
-  medicalTerms: string[];
+  method: string;
+  sourceText: string;
+  translatedText: string | null;
+  isVerified: boolean;
+  verifiedBy: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
 // ---------------------------------------------------------------------------
-// Mock Data
+// Helpers
 // ---------------------------------------------------------------------------
 
 const languageLabels: Record<string, string> = {
@@ -57,145 +58,12 @@ const languageLabels: Record<string, string> = {
   am: "Amharic",
 };
 
-const mockTranslations: TranslationItem[] = [
-  {
-    id: "tr_001",
-    contentTitle: "What is Triage?",
-    contentPath: "Emergency Triage Protocol > Introduction > Lesson 1",
-    sourceLang: "en",
-    targetLang: "ko",
-    status: "verified",
-    translator: "Dr. Kim Seonghyun",
-    originalText:
-      "Triage is a process of prioritizing patients based on the severity of their condition. In emergency settings, effective triage ensures that limited resources are directed to those who need them most. The START (Simple Triage And Rapid Treatment) system is the most widely used method.",
-    translatedText:
-      "트리아지(Triage)는 환자의 상태 심각도를 기반으로 우선순위를 결정하는 과정입니다. 응급 상황에서 효과적인 트리아지는 제한된 자원이 가장 필요한 사람에게 전달되도록 보장합니다. START(Simple Triage And Rapid Treatment) 시스템은 가장 널리 사용되는 방법입니다.",
-    medicalTerms: ["Triage", "START", "emergency"],
-    updatedAt: "2026-02-23",
-  },
-  {
-    id: "tr_002",
-    contentTitle: "What is Triage?",
-    contentPath: "Emergency Triage Protocol > Introduction > Lesson 1",
-    sourceLang: "en",
-    targetLang: "fr",
-    status: "in_progress",
-    translator: "Dr. Jean-Pierre M.",
-    originalText:
-      "Triage is a process of prioritizing patients based on the severity of their condition. In emergency settings, effective triage ensures that limited resources are directed to those who need them most.",
-    translatedText:
-      "Le triage est un processus de priorisation des patients en fonction de la gravite de leur etat. Dans les situations d'urgence, un triage efficace garantit que les ressources limitees sont dirigees vers ceux qui en ont le plus besoin.",
-    medicalTerms: ["Triage", "emergency"],
-    updatedAt: "2026-02-22",
-  },
-  {
-    id: "tr_003",
-    contentTitle: "What is Triage?",
-    contentPath: "Emergency Triage Protocol > Introduction > Lesson 1",
-    sourceLang: "en",
-    targetLang: "sw",
-    status: "pending",
-    translator: null,
-    originalText:
-      "Triage is a process of prioritizing patients based on the severity of their condition.",
-    translatedText: "",
-    medicalTerms: ["Triage"],
-    updatedAt: "2026-02-20",
-  },
-  {
-    id: "tr_004",
-    contentTitle: "5 Moments of Hand Hygiene",
-    contentPath: "IPC Training > Hand Hygiene > Lesson 1",
-    sourceLang: "en",
-    targetLang: "ko",
-    status: "done",
-    translator: "AI Translation",
-    originalText:
-      "The WHO 5 moments for hand hygiene are: before touching a patient, before clean/aseptic procedures, after body fluid exposure risk, after touching a patient, and after touching patient surroundings.",
-    translatedText:
-      "WHO 손 위생 5가지 시점: 환자 접촉 전, 청결/무균 처치 전, 체액 노출 위험 후, 환자 접촉 후, 환자 주변 환경 접촉 후.",
-    medicalTerms: ["hand hygiene", "aseptic", "body fluid"],
-    updatedAt: "2026-02-22",
-  },
-  {
-    id: "tr_005",
-    contentTitle: "5 Moments of Hand Hygiene",
-    contentPath: "IPC Training > Hand Hygiene > Lesson 1",
-    sourceLang: "en",
-    targetLang: "fr",
-    status: "pending",
-    translator: null,
-    originalText:
-      "The WHO 5 moments for hand hygiene are: before touching a patient, before clean/aseptic procedures, after body fluid exposure risk, after touching a patient, and after touching patient surroundings.",
-    translatedText: "",
-    medicalTerms: ["hand hygiene", "aseptic", "body fluid"],
-    updatedAt: "2026-02-21",
-  },
-  {
-    id: "tr_006",
-    contentTitle: "Types of PPE",
-    contentPath: "IPC Training > PPE > Lesson 1",
-    sourceLang: "en",
-    targetLang: "am",
-    status: "pending",
-    translator: null,
-    originalText:
-      "Personal Protective Equipment includes gloves, gowns, masks, respirators, eye protection, and face shields.",
-    translatedText: "",
-    medicalTerms: ["PPE", "respirators"],
-    updatedAt: "2026-02-20",
-  },
-  {
-    id: "tr_007",
-    contentTitle: "START Method Overview",
-    contentPath: "Emergency Triage > START System > Lesson 1",
-    sourceLang: "en",
-    targetLang: "ko",
-    status: "in_progress",
-    translator: "AI Translation",
-    originalText:
-      "The START system classifies patients into four categories: Immediate (Red), Delayed (Yellow), Minor (Green), and Deceased (Black).",
-    translatedText:
-      "START 시스템은 환자를 네 가지 범주로 분류합니다: 즉각(적색), 지연(황색), 경미(녹색), 사망(흑색).",
-    medicalTerms: ["START", "Immediate", "Delayed", "Minor", "Deceased"],
-    updatedAt: "2026-02-24",
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const statusConfig: Record<TranslationStatus, { label: string; className: string }> = {
-  pending: { label: "Pending", className: "bg-gray-100 text-gray-600" },
-  in_progress: { label: "In Progress", className: "bg-brand-50 text-brand-700" },
-  done: { label: "Done", className: "bg-accent-50 text-accent-700" },
-  verified: { label: "Verified", className: "bg-purple-50 text-purple-700" },
+const statusConfig: Record<string, { label: string; className: string }> = {
+  PENDING: { label: "Pending", className: "bg-gray-100 text-gray-600" },
+  IN_PROGRESS: { label: "In Progress", className: "bg-brand-50 text-brand-700" },
+  COMPLETED: { label: "Done", className: "bg-accent-50 text-accent-700" },
+  VERIFIED: { label: "Verified", className: "bg-purple-50 text-purple-700" },
 };
-
-function highlightTerms(text: string, terms: string[]): React.ReactNode {
-  if (!text || terms.length === 0) return text;
-
-  const escapedTerms = terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-  const regex = new RegExp(`(${escapedTerms.join("|")})`, "gi");
-  const parts = text.split(regex);
-
-  return parts.map((part, i) => {
-    const isMatch = terms.some((t) => t.toLowerCase() === part.toLowerCase());
-    if (isMatch) {
-      return (
-        <span
-          key={i}
-          className="rounded bg-amber-100 px-0.5 font-medium text-amber-800"
-          title="Medical term"
-        >
-          {part}
-        </span>
-      );
-    }
-    return part;
-  });
-}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -205,9 +73,11 @@ function TranslationSidePanel({
   item,
   onClose,
 }: {
-  item: TranslationItem;
+  item: TranslationJob;
   onClose: () => void;
 }) {
+  const sc = statusConfig[item.status] || statusConfig.PENDING;
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="fixed inset-0 bg-black/30" onClick={onClose} />
@@ -215,16 +85,16 @@ function TranslationSidePanel({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">{item.contentTitle}</h2>
-            <p className="mt-0.5 text-xs text-gray-500">{item.contentPath}</p>
+            <h2 className="text-base font-semibold text-gray-900">
+              {item.entityType} Translation
+            </h2>
+            <p className="mt-0.5 text-xs text-gray-500">
+              {item.entityType} &middot; {item.entityId.slice(0, 8)}...
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                statusConfig[item.status].className
-              }`}
-            >
-              {statusConfig[item.status].label}
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${sc.className}`}>
+              {sc.label}
             </span>
             <button
               onClick={onClose}
@@ -242,41 +112,23 @@ function TranslationSidePanel({
           <div className="flex-1 overflow-y-auto border-r border-gray-100 p-6">
             <div className="mb-3 flex items-center gap-2">
               <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                {languageLabels[item.sourceLang] || item.sourceLang}
+                {languageLabels[item.sourceLocale] || item.sourceLocale}
               </span>
               <span className="text-xs text-gray-400">Original</span>
             </div>
             <div className="text-sm leading-relaxed text-gray-700">
-              {highlightTerms(item.originalText, item.medicalTerms)}
+              {item.sourceText}
             </div>
-
-            {item.medicalTerms.length > 0 && (
-              <div className="mt-6">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Medical Terms
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {item.medicalTerms.map((term) => (
-                    <span
-                      key={term}
-                      className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700"
-                    >
-                      {term}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Translation */}
           <div className="flex-1 overflow-y-auto p-6">
             <div className="mb-3 flex items-center gap-2">
               <span className="rounded bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">
-                {languageLabels[item.targetLang] || item.targetLang}
+                {languageLabels[item.targetLocale] || item.targetLocale}
               </span>
               <span className="text-xs text-gray-400">Translation</span>
-              {item.translator === "AI Translation" && (
+              {item.method === "ai" && (
                 <span className="rounded bg-purple-50 px-1.5 py-0.5 text-xs text-purple-600">
                   AI
                 </span>
@@ -290,28 +142,24 @@ function TranslationSidePanel({
               <div className="rounded-xl border-2 border-dashed border-gray-200 p-6 text-center">
                 <Languages className="mx-auto h-8 w-8 text-gray-300" />
                 <p className="mt-2 text-sm text-gray-500">No translation yet</p>
-                <Button size="sm" className="mt-3">
-                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                  Generate AI Translation
-                </Button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Footer actions */}
+        {/* Footer */}
         {item.translatedText && (
           <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
             <div className="flex items-center gap-2 text-xs text-gray-500">
-              {item.translator && (
-                <>
-                  <span>Translated by:</span>
-                  <span className="font-medium text-gray-700">{item.translator}</span>
-                </>
+              <span>Method: {item.method}</span>
+              {item.isVerified && (
+                <span className="flex items-center gap-1 text-accent-600">
+                  <Check className="h-3.5 w-3.5" /> Verified
+                </span>
               )}
             </div>
             <div className="flex gap-2">
-              {item.status === "done" && (
+              {item.status === "COMPLETED" && (
                 <>
                   <Button variant="outline" size="sm">
                     <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-red-500" />
@@ -323,13 +171,7 @@ function TranslationSidePanel({
                   </Button>
                 </>
               )}
-              {item.status === "in_progress" && (
-                <Button size="sm">
-                  <Check className="mr-1.5 h-3.5 w-3.5" />
-                  Mark as Done
-                </Button>
-              )}
-              {item.status === "verified" && (
+              {item.status === "VERIFIED" && (
                 <span className="flex items-center gap-1 text-xs font-medium text-accent-600">
                   <Check className="h-3.5 w-3.5" /> Verified
                 </span>
@@ -345,13 +187,49 @@ function TranslationSidePanel({
 function BatchTranslateDialog({
   open,
   onClose,
+  onCreated,
 }: {
   open: boolean;
   onClose: () => void;
+  onCreated: () => void;
 }) {
+  const [sourceLang, setSourceLang] = useState("en");
+  const [targetLang, setTargetLang] = useState("fr");
   const [running, setRunning] = useState(false);
+  const [error, setError] = useState("");
 
   if (!open) return null;
+
+  const handleStart = async () => {
+    setRunning(true);
+    setError("");
+    try {
+      const res = await fetch("/api/v1/admin/translations", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          entityType: "LESSON",
+          entityId: crypto.randomUUID(),
+          sourceLocale: sourceLang,
+          targetLocale: targetLang,
+          sourceText: "Batch translation job placeholder",
+          method: "ai",
+        }),
+      });
+
+      if (res.ok) {
+        onClose();
+        onCreated();
+      } else {
+        const json = await res.json();
+        setError(json.error?.message || "Failed to create translation job");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setRunning(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -370,6 +248,8 @@ function BatchTranslateDialog({
             </label>
             <select
               id="batch-source"
+              value={sourceLang}
+              onChange={(e) => setSourceLang(e.target.value)}
               className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <option value="en">English</option>
@@ -382,6 +262,8 @@ function BatchTranslateDialog({
             </label>
             <select
               id="batch-target"
+              value={targetLang}
+              onChange={(e) => setTargetLang(e.target.value)}
               className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <option value="fr">French</option>
@@ -392,27 +274,21 @@ function BatchTranslateDialog({
           </div>
           <div className="rounded-lg bg-amber-50 p-3">
             <p className="text-xs text-amber-700">
-              <strong>Note:</strong> AI translations of medical content will be marked as "Done"
+              <strong>Note:</strong> AI translations of medical content will be marked as &quot;Done&quot;
               and require human verification before being made available to learners.
             </p>
           </div>
         </div>
+
+        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+
         <div className="mt-6 flex justify-end gap-3">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button
-            onClick={() => {
-              setRunning(true);
-              setTimeout(() => {
-                setRunning(false);
-                onClose();
-              }, 2000);
-            }}
-            disabled={running}
-          >
+          <Button onClick={handleStart} disabled={running}>
             {running ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Translating...
+                Creating...
               </>
             ) : (
               <>
@@ -432,34 +308,61 @@ function BatchTranslateDialog({
 // ---------------------------------------------------------------------------
 
 export default function TranslationsPage() {
+  const [items, setItems] = useState<TranslationJob[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [langFilter, setLangFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<TranslationStatus | "all">("all");
-  const [selectedItem, setSelectedItem] = useState<TranslationItem | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedItem, setSelectedItem] = useState<TranslationJob | null>(null);
   const [batchOpen, setBatchOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
-  const filtered = useMemo(() => {
-    return mockTranslations.filter((t) => {
-      const matchesSearch =
-        !search ||
-        t.contentTitle.toLowerCase().includes(search.toLowerCase()) ||
-        t.contentPath.toLowerCase().includes(search.toLowerCase());
-      const matchesLang =
-        langFilter === "all" || t.targetLang === langFilter;
-      const matchesStatus =
-        statusFilter === "all" || t.status === statusFilter;
-      return matchesSearch && matchesLang && matchesStatus;
-    });
-  }, [search, langFilter, statusFilter]);
+  const fetchTranslations = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(pageSize),
+      });
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (langFilter !== "all") params.set("locale", langFilter);
 
-  const statusCounts = {
-    pending: mockTranslations.filter((t) => t.status === "pending").length,
-    in_progress: mockTranslations.filter((t) => t.status === "in_progress").length,
-    done: mockTranslations.filter((t) => t.status === "done").length,
-    verified: mockTranslations.filter((t) => t.status === "verified").length,
-  };
+      const res = await fetch(`/api/v1/admin/translations?${params.toString()}`);
+      const json = await res.json();
+
+      if (json.data) {
+        setItems(json.data);
+        setTotal(json.pagination?.total || 0);
+      } else {
+        setError("Failed to load translations");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, statusFilter, langFilter]);
+
+  useEffect(() => {
+    fetchTranslations();
+  }, [fetchTranslations]);
+
+  // Client-side search filter (API doesn't support search param)
+  const filtered = search
+    ? items.filter(
+        (t) =>
+          t.entityType.toLowerCase().includes(search.toLowerCase()) ||
+          t.sourceText.toLowerCase().includes(search.toLowerCase())
+      )
+    : items;
+
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="space-y-6">
@@ -479,25 +382,31 @@ export default function TranslationsPage() {
 
       {/* Status Stats */}
       <div className="grid gap-4 sm:grid-cols-4">
-        {(Object.entries(statusCounts) as [TranslationStatus, number][]).map(([status, count]) => (
-          <Card key={status}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium capitalize text-gray-500">
-                    {status.replace("_", " ")}
-                  </p>
-                  <p className="mt-1 text-2xl font-bold text-gray-900">{count}</p>
+        {[
+          { key: "PENDING", label: "Pending" },
+          { key: "IN_PROGRESS", label: "In Progress" },
+          { key: "COMPLETED", label: "Done" },
+          { key: "VERIFIED", label: "Verified" },
+        ].map(({ key, label }) => {
+          const sc = statusConfig[key];
+          return (
+            <Card key={key}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500">{label}</p>
+                    <p className="mt-1 text-2xl font-bold text-gray-900">
+                      {statusFilter === key ? total : "-"}
+                    </p>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${sc.className}`}>
+                    {sc.label}
+                  </span>
                 </div>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusConfig[status].className}`}
-                >
-                  {statusConfig[status].label}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Filters */}
@@ -509,7 +418,7 @@ export default function TranslationsPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search content title..."
+                placeholder="Search content..."
                 className="pl-9"
               />
             </div>
@@ -537,6 +446,7 @@ export default function TranslationsPage() {
                         key={lang}
                         onClick={() => {
                           setLangFilter(lang);
+                          setPage(1);
                           setLangDropdownOpen(false);
                         }}
                         className={`flex w-full items-center px-3 py-2 text-sm ${
@@ -571,11 +481,12 @@ export default function TranslationsPage() {
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setStatusDropdownOpen(false)} />
                   <div className="absolute right-0 z-20 mt-1 w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                    {(["all", "pending", "in_progress", "done", "verified"] as const).map((s) => (
+                    {["all", "PENDING", "IN_PROGRESS", "COMPLETED", "VERIFIED"].map((s) => (
                       <button
                         key={s}
                         onClick={() => {
                           setStatusFilter(s);
+                          setPage(1);
                           setStatusDropdownOpen(false);
                         }}
                         className={`flex w-full items-center px-3 py-2 text-sm ${
@@ -584,7 +495,7 @@ export default function TranslationsPage() {
                             : "text-gray-700 hover:bg-gray-50"
                         }`}
                       >
-                        {s === "all" ? "All Statuses" : statusConfig[s].label}
+                        {s === "all" ? "All Statuses" : (statusConfig[s]?.label || s)}
                       </button>
                     ))}
                   </div>
@@ -614,7 +525,7 @@ export default function TranslationsPage() {
                   Status
                 </th>
                 <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">
-                  Translator
+                  Method
                 </th>
                 <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">
                   Updated
@@ -625,7 +536,21 @@ export default function TranslationsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-12 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-500" />
+                    <p className="mt-2 text-sm text-gray-500">Loading translations...</p>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-12 text-center">
+                    <AlertCircle className="mx-auto h-10 w-10 text-red-300" />
+                    <p className="mt-2 text-sm font-medium text-gray-500">{error}</p>
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center">
                     <Languages className="mx-auto h-10 w-10 text-gray-300" />
@@ -636,84 +561,93 @@ export default function TranslationsPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50/50"
-                    onClick={() => setSelectedItem(item)}
-                  >
-                    <td className="px-4 py-3">
-                      <p className="text-sm font-medium text-gray-900">{item.contentTitle}</p>
-                      <p className="text-xs text-gray-500">{item.contentPath}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold uppercase text-gray-600">
-                        {item.sourceLang}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded bg-brand-50 px-2 py-0.5 text-xs font-semibold uppercase text-brand-700">
-                        {item.targetLang}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          statusConfig[item.status].className
-                        }`}
-                      >
-                        {statusConfig[item.status].label}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-3 md:table-cell">
-                      {item.translator ? (
+                filtered.map((item) => {
+                  const sc = statusConfig[item.status] || statusConfig.PENDING;
+                  return (
+                    <tr
+                      key={item.id}
+                      className="cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50/50"
+                      onClick={() => setSelectedItem(item)}
+                    >
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-medium text-gray-900">{item.entityType}</p>
+                        <p className="max-w-xs truncate text-xs text-gray-500">
+                          {item.sourceText.slice(0, 60)}...
+                        </p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold uppercase text-gray-600">
+                          {item.sourceLocale}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded bg-brand-50 px-2 py-0.5 text-xs font-semibold uppercase text-brand-700">
+                          {item.targetLocale}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${sc.className}`}
+                        >
+                          {sc.label}
+                        </span>
+                      </td>
+                      <td className="hidden px-4 py-3 md:table-cell">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm text-gray-600">{item.translator}</span>
-                          {item.translator === "AI Translation" && (
+                          <span className="text-sm text-gray-600">{item.method}</span>
+                          {item.method === "ai" && (
                             <Sparkles className="h-3 w-3 text-purple-500" />
                           )}
                         </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">Unassigned</span>
-                      )}
-                    </td>
-                    <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell">
-                      {item.updatedAt}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedItem(item);
-                        }}
-                      >
-                        View
-                        <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell">
+                        {new Date(item.updatedAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedItem(item);
+                          }}
+                        >
+                          View
+                          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
         {/* Pagination */}
-        {filtered.length > 0 && (
+        {totalPages > 0 && (
           <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
             <p className="text-xs text-gray-500">
-              Showing 1-{filtered.length} of {filtered.length} translations
+              Page {page} of {totalPages || 1} ({total} translations)
             </p>
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage(page - 1)}
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="sm" className="bg-brand-50 text-brand-700">
-                1
+                {page}
               </Button>
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage(page + 1)}
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -730,7 +664,11 @@ export default function TranslationsPage() {
       )}
 
       {/* Batch Translate Dialog */}
-      <BatchTranslateDialog open={batchOpen} onClose={() => setBatchOpen(false)} />
+      <BatchTranslateDialog
+        open={batchOpen}
+        onClose={() => setBatchOpen(false)}
+        onCreated={fetchTranslations}
+      />
     </div>
   );
 }

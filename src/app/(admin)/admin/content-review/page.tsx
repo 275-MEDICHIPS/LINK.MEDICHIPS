@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Clock,
   CheckCircle2,
@@ -9,169 +9,56 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Send,
   Shield,
   FileText,
   Eye,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
+import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type ReviewStatus = "pending" | "approved" | "rejected";
+type ReviewTab = "pending" | "approved" | "rejected";
 type RiskLevel = "L1" | "L2" | "L3";
+
+interface ReviewComment {
+  id: string;
+  comment: string;
+  action: string;
+  createdAt: string;
+  reviewer?: { name: string };
+}
 
 interface ReviewItem {
   id: string;
-  courseTitle: string;
-  moduleTitle: string;
-  lessonTitle: string;
-  author: string;
-  riskLevel: RiskLevel;
+  versionNumber: number;
+  status: string;
   isAiGenerated: boolean;
-  status: ReviewStatus;
-  submittedAt: string;
-  approvalsRequired: number;
-  approvalsReceived: number;
-  content: string;
-  reviewComments: { reviewer: string; comment: string; action: "approved" | "rejected" | "changes_requested"; date: string }[];
+  createdAt: string;
+  lesson: {
+    translations: { title: string; locale: string }[];
+    module: {
+      translations?: { title: string }[];
+      course: {
+        riskLevel: RiskLevel;
+        translations: { title: string }[];
+      };
+    };
+  };
+  contentBody?: string;
+  reviewComments: ReviewComment[];
+  author?: { name: string };
 }
-
-// ---------------------------------------------------------------------------
-// Mock Data
-// ---------------------------------------------------------------------------
-
-const mockReviews: ReviewItem[] = [
-  {
-    id: "rev_001",
-    courseTitle: "Emergency Triage Protocol",
-    moduleTitle: "Introduction to Triage",
-    lessonTitle: "What is Triage?",
-    author: "Dr. Kim Seonghyun",
-    riskLevel: "L3",
-    isAiGenerated: false,
-    status: "pending",
-    submittedAt: "2026-02-23 14:30",
-    approvalsRequired: 3,
-    approvalsReceived: 1,
-    content:
-      "Triage is a process of prioritizing patients based on the severity of their condition. In emergency settings, effective triage ensures that limited resources are directed to those who need them most. The START (Simple Triage And Rapid Treatment) system is the most widely used method in mass casualty incidents.",
-    reviewComments: [
-      { reviewer: "Dr. Tanaka", comment: "Content is accurate. Approved from emergency medicine perspective.", action: "approved", date: "2026-02-24 09:00" },
-    ],
-  },
-  {
-    id: "rev_002",
-    courseTitle: "Infection Prevention and Control",
-    moduleTitle: "Hand Hygiene",
-    lessonTitle: "5 Moments of Hand Hygiene",
-    author: "AI Builder",
-    riskLevel: "L2",
-    isAiGenerated: true,
-    status: "pending",
-    submittedAt: "2026-02-22 10:15",
-    approvalsRequired: 2,
-    approvalsReceived: 0,
-    content:
-      "The WHO 5 moments for hand hygiene are: (1) before touching a patient, (2) before clean/aseptic procedures, (3) after body fluid exposure risk, (4) after touching a patient, and (5) after touching patient surroundings. Proper hand hygiene is the single most effective measure to prevent healthcare-associated infections.",
-    reviewComments: [],
-  },
-  {
-    id: "rev_003",
-    courseTitle: "Wound Care Basics",
-    moduleTitle: "Assessment",
-    lessonTitle: "Wound Classification",
-    author: "Nurse Mpho Dlamini",
-    riskLevel: "L1",
-    isAiGenerated: false,
-    status: "pending",
-    submittedAt: "2026-02-21 16:45",
-    approvalsRequired: 1,
-    approvalsReceived: 0,
-    content:
-      "Wounds can be classified by their cause (surgical, traumatic, pressure), depth (superficial, partial-thickness, full-thickness), and contamination level (clean, clean-contaminated, contaminated, dirty). Proper classification guides treatment decisions.",
-    reviewComments: [],
-  },
-  {
-    id: "rev_004",
-    courseTitle: "Pediatric Assessment",
-    moduleTitle: "Vital Signs",
-    lessonTitle: "Age-Specific Normal Ranges",
-    author: "AI Builder",
-    riskLevel: "L3",
-    isAiGenerated: true,
-    status: "pending",
-    submittedAt: "2026-02-20 11:30",
-    approvalsRequired: 3,
-    approvalsReceived: 0,
-    content:
-      "Normal vital sign ranges vary significantly by age in pediatric patients. Heart rate: newborn 120-160, infant 80-140, child 80-120, adolescent 60-100 bpm. Respiratory rate: newborn 30-60, infant 25-50, child 20-30, adolescent 12-20 breaths/min.",
-    reviewComments: [],
-  },
-  {
-    id: "rev_005",
-    courseTitle: "Mental Health First Aid",
-    moduleTitle: "Crisis Recognition",
-    lessonTitle: "Signs of Acute Distress",
-    author: "Dr. Williams Okafor",
-    riskLevel: "L1",
-    isAiGenerated: false,
-    status: "pending",
-    submittedAt: "2026-02-19 09:00",
-    approvalsRequired: 1,
-    approvalsReceived: 0,
-    content:
-      "Signs of acute psychological distress include rapid breathing, trembling, disorientation, emotional numbness, and inability to perform routine tasks. Early recognition allows for timely intervention and support.",
-    reviewComments: [],
-  },
-  {
-    id: "rev_006",
-    courseTitle: "Diabetes Management",
-    moduleTitle: "Monitoring",
-    lessonTitle: "Blood Glucose Monitoring",
-    author: "Dr. Chen Wei",
-    riskLevel: "L2",
-    isAiGenerated: false,
-    status: "approved",
-    submittedAt: "2026-02-18 14:00",
-    approvalsRequired: 2,
-    approvalsReceived: 2,
-    content:
-      "Blood glucose monitoring is essential for diabetes management. Normal fasting glucose: 70-100 mg/dL. Target pre-meal: 80-130 mg/dL. Target post-meal (2 hours): <180 mg/dL. HbA1c target: <7% for most adults.",
-    reviewComments: [
-      { reviewer: "Dr. Kim", comment: "Accurate values. Well structured.", action: "approved", date: "2026-02-19 10:00" },
-      { reviewer: "Dr. Tanaka", comment: "Good for resource-limited context.", action: "approved", date: "2026-02-20 08:30" },
-    ],
-  },
-  {
-    id: "rev_007",
-    courseTitle: "Infection Prevention and Control",
-    moduleTitle: "PPE",
-    lessonTitle: "Donning and Doffing Sequence",
-    author: "AI Builder",
-    riskLevel: "L2",
-    isAiGenerated: true,
-    status: "rejected",
-    submittedAt: "2026-02-17 15:30",
-    approvalsRequired: 2,
-    approvalsReceived: 0,
-    content:
-      "Donning sequence: hand hygiene, gown, mask/respirator, goggles/face shield, gloves. Doffing sequence: gloves, goggles/face shield, gown, mask/respirator, hand hygiene.",
-    reviewComments: [
-      { reviewer: "Dr. Amina", comment: "Doffing sequence is incorrect per current WHO guidelines. The gown and gloves should be removed together. Please regenerate.", action: "rejected", date: "2026-02-18 11:00" },
-    ],
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -183,11 +70,15 @@ const riskConfig: Record<RiskLevel, { label: string; className: string; required
   L3: { label: "L3 High", className: "bg-red-50 text-red-700 border border-red-200", required: 3 },
 };
 
-const tabConfig: { key: ReviewStatus; label: string; icon: React.ElementType; color: string }[] = [
-  { key: "pending", label: "Pending Review", icon: Clock, color: "text-amber-600" },
-  { key: "approved", label: "Approved", icon: CheckCircle2, color: "text-accent-600" },
-  { key: "rejected", label: "Rejected", icon: XCircle, color: "text-red-600" },
+const tabConfig: { key: ReviewTab; label: string; apiStatus: string; icon: React.ElementType; color: string }[] = [
+  { key: "pending", label: "Pending Review", apiStatus: "IN_REVIEW", icon: Clock, color: "text-amber-600" },
+  { key: "approved", label: "Approved", apiStatus: "APPROVED", icon: CheckCircle2, color: "text-accent-600" },
+  { key: "rejected", label: "Rejected", apiStatus: "ARCHIVED", icon: XCircle, color: "text-red-600" },
 ];
+
+function getApprovalCount(comments: ReviewComment[]): number {
+  return comments.filter((c) => c.action === "APPROVED" || c.action === "approved").length;
+}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -197,13 +88,40 @@ function ReviewCard({
   item,
   expanded,
   onToggle,
+  onSubmitReview,
 }: {
   item: ReviewItem;
   expanded: boolean;
   onToggle: () => void;
+  onSubmitReview: (versionId: string, action: "approve" | "reject", reason?: string) => Promise<void>;
 }) {
   const [reviewAction, setReviewAction] = useState<"approve" | "changes" | "reject" | null>(null);
   const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const riskLevel = item.lesson?.module?.course?.riskLevel || "L1";
+  const risk = riskConfig[riskLevel];
+  const courseTitle = item.lesson?.module?.course?.translations?.[0]?.title || "Untitled Course";
+  const moduleTitle = item.lesson?.module?.translations?.[0]?.title || "Module";
+  const lessonTitle = item.lesson?.translations?.[0]?.title || "Untitled Lesson";
+  const approvalsReceived = getApprovalCount(item.reviewComments);
+  const isPending = item.status === "IN_REVIEW" || item.status === "DRAFT";
+
+  const handleSubmit = async () => {
+    if (!reviewAction || reviewAction === "changes") return;
+    setSubmitting(true);
+    try {
+      await onSubmitReview(
+        item.id,
+        reviewAction,
+        comment.trim() || undefined
+      );
+      setReviewAction(null);
+      setComment("");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <Card className={expanded ? "ring-2 ring-brand-200" : ""}>
@@ -214,9 +132,9 @@ function ReviewCard({
           className="flex w-full items-start gap-4 p-4 text-left"
         >
           <div className="mt-0.5 shrink-0">
-            {item.status === "pending" ? (
+            {isPending ? (
               <Clock className="h-5 w-5 text-amber-500" />
-            ) : item.status === "approved" ? (
+            ) : item.status === "APPROVED" || item.status === "PUBLISHED" ? (
               <CheckCircle2 className="h-5 w-5 text-accent-500" />
             ) : (
               <XCircle className="h-5 w-5 text-red-500" />
@@ -224,20 +142,20 @@ function ReviewCard({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-gray-500">{item.courseTitle}</span>
+              <span className="text-xs text-gray-500">{courseTitle}</span>
               <ChevronDown className="h-3 w-3 text-gray-300" />
-              <span className="text-xs text-gray-500">{item.moduleTitle}</span>
+              <span className="text-xs text-gray-500">{moduleTitle}</span>
               <ChevronDown className="h-3 w-3 text-gray-300" />
             </div>
-            <h3 className="mt-1 text-sm font-semibold text-gray-900">{item.lessonTitle}</h3>
+            <h3 className="mt-1 text-sm font-semibold text-gray-900">{lessonTitle}</h3>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-gray-500">by {item.author}</span>
+              <span className="text-xs text-gray-500">
+                v{item.versionNumber}
+              </span>
               <span
-                className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-mono font-semibold ${
-                  riskConfig[item.riskLevel].className
-                }`}
+                className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-mono font-semibold ${risk.className}`}
               >
-                {riskConfig[item.riskLevel].label}
+                {risk.label}
               </span>
               {item.isAiGenerated && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">
@@ -248,17 +166,17 @@ function ReviewCard({
           </div>
           <div className="shrink-0 text-right">
             <div className="flex items-center gap-1">
-              {Array.from({ length: item.approvalsRequired }).map((_, i) => (
+              {Array.from({ length: risk.required }).map((_, i) => (
                 <div
                   key={i}
                   className={`h-2 w-2 rounded-full ${
-                    i < item.approvalsReceived ? "bg-accent-500" : "bg-gray-200"
+                    i < approvalsReceived ? "bg-accent-500" : "bg-gray-200"
                   }`}
                 />
               ))}
             </div>
             <p className="mt-1 text-xs text-gray-400">
-              {item.approvalsReceived}/{item.approvalsRequired} approvals
+              {approvalsReceived}/{risk.required} approvals
             </p>
             {expanded ? (
               <ChevronUp className="ml-auto mt-1 h-4 w-4 text-gray-400" />
@@ -272,15 +190,17 @@ function ReviewCard({
         {expanded && (
           <div className="border-t border-gray-100">
             {/* Content preview */}
-            <div className="border-b border-gray-50 bg-gray-50/50 p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-gray-400" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Content Preview
-                </span>
+            {item.contentBody && (
+              <div className="border-b border-gray-50 bg-gray-50/50 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-gray-400" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Content Preview
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed text-gray-700">{item.contentBody}</p>
               </div>
-              <p className="text-sm leading-relaxed text-gray-700">{item.content}</p>
-            </div>
+            )}
 
             {/* Existing comments */}
             {item.reviewComments.length > 0 && (
@@ -289,12 +209,12 @@ function ReviewCard({
                   Review History
                 </p>
                 <div className="space-y-3">
-                  {item.reviewComments.map((rc, idx) => (
-                    <div key={idx} className="flex gap-3">
+                  {item.reviewComments.map((rc) => (
+                    <div key={rc.id} className="flex gap-3">
                       <div className="mt-0.5 shrink-0">
-                        {rc.action === "approved" ? (
+                        {rc.action === "APPROVED" || rc.action === "approved" ? (
                           <CheckCircle2 className="h-4 w-4 text-accent-500" />
-                        ) : rc.action === "rejected" ? (
+                        ) : rc.action === "REJECTED" || rc.action === "rejected" ? (
                           <XCircle className="h-4 w-4 text-red-500" />
                         ) : (
                           <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -302,16 +222,22 @@ function ReviewCard({
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900">{rc.reviewer}</span>
-                          <span className={`text-xs font-medium capitalize ${
-                            rc.action === "approved" ? "text-accent-600" :
-                            rc.action === "rejected" ? "text-red-600" : "text-amber-600"
-                          }`}>
-                            {rc.action.replace("_", " ")}
+                          <span className="text-sm font-medium text-gray-900">
+                            {rc.reviewer?.name || "Reviewer"}
                           </span>
-                          <span className="text-xs text-gray-400">{rc.date}</span>
+                          <span className={`text-xs font-medium capitalize ${
+                            rc.action === "APPROVED" || rc.action === "approved" ? "text-accent-600" :
+                            rc.action === "REJECTED" || rc.action === "rejected" ? "text-red-600" : "text-amber-600"
+                          }`}>
+                            {rc.action.toLowerCase().replace("_", " ")}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {new Date(rc.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
-                        <p className="mt-0.5 text-sm text-gray-600">{rc.comment}</p>
+                        {rc.comment && (
+                          <p className="mt-0.5 text-sm text-gray-600">{rc.comment}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -320,7 +246,7 @@ function ReviewCard({
             )}
 
             {/* Review form (only for pending items) */}
-            {item.status === "pending" && (
+            {isPending && (
               <div className="p-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
                   Your Review
@@ -340,17 +266,6 @@ function ReviewCard({
                     Approve
                   </button>
                   <button
-                    onClick={() => setReviewAction("changes")}
-                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                      reviewAction === "changes"
-                        ? "border-amber-300 bg-amber-50 text-amber-700"
-                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <AlertTriangle className="h-4 w-4" />
-                    Request Changes
-                  </button>
-                  <button
                     onClick={() => setReviewAction("reject")}
                     className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                       reviewAction === "reject"
@@ -366,7 +281,7 @@ function ReviewCard({
                 {/* Comment */}
                 <div className="mb-4">
                   <label htmlFor={`comment-${item.id}`} className="mb-1.5 block text-sm font-medium text-gray-700">
-                    Comment {reviewAction !== "approve" && <span className="text-red-500">*</span>}
+                    Comment {reviewAction === "reject" && <span className="text-red-500">*</span>}
                   </label>
                   <textarea
                     id={`comment-${item.id}`}
@@ -386,9 +301,9 @@ function ReviewCard({
                 <div className="mb-4 flex items-start gap-2 rounded-lg bg-gray-50 p-3">
                   <Shield className="mt-0.5 h-4 w-4 text-gray-400" />
                   <p className="text-xs text-gray-500">
-                    Risk level <strong>{item.riskLevel}</strong> requires{" "}
-                    <strong>{item.approvalsRequired} approval{item.approvalsRequired > 1 ? "s" : ""}</strong>.
-                    Currently has {item.approvalsReceived}/{item.approvalsRequired}.
+                    Risk level <strong>{riskLevel}</strong> requires{" "}
+                    <strong>{risk.required} approval{risk.required > 1 ? "s" : ""}</strong>.
+                    Currently has {approvalsReceived}/{risk.required}.
                     {item.isAiGenerated && " AI-generated content always requires human review."}
                   </p>
                 </div>
@@ -396,10 +311,20 @@ function ReviewCard({
                 {/* Submit */}
                 <div className="flex justify-end">
                   <Button
-                    disabled={!reviewAction || (reviewAction !== "approve" && !comment.trim())}
+                    disabled={
+                      !reviewAction ||
+                      reviewAction === "changes" ||
+                      (reviewAction === "reject" && !comment.trim()) ||
+                      submitting
+                    }
+                    onClick={handleSubmit}
                   >
-                    <Send className="mr-2 h-4 w-4" />
-                    Submit Review
+                    {submitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="mr-2 h-4 w-4" />
+                    )}
+                    {submitting ? "Submitting..." : "Submit Review"}
                   </Button>
                 </div>
               </div>
@@ -416,18 +341,74 @@ function ReviewCard({
 // ---------------------------------------------------------------------------
 
 export default function ContentReviewPage() {
-  const [activeTab, setActiveTab] = useState<ReviewStatus>("pending");
+  const [activeTab, setActiveTab] = useState<ReviewTab>("pending");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [items, setItems] = useState<ReviewItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filteredItems = useMemo(() => {
-    return mockReviews.filter((r) => r.status === activeTab);
-  }, [activeTab]);
+  const currentTabConfig = tabConfig.find((t) => t.key === activeTab)!;
 
-  const counts = {
-    pending: mockReviews.filter((r) => r.status === "pending").length,
-    approved: mockReviews.filter((r) => r.status === "approved").length,
-    rejected: mockReviews.filter((r) => r.status === "rejected").length,
+  const fetchReviews = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        status: currentTabConfig.apiStatus,
+      });
+
+      const res = await fetch(`/api/v1/admin/content-review?${params.toString()}`);
+      const json = await res.json();
+
+      if (json.data) {
+        setItems(json.data);
+        setTotal(json.pagination?.total || 0);
+      } else {
+        setError("Failed to load reviews");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, currentTabConfig.apiStatus]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
+
+  const handleTabChange = (tab: ReviewTab) => {
+    setActiveTab(tab);
+    setPage(1);
+    setExpandedId(null);
   };
+
+  const handleSubmitReview = async (versionId: string, action: "approve" | "reject", reason?: string) => {
+    try {
+      const res = await fetch("/api/v1/admin/content-review", {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ versionId, action, reason }),
+      });
+
+      if (res.ok) {
+        // Refetch after successful review
+        fetchReviews();
+      } else {
+        const json = await res.json();
+        alert(json.error?.message || "Failed to submit review");
+      }
+    } catch {
+      alert("Network error. Please try again.");
+    }
+  };
+
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="space-y-6">
@@ -475,10 +456,7 @@ export default function ContentReviewPage() {
           return (
             <button
               key={tab.key}
-              onClick={() => {
-                setActiveTab(tab.key);
-                setExpandedId(null);
-              }}
+              onClick={() => handleTabChange(tab.key)}
               className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? "border-brand-500 text-brand-700"
@@ -487,13 +465,11 @@ export default function ContentReviewPage() {
             >
               <Icon className={`h-4 w-4 ${activeTab === tab.key ? tab.color : "text-gray-400"}`} />
               {tab.label}
-              <span
-                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  activeTab === tab.key ? "bg-brand-50 text-brand-700" : "bg-gray-100 text-gray-500"
-                }`}
-              >
-                {counts[tab.key]}
-              </span>
+              {activeTab === tab.key && (
+                <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">
+                  {total}
+                </span>
+              )}
             </button>
           );
         })}
@@ -501,7 +477,24 @@ export default function ContentReviewPage() {
 
       {/* Review items */}
       <div className="space-y-3">
-        {filteredItems.length === 0 ? (
+        {loading ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
+              <p className="mt-3 text-sm text-gray-500">Loading reviews...</p>
+            </CardContent>
+          </Card>
+        ) : error ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center p-12">
+              <AlertTriangle className="h-10 w-10 text-red-300" />
+              <p className="mt-3 text-sm font-medium text-gray-500">{error}</p>
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => fetchReviews()}>
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : items.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-12">
               {activeTab === "pending" ? (
@@ -513,7 +506,7 @@ export default function ContentReviewPage() {
               ) : activeTab === "approved" ? (
                 <>
                   <Eye className="h-12 w-12 text-gray-200" />
-                  <p className="mt-3 text-sm font-medium text-gray-500">No approved items yet</p>
+                  <p className="mt-3 text-sm font-medium text-gray-500">No approved items</p>
                 </>
               ) : (
                 <>
@@ -524,7 +517,7 @@ export default function ContentReviewPage() {
             </CardContent>
           </Card>
         ) : (
-          filteredItems.map((item) => (
+          items.map((item) => (
             <ReviewCard
               key={item.id}
               item={item}
@@ -532,10 +525,41 @@ export default function ContentReviewPage() {
               onToggle={() =>
                 setExpandedId(expandedId === item.id ? null : item.id)
               }
+              onSubmitReview={handleSubmitReview}
             />
           ))
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-gray-500">
+            Page {page} of {totalPages} ({total} items)
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" className="bg-brand-50 text-brand-700">
+              {page}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage(page + 1)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
