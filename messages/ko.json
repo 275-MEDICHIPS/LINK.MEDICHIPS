@@ -80,7 +80,10 @@
     "recentAchievements": "최근 성과",
     "earnBadgesPrompt": "레슨을 완료하고 배지와 XP를 획득하세요!",
     "recommendedForYou": "추천 코스",
-    "modules": "모듈 {count}개"
+    "modules": "모듈 {count}개",
+    "goalAchieved": "목표 달성!",
+    "dailyGoal": "오늘의 목표",
+    "lessonsToday": "오늘 {count}개 레슨 완료"
   },
   "course": {
     "searchCourses": "코스 검색...",
@@ -116,7 +119,13 @@
     "recommendedCourses": "추천 코스",
     "noEnrolledCourses": "등록된 코스가 없습니다",
     "noEnrolledCoursesDesc": "아래 코스에 등록하여 학습을 시작하세요.",
-    "viewAll": "모두 보기"
+    "viewAll": "모두 보기",
+    "allLevels": "전체 레벨",
+    "riskLevel": "위험 등급",
+    "sort": "정렬",
+    "latest": "최신순",
+    "titleAZ": "제목 A-Z",
+    "titleZA": "제목 Z-A"
   },
   "lesson": {
     "min": "{count}분",

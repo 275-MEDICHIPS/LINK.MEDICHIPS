@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Loader2,
   CalendarDays,
+  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -157,6 +158,8 @@ function TaskCard({
     task.status
   );
 
+  const canStart = task.status === "PENDING" || task.status === "IN_PROGRESS";
+
   return (
     <div
       className={cn(
@@ -259,18 +262,32 @@ function TaskCard({
           )}
         </div>
 
-        {/* Expand Icon */}
-        {expanded ? (
-          <ChevronUp
-            className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400"
-            aria-hidden="true"
-          />
-        ) : (
-          <ChevronDown
-            className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400"
-            aria-hidden="true"
-          />
-        )}
+        {/* Quick Start + Expand Icon */}
+        <div className="flex items-center gap-2">
+          {canStart && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onUploadEvidence(task.id);
+              }}
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:bg-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+              aria-label={`Start task: ${task.title}`}
+            >
+              <Play className="ml-0.5 h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          )}
+          {expanded ? (
+            <ChevronUp
+              className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400"
+              aria-hidden="true"
+            />
+          ) : (
+            <ChevronDown
+              className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400"
+              aria-hidden="true"
+            />
+          )}
+        </div>
       </button>
 
       {/* Expanded Details */}

@@ -757,6 +757,26 @@ export default function LessonViewerPage() {
     lastPositionRef.current = time;
   };
 
+  const storeLessonCompleted = useCallback(() => {
+    if (!lesson) return;
+    const nextLessonId = lesson.navigation.nextLesson?.id ?? null;
+    const nextModuleId = lesson.navigation.nextLesson?.moduleId ?? null;
+    try {
+      sessionStorage.setItem(
+        "lessonCompleted",
+        JSON.stringify({
+          lessonTitle: lesson.title,
+          xpEarned: 10,
+          nextLessonId,
+          nextModuleId,
+          courseId: params.courseId,
+        })
+      );
+    } catch {
+      // sessionStorage unavailable
+    }
+  }, [lesson, params.courseId]);
+
   const handleMarkComplete = async () => {
     if (marking || !lesson) return;
     try {
@@ -777,6 +797,7 @@ export default function LessonViewerPage() {
       if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error("Failed to mark complete");
       setIsCompleted(true);
+      storeLessonCompleted();
       triggerLogoBounce();
     } catch {
       setMarkError(true);
@@ -785,9 +806,10 @@ export default function LessonViewerPage() {
     }
   };
 
-  const handleQuizComplete = (passed: boolean, score: number) => {
+  const handleQuizComplete = (passed: boolean, _score: number) => {
     if (passed) {
       setIsCompleted(true);
+      storeLessonCompleted();
       triggerLogoBounce();
     }
   };

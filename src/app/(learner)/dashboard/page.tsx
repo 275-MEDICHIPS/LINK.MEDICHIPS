@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   Flame,
@@ -13,8 +14,14 @@ import {
   BookOpen,
   Star,
   TrendingUp,
+  Clock,
+  CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProgressRing } from "@/components/course/progress-ring";
+import { CelebrationModal } from "@/components/gamification/celebration-modal";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -43,7 +50,16 @@ interface DashboardData {
     moduleId: string;
     progressPct: number;
     thumbnailUrl: string | null;
+    moduleIndex: number;
+    lessonIndex: number;
+    durationMin: number | null;
+    lastStudiedAt: string;
   } | null;
+  dailyGoal: {
+    targetMin: number;
+    completedMin: number;
+    lessonsToday: number;
+  };
   pendingTasks: Array<{
     id: string;
     title: string;
@@ -67,6 +83,14 @@ interface DashboardData {
     moduleCount: number;
     riskLevel: string;
   } | null;
+}
+
+interface LessonCompletedData {
+  lessonTitle: string;
+  xpEarned: number;
+  nextLessonId: string | null;
+  nextModuleId: string | null;
+  courseId: string;
 }
 
 // ─── Skeleton Components ──────────────────────────────────────────────────────
@@ -113,15 +137,36 @@ function getWeekdayLabels(): string[] {
   return labels;
 }
 
+// ─── Helper: Relative time ───────────────────────────────────────────────────
+
+function getRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMin = Math.floor((now - then) / 60000);
+
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay}d ago`;
+}
+
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function LearnerDashboard() {
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
+
+  // Celebration modal state
+  const [celebrationOpen, setCelebrationOpen] = useState(false);
+  const [celebrationData, setCelebrationData] =
+    useState<LessonCompletedData | null>(null);
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -144,9 +189,29 @@ export default function LearnerDashboard() {
     }
   }, []);
 
+  // Pull-to-refresh
+  const { isRefreshing, pullDistance, handlers } = usePullToRefresh(
+    fetchDashboard
+  );
+
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+
+  // Check sessionStorage for lesson completion celebration
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("lessonCompleted");
+      if (raw) {
+        sessionStorage.removeItem("lessonCompleted");
+        const parsed: LessonCompletedData = JSON.parse(raw);
+        setCelebrationData(parsed);
+        setCelebrationOpen(true);
+      }
+    } catch {
+      // sessionStorage unavailable or bad data
+    }
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -160,11 +225,11 @@ export default function LearnerDashboard() {
     };
   }, []);
 
-  if (loading) {
+  if (loading && !data) {
     return <DashboardSkeleton />;
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
         <p className="text-sm text-gray-500">{error}</p>
@@ -178,17 +243,52 @@ export default function LearnerDashboard() {
   if (!data) return null;
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? t("goodMorning") : hour < 17 ? t("goodAfternoon") : t("goodEvening");
+  const greeting =
+    hour < 12
+      ? t("goodMorning")
+      : hour < 17
+        ? t("goodAfternoon")
+        : t("goodEvening");
   const weekLabels = getWeekdayLabels();
-  const weekData = data.weeklyProgress.length === 7
-    ? data.weeklyProgress
-    : [0, 0, 0, 0, 0, 0, 0];
+  const weekData =
+    data.weeklyProgress.length === 7
+      ? data.weeklyProgress
+      : [0, 0, 0, 0, 0, 0, 0];
   const maxWeekVal = Math.max(...weekData, 1);
 
   const xpProgressPct = Math.round(data.level.progress * 100);
 
+  // Daily goal
+  const goalPct = Math.min(
+    Math.round((data.dailyGoal.completedMin / data.dailyGoal.targetMin) * 100),
+    100
+  );
+  const goalAchieved = goalPct >= 100;
+
   return (
-    <div className="space-y-6 pb-4">
+    <div
+      className="space-y-6 pb-4"
+      {...handlers}
+    >
+      {/* Pull-to-refresh indicator */}
+      {(pullDistance > 0 || isRefreshing) && (
+        <div
+          className="flex items-center justify-center transition-all duration-200"
+          style={{ height: `${pullDistance}px` }}
+        >
+          {isRefreshing ? (
+            <Loader2 className="h-5 w-5 animate-spin text-brand-500" />
+          ) : (
+            <div
+              className="h-5 w-5 rounded-full border-2 border-brand-300 border-t-brand-500 transition-transform"
+              style={{
+                transform: `rotate(${(pullDistance / 50) * 360}deg)`,
+              }}
+            />
+          )}
+        </div>
+      )}
+
       {/* Greeting */}
       <div className="flex items-center justify-between">
         <div>
@@ -230,7 +330,9 @@ export default function LearnerDashboard() {
               {data.level.level}
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">{t("level", { level: data.level.level })}</p>
+              <p className="text-xs font-medium text-gray-500">
+                {t("level", { level: data.level.level })}
+              </p>
               <p className="text-sm font-bold text-gray-900">
                 {data.totalXp.toLocaleString()} XP
               </p>
@@ -238,7 +340,10 @@ export default function LearnerDashboard() {
           </div>
           {data.level.nextLevelXp && (
             <p className="text-xs text-gray-400">
-              {t("xpToNextLevel", { xp: data.level.nextLevelXp.toLocaleString(), level: data.level.level + 1 })}
+              {t("xpToNextLevel", {
+                xp: data.level.nextLevelXp.toLocaleString(),
+                level: data.level.level + 1,
+              })}
             </p>
           )}
         </div>
@@ -256,6 +361,53 @@ export default function LearnerDashboard() {
           />
         </div>
       </div>
+
+      {/* Daily Goal Widget */}
+      <section
+        className={cn(
+          "rounded-xl border p-4 shadow-sm transition-colors",
+          goalAchieved
+            ? "border-accent-200 bg-accent-50"
+            : "border-gray-100 bg-white"
+        )}
+        aria-label="Daily learning goal"
+      >
+        <div className="flex items-center gap-4">
+          <ProgressRing
+            percentage={goalPct}
+            size={80}
+            strokeWidth={6}
+            showLabel={false}
+          />
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              {goalAchieved ? (
+                <CheckCircle2
+                  className="h-4 w-4 text-accent-500"
+                  aria-hidden="true"
+                />
+              ) : (
+                <TrendingUp
+                  className="h-4 w-4 text-brand-500"
+                  aria-hidden="true"
+                />
+              )}
+              <p className="text-sm font-semibold text-gray-900">
+                {goalAchieved
+                  ? t("goalAchieved")
+                  : t("dailyGoal")}
+              </p>
+            </div>
+            <p className="mt-0.5 text-lg font-bold text-gray-900">
+              {data.dailyGoal.completedMin}/{data.dailyGoal.targetMin}
+              <span className="text-sm font-normal text-gray-400"> min</span>
+            </p>
+            <p className="text-xs text-gray-500">
+              {t("lessonsToday", { count: data.dailyGoal.lessonsToday })}
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-3">
@@ -295,42 +447,45 @@ export default function LearnerDashboard() {
             href={`/courses/${data.continueLearning.courseId}/modules/${data.continueLearning.moduleId}/lessons/${data.continueLearning.lessonId}`}
             className="block rounded-xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md"
           >
-            <div className="flex gap-3 p-4">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-brand-50">
-                {data.continueLearning.thumbnailUrl ? (
-                  <img
-                    src={data.continueLearning.thumbnailUrl}
-                    alt=""
-                    className="h-full w-full rounded-lg object-cover"
-                  />
-                ) : (
-                  <BookOpen className="h-6 w-6 text-brand-400" aria-hidden="true" />
-                )}
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-gray-400">
+            <div className="flex items-center gap-3 p-4">
+              {/* ProgressRing */}
+              <ProgressRing
+                percentage={data.continueLearning.progressPct}
+                size={56}
+                strokeWidth={5}
+                className="flex-shrink-0"
+              />
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-xs text-gray-400">
                   {data.continueLearning.courseTitle}
                 </p>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="truncate text-sm font-semibold text-gray-900">
                   {data.continueLearning.lessonTitle}
                 </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      className="h-full rounded-full bg-brand-500"
-                      style={{
-                        width: `${data.continueLearning.progressPct}%`,
-                      }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-medium text-gray-400">
-                    {Math.round(data.continueLearning.progressPct)}%
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-gray-400">
+                  <span>
+                    Module {data.continueLearning.moduleIndex + 1} · Lesson{" "}
+                    {data.continueLearning.lessonIndex + 1}
                   </span>
+                  {data.continueLearning.durationMin && (
+                    <span className="flex items-center gap-0.5">
+                      <Clock className="h-2.5 w-2.5" aria-hidden="true" />
+                      {data.continueLearning.durationMin}min
+                    </span>
+                  )}
+                  <span>{getRelativeTime(data.continueLearning.lastStudiedAt)}</span>
                 </div>
               </div>
+
+              {/* CTA */}
               <div className="flex items-center">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-500">
-                  <Play className="h-3.5 w-3.5 text-white" aria-hidden="true" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-500">
+                  <Play
+                    className="ml-0.5 h-4 w-4 text-white"
+                    aria-hidden="true"
+                  />
                 </div>
               </div>
             </div>
@@ -381,9 +536,7 @@ export default function LearnerDashboard() {
                 <div
                   className={cn(
                     "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg",
-                    task.status === "IN_PROGRESS"
-                      ? "bg-blue-50"
-                      : "bg-gray-50"
+                    task.status === "IN_PROGRESS" ? "bg-blue-50" : "bg-gray-50"
                   )}
                 >
                   <div
@@ -402,10 +555,13 @@ export default function LearnerDashboard() {
                   {task.dueDate && (
                     <p className="text-[10px] text-gray-400">
                       {t("due", {
-                        date: new Date(task.dueDate).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                        }),
+                        date: new Date(task.dueDate).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                          }
+                        ),
                       })}
                     </p>
                   )}
@@ -442,7 +598,10 @@ export default function LearnerDashboard() {
           >
             {weekData.map((val, i) => (
               <div key={i} className="flex flex-1 flex-col items-center gap-1">
-                <div className="relative w-full flex justify-center" style={{ height: "60px" }}>
+                <div
+                  className="relative w-full flex justify-center"
+                  style={{ height: "60px" }}
+                >
                   <div
                     className={cn(
                       "w-5 rounded-t-md transition-all duration-300",
@@ -512,11 +671,12 @@ export default function LearnerDashboard() {
           <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50">
-                <Trophy className="h-5 w-5 text-gray-300" aria-hidden="true" />
+                <Trophy
+                  className="h-5 w-5 text-gray-300"
+                  aria-hidden="true"
+                />
               </div>
-              <p className="text-sm text-gray-500">
-                {t("earnBadgesPrompt")}
-              </p>
+              <p className="text-sm text-gray-500">{t("earnBadgesPrompt")}</p>
             </div>
           </div>
         )}
@@ -537,7 +697,10 @@ export default function LearnerDashboard() {
           >
             <div className="flex items-start gap-3">
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-brand-100">
-                <Star className="h-5 w-5 text-brand-500" aria-hidden="true" />
+                <Star
+                  className="h-5 w-5 text-brand-500"
+                  aria-hidden="true"
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="mb-1 flex items-center gap-2">
@@ -562,10 +725,15 @@ export default function LearnerDashboard() {
                   {data.recommendedCourse.description}
                 </p>
                 <p className="mt-1 text-[10px] text-gray-400">
-                  {t("modules", { count: data.recommendedCourse.moduleCount })}
+                  {t("modules", {
+                    count: data.recommendedCourse.moduleCount,
+                  })}
                 </p>
               </div>
-              <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300" aria-hidden="true" />
+              <ChevronRight
+                className="h-4 w-4 flex-shrink-0 text-gray-300"
+                aria-hidden="true"
+              />
             </div>
           </Link>
         </section>
@@ -594,6 +762,22 @@ export default function LearnerDashboard() {
           </>
         )}
       </div>
+
+      {/* Celebration Modal */}
+      <CelebrationModal
+        open={celebrationOpen}
+        onOpenChange={(open) => {
+          setCelebrationOpen(open);
+          if (!open && celebrationData?.nextLessonId && celebrationData.nextModuleId) {
+            router.push(
+              `/courses/${celebrationData.courseId}/modules/${celebrationData.nextModuleId}/lessons/${celebrationData.nextLessonId}`
+            );
+          }
+        }}
+        title={celebrationData?.lessonTitle ?? "Lesson Complete!"}
+        description="Great job completing this lesson!"
+        xpEarned={celebrationData?.xpEarned}
+      />
     </div>
   );
 }

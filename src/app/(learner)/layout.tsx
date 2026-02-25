@@ -12,6 +12,7 @@ import {
   Settings,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
+import { Toaster } from "@/components/ui/toaster";
 
 const tabKeys = [
   { href: "/dashboard", icon: LayoutDashboard, key: "home" as const },
@@ -62,6 +63,7 @@ export default function LearnerLayout({
 
       {/* Main content */}
       <main className="flex-1 px-4 py-4">{children}</main>
+      <Toaster />
 
       {/* Bottom tab bar */}
       <nav className="sticky bottom-0 z-40 border-t border-gray-100 bg-white pb-safe">

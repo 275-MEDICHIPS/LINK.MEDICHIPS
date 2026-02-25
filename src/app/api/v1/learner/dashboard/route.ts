@@ -63,7 +63,12 @@ export async function GET(req: NextRequest) {
         orderBy: { updatedAt: "desc" },
         include: {
           lesson: {
-            include: { translations: true },
+            include: {
+              translations: true,
+              module: {
+                select: { orderIndex: true },
+              },
+            },
           },
         },
       });
@@ -79,9 +84,39 @@ export async function GET(req: NextRequest) {
           moduleId: lessonProgress.lesson.moduleId,
           progressPct: enrollment.progressPct,
           thumbnailUrl: enrollment.course.thumbnailUrl,
+          moduleIndex: lessonProgress.lesson.module.orderIndex,
+          lessonIndex: lessonProgress.lesson.orderIndex,
+          durationMin: lessonProgress.lesson.durationMin,
+          lastStudiedAt: enrollment.updatedAt.toISOString(),
         };
       }
     }
+
+    // Daily goal
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayCompletedLessons = await prisma.lessonProgress.findMany({
+      where: {
+        userId,
+        status: "COMPLETED",
+        updatedAt: { gte: todayStart },
+      },
+      include: {
+        lesson: { select: { durationMin: true } },
+      },
+    });
+
+    const completedMin = todayCompletedLessons.reduce(
+      (sum, lp) => sum + (lp.lesson.durationMin ?? 0),
+      0
+    );
+
+    const dailyGoal = {
+      targetMin: 15,
+      completedMin,
+      lessonsToday: todayCompletedLessons.length,
+    };
 
     // Pending tasks
     const rawTasks = await prisma.task.findMany({
@@ -190,6 +225,7 @@ export async function GET(req: NextRequest) {
         longestStreak: streak?.longestStreak ?? 0,
       },
       continueLearning,
+      dailyGoal,
       pendingTasks,
       weeklyProgress,
       recentBadges: recentBadges.map((eb) => ({
@@ -212,6 +248,7 @@ function buildEmptyDashboard(name: string) {
     level: { level: 1, currentXp: 0, nextLevelXp: 100, progress: 0 },
     streak: { currentStreak: 0, longestStreak: 0 },
     continueLearning: null,
+    dailyGoal: { targetMin: 15, completedMin: 0, lessonsToday: 0 },
     pendingTasks: [],
     weeklyProgress: [0, 0, 0, 0, 0, 0, 0],
     recentBadges: [],

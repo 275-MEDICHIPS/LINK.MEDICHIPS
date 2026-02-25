@@ -11,11 +11,20 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type FilterStatus = "ALL" | "ENROLLED" | "RECOMMENDED";
+type RiskFilter = "ALL" | "L1" | "L2" | "L3";
+type SortOption = "latest" | "titleAZ" | "titleZA";
 
 interface CourseItem {
   id: string;
@@ -209,6 +218,8 @@ export default function CoursesPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterStatus>("ALL");
+  const [riskFilter, setRiskFilter] = useState<RiskFilter>("ALL");
+  const [sortOption, setSortOption] = useState<SortOption>("latest");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const FILTERS: { label: string; value: FilterStatus }[] = [
@@ -245,14 +256,39 @@ export default function CoursesPage() {
     fetchCourses();
   }, [fetchCourses]);
 
+  // Apply risk level filter and sort
+  const applyFiltersAndSort = useCallback(
+    (list: CourseItem[]) => {
+      let filtered = list;
+      if (riskFilter !== "ALL") {
+        filtered = filtered.filter((c) => c.riskLevel === riskFilter);
+      }
+      const sorted = [...filtered];
+      switch (sortOption) {
+        case "titleAZ":
+          sorted.sort((a, b) => a.title.localeCompare(b.title));
+          break;
+        case "titleZA":
+          sorted.sort((a, b) => b.title.localeCompare(a.title));
+          break;
+        case "latest":
+        default:
+          // Keep original order (latest from API)
+          break;
+      }
+      return sorted;
+    },
+    [riskFilter, sortOption]
+  );
+
   // Split courses by enrollment status
   const enrolledCourses = useMemo(
-    () => courses.filter((c) => c.isEnrolled),
-    [courses]
+    () => applyFiltersAndSort(courses.filter((c) => c.isEnrolled)),
+    [courses, applyFiltersAndSort]
   );
   const recommendedCourses = useMemo(
-    () => courses.filter((c) => !c.isEnrolled),
-    [courses]
+    () => applyFiltersAndSort(courses.filter((c) => !c.isEnrolled)),
+    [courses, applyFiltersAndSort]
   );
 
   return (
@@ -295,6 +331,37 @@ export default function CoursesPage() {
             {filter.label}
           </button>
         ))}
+      </div>
+
+      {/* Filter Row */}
+      <div className="flex gap-2">
+        <Select
+          value={riskFilter}
+          onValueChange={(v) => setRiskFilter(v as RiskFilter)}
+        >
+          <SelectTrigger className="h-8 w-[120px] text-xs">
+            <SelectValue placeholder={t("riskLevel")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">{t("allLevels")}</SelectItem>
+            <SelectItem value="L1">L1</SelectItem>
+            <SelectItem value="L2">L2</SelectItem>
+            <SelectItem value="L3">L3</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={sortOption}
+          onValueChange={(v) => setSortOption(v as SortOption)}
+        >
+          <SelectTrigger className="h-8 w-[120px] text-xs">
+            <SelectValue placeholder={t("sort")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="latest">{t("latest")}</SelectItem>
+            <SelectItem value="titleAZ">{t("titleAZ")}</SelectItem>
+            <SelectItem value="titleZA">{t("titleZA")}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Content */}

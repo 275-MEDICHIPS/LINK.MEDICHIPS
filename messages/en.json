@@ -80,7 +80,10 @@
     "recentAchievements": "Recent Achievements",
     "earnBadgesPrompt": "Complete lessons to earn badges and XP!",
     "recommendedForYou": "Recommended for You",
-    "modules": "{count} modules"
+    "modules": "{count} modules",
+    "goalAchieved": "Goal Achieved!",
+    "dailyGoal": "Daily Goal",
+    "lessonsToday": "{count} lessons completed today"
   },
   "course": {
     "searchCourses": "Search courses...",
@@ -116,7 +119,13 @@
     "recommendedCourses": "Recommended Courses",
     "noEnrolledCourses": "No enrolled courses yet",
     "noEnrolledCoursesDesc": "Enroll in a course below to start learning.",
-    "viewAll": "View All"
+    "viewAll": "View All",
+    "allLevels": "All Levels",
+    "riskLevel": "Risk Level",
+    "sort": "Sort",
+    "latest": "Latest",
+    "titleAZ": "Title A-Z",
+    "titleZA": "Title Z-A"
   },
   "lesson": {
     "min": "{count} min",
