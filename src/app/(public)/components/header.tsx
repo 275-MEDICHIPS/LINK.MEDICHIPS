@@ -26,7 +26,7 @@ export function Header() {
             href="/login"
             className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
           >
-            {t("navLogin") ?? "로그인"}
+            로그인
           </Link>
           <Link
             href="/register"

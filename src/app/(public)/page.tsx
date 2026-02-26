@@ -25,6 +25,18 @@ import {
   Heart,
   Activity,
   Microscope,
+  Brain,
+  Baby,
+  Eye,
+  Bone,
+  Pill,
+  HeartPulse,
+  Ear,
+  Ribbon,
+  ShieldPlus,
+  Radiation,
+  Scissors,
+  Thermometer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CelebrationModal } from "@/components/gamification/celebration-modal";
@@ -62,12 +74,27 @@ interface PublicCourse {
 }
 
 const SPECIALTIES = [
-  { icon: Scan, label: "내시경", desc: "Endoscopy", bg: "bg-teal-50", text: "text-teal-600", count: "12 코스" },
-  { icon: Heart, label: "심초음파", desc: "Echo", bg: "bg-rose-50", text: "text-rose-500", count: "3 코스" },
-  { icon: Activity, label: "초음파", desc: "Ultrasound", bg: "bg-blue-50", text: "text-blue-500", count: "6 코스" },
-  { icon: Syringe, label: "시술", desc: "Procedure", bg: "bg-amber-50", text: "text-amber-600", count: "5 코스" },
-  { icon: Stethoscope, label: "갑상선", desc: "Thyroid", bg: "bg-purple-50", text: "text-purple-500", count: "4 코스" },
-  { icon: Microscope, label: "관절", desc: "Joint", bg: "bg-emerald-50", text: "text-emerald-600", count: "3 코스" },
+  // 1행
+  { icon: Scan, label: "내시경", desc: "Endoscopy", bg: "bg-teal-50", text: "text-teal-600" },
+  { icon: Heart, label: "심장내과", desc: "Cardiology", bg: "bg-rose-50", text: "text-rose-500" },
+  { icon: Activity, label: "초음파", desc: "Ultrasound", bg: "bg-blue-50", text: "text-blue-500" },
+  { icon: Syringe, label: "시술/중재", desc: "Intervention", bg: "bg-amber-50", text: "text-amber-600" },
+  { icon: Stethoscope, label: "내과", desc: "Internal Med", bg: "bg-purple-50", text: "text-purple-500" },
+  { icon: Microscope, label: "병리", desc: "Pathology", bg: "bg-emerald-50", text: "text-emerald-600" },
+  // 2행
+  { icon: Brain, label: "신경과", desc: "Neurology", bg: "bg-indigo-50", text: "text-indigo-500" },
+  { icon: Bone, label: "정형외과", desc: "Orthopedics", bg: "bg-orange-50", text: "text-orange-500" },
+  { icon: Baby, label: "소아과", desc: "Pediatrics", bg: "bg-pink-50", text: "text-pink-500" },
+  { icon: Eye, label: "안과", desc: "Ophthalmology", bg: "bg-cyan-50", text: "text-cyan-600" },
+  { icon: Scissors, label: "외과", desc: "Surgery", bg: "bg-red-50", text: "text-red-500" },
+  { icon: HeartPulse, label: "응급의학", desc: "Emergency", bg: "bg-yellow-50", text: "text-yellow-600" },
+  // 3행
+  { icon: Pill, label: "약리학", desc: "Pharmacology", bg: "bg-violet-50", text: "text-violet-500" },
+  { icon: Ribbon, label: "산부인과", desc: "OB/GYN", bg: "bg-fuchsia-50", text: "text-fuchsia-500" },
+  { icon: Ear, label: "이비인후과", desc: "ENT", bg: "bg-sky-50", text: "text-sky-500" },
+  { icon: Radiation, label: "영상의학", desc: "Radiology", bg: "bg-slate-50", text: "text-slate-500" },
+  { icon: ShieldPlus, label: "감염내과", desc: "Infectious", bg: "bg-lime-50", text: "text-lime-600" },
+  { icon: Thermometer, label: "가정의학", desc: "Family Med", bg: "bg-stone-50", text: "text-stone-500" },
 ];
 
 const POPULAR_TAGS = ["대장내시경", "위내시경", "복부초음파", "갑상선초음파"];
@@ -151,22 +178,25 @@ function PublicHome() {
             <h2 className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">
               전문분야별 교육
             </h2>
+            <p className="mt-3 text-gray-500">
+              18개 전문 분야의 실전 의료 교육과정
+            </p>
           </div>
-          <div className="mx-auto grid max-w-4xl grid-cols-3 gap-4 sm:grid-cols-6 sm:gap-5">
+          <div className="mx-auto grid max-w-5xl grid-cols-3 gap-3 sm:grid-cols-6 sm:gap-4">
             {SPECIALTIES.map((spec) => (
               <Link
                 key={spec.label}
                 href="/login"
-                className="group flex flex-col items-center gap-2.5 rounded-2xl border border-gray-100 bg-white p-5 transition-all hover:shadow-lg hover:shadow-brand-100/50 hover:-translate-y-1 hover:border-brand-200"
+                className="group flex flex-col items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-4 transition-all hover:shadow-lg hover:shadow-brand-100/50 hover:-translate-y-1 hover:border-brand-200"
               >
                 <div className={cn(
-                  "flex h-14 w-14 items-center justify-center rounded-2xl transition-transform group-hover:scale-110",
+                  "flex h-12 w-12 items-center justify-center rounded-xl transition-transform group-hover:scale-110",
                   spec.bg, spec.text
                 )}>
-                  <spec.icon className="h-7 w-7" />
+                  <spec.icon className="h-6 w-6" />
                 </div>
-                <span className="text-sm font-bold text-gray-900">{spec.label}</span>
-                <span className="text-[10px] font-medium text-gray-400">{spec.count}</span>
+                <span className="text-[13px] font-bold text-gray-900">{spec.label}</span>
+                <span className="text-[10px] text-gray-400">{spec.desc}</span>
               </Link>
             ))}
           </div>
