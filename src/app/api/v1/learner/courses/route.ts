@@ -12,7 +12,19 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || undefined;
     const category = searchParams.get("category") || undefined;
-    const specialtyId = searchParams.get("specialtyId") || undefined;
+    const explicitSpecialtyId = searchParams.get("specialtyId") || undefined;
+
+    // Get user's specialty early so we can auto-filter
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        specialtyId: true,
+        specialty: { select: { id: true, name: true } },
+      },
+    });
+
+    // Auto-filter by user's specialty when not searching and no explicit filter
+    const specialtyId = explicitSpecialtyId ?? (search ? undefined : user?.specialtyId ?? undefined);
 
     // Build where clause — no organizationId filter so all PUBLISHED courses are visible
     const where: Record<string, unknown> = {
@@ -74,15 +86,6 @@ export async function GET(req: NextRequest) {
     const enrollmentMap = new Map(
       enrollments.map((e) => [e.courseId, e.progressPct])
     );
-
-    // Get user's specialty
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        specialtyId: true,
-        specialty: { select: { id: true, name: true } },
-      },
-    });
 
     const coursesData = courses.map((course) => {
       const t = course.translations[0];
