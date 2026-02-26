@@ -90,7 +90,6 @@ function PageSkeleton() {
       <div className="flex gap-3">
         {[0, 1, 2].map((i) => <Skeleton key={i} className="h-[52px] flex-1 rounded-xl" />)}
       </div>
-      <Skeleton className="h-[320px] w-full rounded-2xl" />
       <Skeleton className="h-5 w-32" />
       <div className="flex gap-3 overflow-hidden">
         {[0, 1, 2].map((i) => (
@@ -102,44 +101,49 @@ function PageSkeleton() {
   );
 }
 
-// ─── Status Chip (Opus: Overdue / To do / Completed) ─────────────────────────
+// ─── Status Chip (Opus style) ────────────────────────────────────────────────
 
 function StatusChip({
   icon: Icon,
   label,
   count,
   active,
-  color,
+  variant,
   onClick,
 }: {
   icon: React.ElementType;
   label: string;
   count: number;
   active: boolean;
-  color: "gray" | "teal" | "green";
+  variant: "default" | "progress" | "done";
   onClick: () => void;
 }) {
-  const colors = {
-    gray: active ? "bg-gray-100 ring-gray-300" : "bg-white ring-gray-100",
-    teal: active ? "bg-teal-50 ring-teal-200" : "bg-white ring-gray-100",
-    green: active ? "bg-emerald-50 ring-emerald-200" : "bg-white ring-gray-100",
+  const styles = {
+    default: {
+      bg: active ? "bg-gray-100 ring-gray-300" : "bg-white ring-gray-100",
+      icon: "text-gray-400",
+    },
+    progress: {
+      bg: active ? "bg-brand-50 ring-brand-200" : "bg-white ring-gray-100",
+      icon: "text-brand-500",
+    },
+    done: {
+      bg: active ? "bg-accent-50 ring-accent-200" : "bg-white ring-gray-100",
+      icon: "text-accent-500",
+    },
   };
-  const iconColors = {
-    gray: "text-gray-400",
-    teal: "text-teal-600",
-    green: "text-emerald-500",
-  };
+  const s = styles[variant];
 
   return (
     <button
       onClick={onClick}
       className={cn(
         "flex flex-1 flex-col items-center gap-1 rounded-xl px-3 py-2.5 ring-1 transition-all",
-        colors[color]
+        s.bg
       )}
     >
       <div className="flex items-center gap-1.5">
-        <Icon className={cn("h-3.5 w-3.5", iconColors[color])} />
+        <Icon className={cn("h-3.5 w-3.5", s.icon)} />
         <span className="text-[11px] text-gray-500">{label}</span>
       </div>
       <span className="text-[18px] font-bold tabular-nums text-gray-900">{count}</span>
@@ -147,91 +151,7 @@ function StatusChip({
   );
 }
 
-// ─── Featured Course Card (Opus: large card + Continue training) ──────────────
-
-function FeaturedCourseCard({ course }: { course: CourseItem }) {
-  const progress = course.progressPct ?? 0;
-  const duration = formatDuration(course.totalDurationMin);
-
-  return (
-    <Link
-      href={`/courses/${course.id}`}
-      className="group block overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100"
-    >
-      {/* Large Thumbnail */}
-      <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
-        {course.thumbnailUrl ? (
-          <img
-            src={course.thumbnailUrl}
-            alt=""
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gray-50">
-            <BookOpen className="h-10 w-10 text-gray-200" />
-          </div>
-        )}
-
-        {/* Module badge (like Opus) */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-lg bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-gray-700 shadow-sm backdrop-blur-sm">
-          <Video className="h-3 w-3" />
-          Module
-        </div>
-
-        {/* Video count */}
-        {course.videoCount > 0 && (
-          <div className="absolute top-3 right-3 flex items-center gap-1 rounded-lg bg-black/50 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
-            <Video className="h-3 w-3" />
-            {course.videoCount}개
-          </div>
-        )}
-      </div>
-
-      {/* Info section */}
-      <div className="p-4">
-        <h3 className="text-[16px] font-bold leading-snug text-gray-900">
-          {course.title}
-        </h3>
-        {(course.creator?.name || duration) && (
-          <p className="mt-1 text-[12px] text-gray-400">
-            {[course.creator?.name, duration].filter(Boolean).join(" · ")}
-          </p>
-        )}
-
-        {/* Progress (like Opus: "In Progress 24%" + green bar) */}
-        {course.isEnrolled && (
-          <div className="mt-3">
-            <p className="text-[12px] text-gray-500">
-              {progress >= 100 ? (
-                <span className="font-medium text-emerald-600">수강 완료</span>
-              ) : (
-                <>진행 중 <span className="font-semibold text-gray-900">{Math.round(progress)}%</span></>
-              )}
-            </p>
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all",
-                  progress >= 100 ? "bg-emerald-500" : "bg-emerald-400"
-                )}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* CTA Button (Opus: "Continue training") */}
-        <div className="mt-4">
-          <span className="block w-full rounded-xl bg-gray-900 py-3 text-center text-[14px] font-semibold text-white transition-colors group-hover:bg-gray-800">
-            {course.isEnrolled && progress > 0 ? "이어서 학습" : "학습 시작"}
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-// ─── Horizontal Scroll Card (for category sections) ──────────────────────────
+// ─── Horizontal Scroll Card ──────────────────────────────────────────────────
 
 function ScrollCourseCard({ course }: { course: CourseItem }) {
   const progress = course.progressPct ?? 0;
@@ -269,7 +189,7 @@ function ScrollCourseCard({ course }: { course: CourseItem }) {
         {course.isEnrolled && progress > 0 && (
           <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/10">
             <div
-              className={cn("h-full", isCompleted ? "bg-emerald-500" : "bg-emerald-400")}
+              className={cn("h-full", isCompleted ? "bg-accent-500" : "bg-brand-400")}
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -287,7 +207,7 @@ function ScrollCourseCard({ course }: { course: CourseItem }) {
         {course.isEnrolled && (
           <p className={cn(
             "mt-1 text-[10px] font-medium",
-            isCompleted ? "text-emerald-600" : "text-gray-400"
+            isCompleted ? "text-accent-600" : "text-gray-400"
           )}>
             {isCompleted ? "완료" : `${Math.round(progress)}%`}
           </p>
@@ -378,13 +298,13 @@ function GridCourseCard({ course }: { course: CourseItem }) {
           <div className="mt-1.5 flex items-center gap-1.5">
             <div className="h-1 flex-1 overflow-hidden rounded-full bg-gray-100">
               <div
-                className={cn("h-full rounded-full", isCompleted ? "bg-emerald-500" : "bg-emerald-400")}
+                className={cn("h-full rounded-full", isCompleted ? "bg-accent-500" : "bg-brand-400")}
                 style={{ width: `${progress}%` }}
               />
             </div>
             <span className={cn(
               "text-[9px] font-medium tabular-nums",
-              isCompleted ? "text-emerald-600" : "text-gray-400"
+              isCompleted ? "text-accent-600" : "text-gray-400"
             )}>
               {isCompleted ? "완료" : `${Math.round(progress)}%`}
             </span>
@@ -457,17 +377,11 @@ export default function CoursesPage() {
   }, [debouncedSearch]);
 
   // Compute stats & sections
-  const { stats, featuredCourse, sections } = useMemo(() => {
+  const { stats, sections } = useMemo(() => {
     const enrolled = courses.filter((c) => c.isEnrolled);
     const inProgress = enrolled.filter((c) => (c.progressPct ?? 0) > 0 && (c.progressPct ?? 0) < 100);
     const completed = enrolled.filter((c) => (c.progressPct ?? 0) >= 100);
     const notStarted = courses.filter((c) => !c.isEnrolled || (c.progressPct ?? 0) === 0);
-
-    // Featured: most recent in-progress course
-    const featured = inProgress.sort((a, b) => (b.progressPct ?? 0) - (a.progressPct ?? 0))[0]
-      ?? enrolled[0]
-      ?? courses[0]
-      ?? null;
 
     // Group by subcategory
     const groups: Record<string, CourseItem[]> = {};
@@ -494,7 +408,6 @@ export default function CoursesPage() {
         completed: completed.length,
         notStarted: notStarted.length,
       },
-      featuredCourse: featured,
       sections: secs,
     };
   }, [courses]);
@@ -526,7 +439,7 @@ export default function CoursesPage() {
           placeholder={t("searchCourses")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-10 text-[14px] text-gray-900 shadow-sm ring-1 ring-gray-100 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
+          className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-10 text-[14px] text-gray-900 shadow-sm ring-1 ring-gray-100 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all"
         />
         {searchQuery && (
           <button
@@ -546,7 +459,7 @@ export default function CoursesPage() {
           <p className="text-[13px] text-gray-400">{error}</p>
           <button
             onClick={() => fetchCourses(userSpecialty?.id)}
-            className="mt-3 text-[13px] font-medium text-gray-900 hover:text-gray-600"
+            className="mt-3 text-[13px] font-medium text-brand-500 hover:text-brand-600"
           >
             {tc("tryAgain")}
           </button>
@@ -566,17 +479,17 @@ export default function CoursesPage() {
           )}
         </div>
       ) : (
-        /* ─── Main View (Opus style) ─── */
+        /* ─── Browse View (코스 탐색) ─── */
         <div className="space-y-6">
-          {/* Specialty header + "Show all" */}
+          {/* Header with specialty */}
           <div className="flex items-center justify-between">
             <h1 className="text-[20px] font-bold text-gray-900">
-              {userSpecialty ? userSpecialty.name : "내 코스"}
+              {userSpecialty ? userSpecialty.name : "코스 탐색"}
             </h1>
             {userSpecialty && (
               <Link
                 href="/onboarding/specialty"
-                className="flex items-center gap-0.5 text-[12px] font-medium text-gray-400 hover:text-gray-600"
+                className="flex items-center gap-0.5 text-[12px] font-medium text-gray-400 hover:text-brand-500"
               >
                 변경
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -591,7 +504,7 @@ export default function CoursesPage() {
               label="미수강"
               count={stats.notStarted}
               active={statusFilter === "all"}
-              color="gray"
+              variant="default"
               onClick={() => setStatusFilter("all")}
             />
             <StatusChip
@@ -599,7 +512,7 @@ export default function CoursesPage() {
               label="수강 중"
               count={stats.inProgress}
               active={statusFilter === "inProgress"}
-              color="teal"
+              variant="progress"
               onClick={() => setStatusFilter("inProgress")}
             />
             <StatusChip
@@ -607,15 +520,10 @@ export default function CoursesPage() {
               label="완료"
               count={stats.completed}
               active={statusFilter === "completed"}
-              color="green"
+              variant="done"
               onClick={() => setStatusFilter("completed")}
             />
           </div>
-
-          {/* Featured Course (Opus: large card + "Continue training") */}
-          {featuredCourse && statusFilter === "all" && (
-            <FeaturedCourseCard course={featuredCourse} />
-          )}
 
           {/* Category Sections (horizontal scroll) */}
           {filteredSections.map((section) => (
