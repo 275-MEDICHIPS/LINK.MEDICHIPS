@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
@@ -8,23 +8,14 @@ import {
   BookOpen,
   Loader2,
   Video,
+  X,
+  ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type FilterStatus = "ALL" | "ENROLLED" | "RECOMMENDED";
-type RiskFilter = "ALL" | "L1" | "L2" | "L3";
-type SortOption = "latest" | "titleAZ" | "titleZA";
 
 interface CreatorInfo {
   id: string;
@@ -52,14 +43,28 @@ interface CourseItem {
   isEnrolled: boolean;
 }
 
-// ─── Medical categories ───────────────────────────────────────────────────────
+interface UserSpecialty {
+  id: string;
+  name: string;
+}
 
-const MEDICAL_CATEGORIES = [
-  "내과", "외과", "응급의학", "간호", "치위생",
-  "물리치료", "임상병리", "방사선", "약학", "한의학",
-  "정형외과", "소아과", "산부인과", "피부과", "안과",
-  "이비인후과", "마취통증의학",
-];
+// ─── Subcategory grouping ────────────────────────────────────────────────────
+
+const SUB_CATEGORIES: Record<string, { label: string; keywords: string[] }> = {
+  endoscopy: { label: "내시경", keywords: ["endoscopy", "colonoscopy", "gastroscopy"] },
+  ultrasound: { label: "초음파", keywords: ["ultrasound"] },
+  procedure: { label: "시술", keywords: ["nerve-block", "joint-injection", "biopsy", "procedure"] },
+  basic: { label: "기초의학", keywords: ["basic", "fundamentals", "introduction", "intro"] },
+  diagnosis: { label: "진단", keywords: ["diagnosis", "diagnostic"] },
+  emergency: { label: "응급", keywords: ["emergency", "acute", "critical"] },
+};
+
+function categorize(slug: string): string {
+  for (const [key, { keywords }] of Object.entries(SUB_CATEGORIES)) {
+    if (keywords.some((kw) => slug.includes(kw))) return key;
+  }
+  return "other";
+}
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -74,7 +79,7 @@ function SkeletonBlock({ className }: { className?: string }) {
 
 function CourseCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+    <div className="w-[160px] flex-shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
       <SkeletonBlock className="aspect-video w-full rounded-none" />
       <div className="space-y-2 p-3">
         <SkeletonBlock className="h-4 w-3/4" />
@@ -84,15 +89,28 @@ function CourseCardSkeleton() {
   );
 }
 
-function CoursesGridSkeleton() {
+function HorizontalSkeleton() {
   return (
-    <div
-      className="grid grid-cols-2 gap-3 lg:grid-cols-3"
-      role="status"
-      aria-label="Loading courses"
-    >
-      {Array.from({ length: 6 }).map((_, i) => (
+    <div className="flex gap-3 overflow-hidden" role="status" aria-label="Loading courses">
+      {Array.from({ length: 3 }).map((_, i) => (
         <CourseCardSkeleton key={i} />
+      ))}
+      <span className="sr-only">Loading...</span>
+    </div>
+  );
+}
+
+function GridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3" role="status" aria-label="Loading courses">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+          <SkeletonBlock className="aspect-video w-full rounded-none" />
+          <div className="space-y-2 p-3">
+            <SkeletonBlock className="h-4 w-3/4" />
+            <SkeletonBlock className="h-3 w-1/2" />
+          </div>
+        </div>
       ))}
       <span className="sr-only">Loading...</span>
     </div>
@@ -119,14 +137,17 @@ function RiskBadge({ level }: { level: string }) {
 
 // ─── Video Course Card ───────────────────────────────────────────────────────
 
-function VideoCourseCard({ course }: { course: CourseItem }) {
+function VideoCourseCard({ course, className }: { course: CourseItem; className?: string }) {
   const progress = course.progressPct ?? 0;
   const isCompleted = progress >= 100;
 
   return (
     <Link
       href={`/courses/${course.id}`}
-      className="group block overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+      className={cn(
+        "group block overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
+        className
+      )}
     >
       {/* Thumbnail — 16:9 */}
       <div className="relative aspect-video w-full bg-gray-100">
@@ -223,6 +244,43 @@ function VideoCourseCard({ course }: { course: CourseItem }) {
   );
 }
 
+// ─── Horizontal Scroll Section ────────────────────────────────────────────────
+
+function HorizontalCourseSection({
+  title,
+  courses,
+}: {
+  title: string;
+  courses: CourseItem[];
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  if (courses.length === 0) return null;
+
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
+        <span className="text-[10px] text-gray-400">
+          {courses.length}개
+        </span>
+      </div>
+      <div
+        ref={scrollRef}
+        className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 snap-x scrollbar-hide"
+      >
+        {courses.map((course) => (
+          <VideoCourseCard
+            key={course.id}
+            course={course}
+            className="w-[160px] flex-shrink-0 snap-start"
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
 function EmptyState({ title, desc }: { title: string; desc: string }) {
@@ -248,17 +306,10 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<FilterStatus>("ALL");
-  const [riskFilter, setRiskFilter] = useState<RiskFilter>("ALL");
-  const [sortOption, setSortOption] = useState<SortOption>("latest");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [userSpecialty, setUserSpecialty] = useState<UserSpecialty | null>(null);
 
-  const FILTERS: { label: string; value: FilterStatus }[] = [
-    { label: t("all"), value: "ALL" },
-    { label: t("myCourses"), value: "ENROLLED" },
-    { label: t("recommendedCourses"), value: "RECOMMENDED" },
-  ];
+  const isSearching = debouncedSearch.length > 0;
 
   // Debounce search input
   useEffect(() => {
@@ -271,66 +322,97 @@ export default function CoursesPage() {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams();
-      if (debouncedSearch) params.set("search", debouncedSearch);
-      if (selectedCategory) params.set("category", selectedCategory);
+      if (debouncedSearch) {
+        params.set("search", debouncedSearch);
+        // When searching, fetch all courses (no specialty filter)
+      } else if (userSpecialty) {
+        params.set("specialtyId", userSpecialty.id);
+      }
       const res = await fetch(`/api/v1/learner/courses?${params.toString()}`);
       if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error(`Failed to load courses (${res.status})`);
       const json = await res.json();
       setCourses(json.data.courses);
+      // Only set specialty from API on initial load (not during search)
+      if (!debouncedSearch && json.data.userSpecialty && !userSpecialty) {
+        setUserSpecialty(json.data.userSpecialty);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load courses");
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, selectedCategory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, userSpecialty?.id]);
+
+  // Initial fetch to get userSpecialty
+  useEffect(() => {
+    if (!userSpecialty) {
+      (async () => {
+        try {
+          const res = await fetch("/api/v1/learner/courses");
+          if (!res.ok) return;
+          const json = await res.json();
+          if (json.data.userSpecialty) {
+            setUserSpecialty(json.data.userSpecialty);
+          }
+          setCourses(json.data.courses);
+        } catch {
+          // will be retried by the main effect
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
-
-  // Apply risk level filter and sort
-  const applyFiltersAndSort = useCallback(
-    (list: CourseItem[]) => {
-      let filtered = list;
-      if (riskFilter !== "ALL") {
-        filtered = filtered.filter((c) => c.riskLevel === riskFilter);
-      }
-      const sorted = [...filtered];
-      switch (sortOption) {
-        case "titleAZ":
-          sorted.sort((a, b) => a.title.localeCompare(b.title));
-          break;
-        case "titleZA":
-          sorted.sort((a, b) => b.title.localeCompare(a.title));
-          break;
-        case "latest":
-        default:
-          break;
-      }
-      return sorted;
-    },
-    [riskFilter, sortOption]
-  );
-
-  // Split courses by enrollment status
-  const enrolledCourses = useMemo(
-    () => applyFiltersAndSort(courses.filter((c) => c.isEnrolled)),
-    [courses, applyFiltersAndSort]
-  );
-  const recommendedCourses = useMemo(
-    () => applyFiltersAndSort(courses.filter((c) => !c.isEnrolled)),
-    [courses, applyFiltersAndSort]
-  );
-
-  // Extract available categories from course data
-  const availableCategories = useMemo(() => {
-    const fields = new Set<string>();
-    for (const c of courses) {
-      if (c.creator?.creatorField) fields.add(c.creator.creatorField);
+    if (userSpecialty || debouncedSearch) {
+      fetchCourses();
     }
-    return MEDICAL_CATEGORIES.filter((cat) => fields.has(cat));
-  }, [courses]);
+  }, [fetchCourses, userSpecialty, debouncedSearch]);
+
+  // Group courses for the default (non-search) view
+  const enrolledCourses = useMemo(
+    () => courses.filter((c) => c.isEnrolled),
+    [courses]
+  );
+
+  const subcategoryGroups = useMemo(() => {
+    const nonEnrolled = courses.filter((c) => !c.isEnrolled);
+    const groups: Record<string, CourseItem[]> = {};
+
+    for (const course of nonEnrolled) {
+      const cat = categorize(course.slug);
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(course);
+    }
+
+    // Sort: known categories first, then "other"
+    const ordered: Array<{ key: string; label: string; courses: CourseItem[] }> = [];
+    for (const [key, meta] of Object.entries(SUB_CATEGORIES)) {
+      if (groups[key]?.length) {
+        ordered.push({ key, label: meta.label, courses: groups[key] });
+      }
+    }
+    if (groups["other"]?.length) {
+      ordered.push({ key: "other", label: t("other"), courses: groups["other"] });
+    }
+    return ordered;
+  }, [courses, t]);
+
+  // If no groups and all enrolled
+  const allCoursesGrouped = useMemo(() => {
+    if (!isSearching) return null;
+    // In search mode, just return all courses
+    return courses;
+  }, [courses, isSearching]);
+
+  function clearSearch() {
+    setSearchQuery("");
+    setDebouncedSearch("");
+  }
 
   return (
     <div className="space-y-4">
@@ -345,89 +427,23 @@ export default function CoursesPage() {
           placeholder={t("searchCourses")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 text-sm"
+          className="pl-9 pr-9 text-sm"
           aria-label={t("searchCourses")}
         />
-      </div>
-
-      {/* Category Chips (horizontal scroll) */}
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 snap-x">
-        {MEDICAL_CATEGORIES.map((cat) => (
+        {searchQuery && (
           <button
-            key={cat}
-            onClick={() =>
-              setSelectedCategory(selectedCategory === cat ? null : cat)
-            }
-            className={cn(
-              "flex-shrink-0 snap-start rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-              selectedCategory === cat
-                ? "bg-brand-500 text-white shadow-sm"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            )}
+            onClick={clearSearch}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            aria-label="Clear search"
           >
-            {cat}
+            <X className="h-4 w-4" />
           </button>
-        ))}
-      </div>
-
-      {/* Filter Tabs */}
-      <div
-        className="flex gap-2"
-        role="tablist"
-        aria-label="Course filter"
-      >
-        {FILTERS.map((filter) => (
-          <button
-            key={filter.value}
-            role="tab"
-            aria-selected={activeFilter === filter.value}
-            onClick={() => setActiveFilter(filter.value)}
-            className={cn(
-              "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-              activeFilter === filter.value
-                ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-            )}
-          >
-            {filter.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Filter Row */}
-      <div className="flex gap-2">
-        <Select
-          value={riskFilter}
-          onValueChange={(v) => setRiskFilter(v as RiskFilter)}
-        >
-          <SelectTrigger className="h-8 w-[120px] text-xs">
-            <SelectValue placeholder={t("riskLevel")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">{t("allLevels")}</SelectItem>
-            <SelectItem value="L1">L1</SelectItem>
-            <SelectItem value="L2">L2</SelectItem>
-            <SelectItem value="L3">L3</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={sortOption}
-          onValueChange={(v) => setSortOption(v as SortOption)}
-        >
-          <SelectTrigger className="h-8 w-[120px] text-xs">
-            <SelectValue placeholder={t("sort")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="latest">{t("latest")}</SelectItem>
-            <SelectItem value="titleAZ">{t("titleAZ")}</SelectItem>
-            <SelectItem value="titleZA">{t("titleZA")}</SelectItem>
-          </SelectContent>
-        </Select>
+        )}
       </div>
 
       {/* Content */}
       {loading ? (
-        <CoursesGridSkeleton />
+        isSearching ? <GridSkeleton /> : <HorizontalSkeleton />
       ) : error ? (
         <div className="flex flex-col items-center justify-center gap-4 py-12">
           <p className="text-sm text-gray-500">{error}</p>
@@ -435,67 +451,77 @@ export default function CoursesPage() {
             {tc("tryAgain")}
           </Button>
         </div>
-      ) : activeFilter === "ALL" ? (
+      ) : isSearching ? (
+        /* ── Search View ── */
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-gray-600">
+            {t("searchResults", { count: courses.length })}
+          </p>
+          {courses.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+              {courses.map((course) => (
+                <VideoCourseCard key={course.id} course={course} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title={t("noSearchResults")}
+              desc={t("noSearchResultsDesc")}
+            />
+          )}
+        </div>
+      ) : (
+        /* ── Default View: Specialty-based ── */
         <div className="space-y-6">
-          {/* My Courses Section */}
+          {/* Specialty header */}
+          {userSpecialty && (
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">
+                {userSpecialty.name}
+              </h2>
+              <Link
+                href="/onboarding/specialty"
+                className="text-xs font-medium text-brand-500 hover:text-brand-600"
+              >
+                {t("changeSpecialty")}
+              </Link>
+            </div>
+          )}
+
+          {/* My Courses (enrolled) — horizontal scroll */}
           {enrolledCourses.length > 0 && (
-            <section>
-              <h2 className="mb-3 text-sm font-semibold text-gray-900">
-                {t("myCourses")}
-              </h2>
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-                {enrolledCourses.map((course) => (
-                  <VideoCourseCard key={course.id} course={course} />
-                ))}
-              </div>
-            </section>
+            <HorizontalCourseSection
+              title={t("myCourses")}
+              courses={enrolledCourses}
+            />
           )}
 
-          {/* All / Recommended Courses Section */}
-          {recommendedCourses.length > 0 && (
-            <section>
-              <h2 className="mb-3 text-sm font-semibold text-gray-900">
-                {t("recommendedCourses")}
-              </h2>
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-                {recommendedCourses.map((course) => (
-                  <VideoCourseCard key={course.id} course={course} />
-                ))}
-              </div>
-            </section>
-          )}
+          {/* Subcategory sections — horizontal scroll each */}
+          {subcategoryGroups.map((group) => (
+            <HorizontalCourseSection
+              key={group.key}
+              title={group.label}
+              courses={group.courses}
+            />
+          ))}
 
-          {enrolledCourses.length === 0 && recommendedCourses.length === 0 && (
+          {/* Empty state */}
+          {enrolledCourses.length === 0 && subcategoryGroups.length === 0 && courses.length === 0 && (
             <EmptyState
               title={t("noCoursesAvailable")}
               desc={t("noCoursesAvailableDesc")}
             />
           )}
+
+          {/* If there are courses but no subcategory groups and no enrolled (all in "other") */}
+          {enrolledCourses.length === 0 && subcategoryGroups.length === 0 && courses.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+              {courses.map((course) => (
+                <VideoCourseCard key={course.id} course={course} />
+              ))}
+            </div>
+          )}
         </div>
-      ) : activeFilter === "ENROLLED" ? (
-        enrolledCourses.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-            {enrolledCourses.map((course) => (
-              <VideoCourseCard key={course.id} course={course} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            title={t("noEnrolledCourses")}
-            desc={t("noEnrolledCoursesDesc")}
-          />
-        )
-      ) : recommendedCourses.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-          {recommendedCourses.map((course) => (
-            <VideoCourseCard key={course.id} course={course} />
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          title={t("noNewCourses")}
-          desc={t("noNewCoursesDesc")}
-        />
       )}
     </div>
   );

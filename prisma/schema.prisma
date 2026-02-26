@@ -296,6 +296,9 @@ model User {
   outcomeRecords    OutcomeRecord[]
   createdCourses    Course[]         @relation("CourseCreator")
 
+  specialtyId       String?
+  specialty         MedicalSpecialty? @relation(fields: [specialtyId], references: [id])
+
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   deletedAt         DateTime?
@@ -398,6 +401,7 @@ model MedicalSpecialty {
   description String?
   iconUrl     String?
   courses     CourseSpecialtyTag[]
+  users       User[]
 
   createdAt   DateTime @default(now())
 

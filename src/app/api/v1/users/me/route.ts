@@ -23,6 +23,8 @@ export async function GET(req: NextRequest) {
         connectivityLevel: true,
         isActive: true,
         lastActiveAt: true,
+        specialtyId: true,
+        specialty: { select: { id: true, name: true } },
         createdAt: true,
         memberships: {
           where: { isActive: true },
@@ -104,6 +106,7 @@ const updateProfileSchema = z.object({
     .enum(["en", "ko", "km", "sw", "fr"])
     .optional(),
   avatarUrl: z.string().url().optional().nullable(),
+  specialtyId: z.string().optional().nullable(),
 });
 
 /**
@@ -123,6 +126,8 @@ export async function PATCH(req: NextRequest) {
       updateData.preferredLocale = input.preferredLocale;
     if (input.avatarUrl !== undefined)
       updateData.avatarUrl = input.avatarUrl;
+    if (input.specialtyId !== undefined)
+      updateData.specialtyId = input.specialtyId;
 
     if (Object.keys(updateData).length === 0) {
       throw new ApiError(
@@ -142,6 +147,8 @@ export async function PATCH(req: NextRequest) {
         avatarUrl: true,
         preferredLocale: true,
         connectivityLevel: true,
+        specialtyId: true,
+        specialty: { select: { id: true, name: true } },
         updatedAt: true,
       },
       data: updateData,

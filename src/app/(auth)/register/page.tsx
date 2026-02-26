@@ -48,8 +48,8 @@ export default function RegisterPage() {
       if (!res.ok) {
         throw new Error(data.error?.message || "Registration failed");
       }
-      // Redirect to dashboard on email registration
-      window.location.href = "/dashboard";
+      // Redirect to onboarding specialty selection
+      window.location.href = "/onboarding/specialty";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {

@@ -9,14 +9,13 @@ export async function GET(req: NextRequest) {
   try {
     const payload = authenticate(req);
     const userId = payload.sub;
-    const orgId = payload.orgId;
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || undefined;
     const category = searchParams.get("category") || undefined;
+    const specialtyId = searchParams.get("specialtyId") || undefined;
 
-    // Build where clause
+    // Build where clause — no organizationId filter so all PUBLISHED courses are visible
     const where: Record<string, unknown> = {
-      organizationId: orgId,
       deletedAt: null,
       status: "PUBLISHED",
     };
@@ -31,6 +30,12 @@ export async function GET(req: NextRequest) {
 
     if (category) {
       where.creator = { creatorField: category };
+    }
+
+    if (specialtyId) {
+      where.specialtyTags = {
+        some: { specialtyId },
+      };
     }
 
     const courses = await prisma.course.findMany({
@@ -69,6 +74,15 @@ export async function GET(req: NextRequest) {
     const enrollmentMap = new Map(
       enrollments.map((e) => [e.courseId, e.progressPct])
     );
+
+    // Get user's specialty
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        specialtyId: true,
+        specialty: { select: { id: true, name: true } },
+      },
+    });
 
     const coursesData = courses.map((course) => {
       const t = course.translations[0];
@@ -119,6 +133,7 @@ export async function GET(req: NextRequest) {
     return success({
       courses: coursesData,
       total: coursesData.length,
+      userSpecialty: user?.specialty ?? null,
     });
   } catch (error) {
     return handleError(error);

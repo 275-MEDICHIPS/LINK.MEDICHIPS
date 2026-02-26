@@ -129,7 +129,12 @@
     "titleAZ": "제목 A-Z",
     "titleZA": "제목 Z-A",
     "courseCount": "코스 {count}개",
-    "videos": "영상 {count}개"
+    "videos": "영상 {count}개",
+    "changeSpecialty": "분야변경",
+    "searchResults": "검색 결과 {count}개",
+    "other": "기타",
+    "noSearchResults": "검색 결과가 없습니다",
+    "noSearchResultsDesc": "다른 검색어로 시도해 보세요."
   },
   "lesson": {
     "min": "{count}분",

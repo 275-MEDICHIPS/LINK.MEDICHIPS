@@ -129,7 +129,12 @@
     "titleAZ": "Title A-Z",
     "titleZA": "Title Z-A",
     "courseCount": "{count} courses",
-    "videos": "{count} videos"
+    "videos": "{count} videos",
+    "changeSpecialty": "Change",
+    "searchResults": "{count} results",
+    "other": "Other",
+    "noSearchResults": "No search results",
+    "noSearchResultsDesc": "Try a different search term."
   },
   "lesson": {
     "min": "{count} min",
