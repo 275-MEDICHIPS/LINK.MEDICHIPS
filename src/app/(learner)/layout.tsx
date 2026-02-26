@@ -11,6 +11,8 @@ import {
   Settings,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
+import { Header } from "@/app/(public)/components/header";
+import { Footer } from "@/app/(public)/components/footer";
 import { Toaster } from "@/components/ui/toaster";
 
 const tabKeys = [
@@ -28,7 +30,20 @@ export default function LearnerLayout({
   const t = useTranslations("nav");
   const tc = useTranslations("common");
   const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isAdmin = user?.role === "SUPER_ADMIN" || user?.role === "ORG_ADMIN" || user?.role === "INSTRUCTOR";
+
+  // Unauthenticated users see public shell (Header + Footer)
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen bg-gray-50 px-4 py-4 pt-20">{children}</main>
+        <Footer />
+        <Toaster />
+      </>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">

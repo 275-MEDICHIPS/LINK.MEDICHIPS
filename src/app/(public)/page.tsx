@@ -139,7 +139,7 @@ function PublicHome() {
 
             {/* Search bar — 강화된 그린 아웃라인 */}
             <Link
-              href="/login"
+              href="/courses"
               className="group mx-auto mt-10 flex max-w-lg items-center gap-3 rounded-full border-2 border-brand-300 bg-white px-5 py-4 shadow-[0_4px_24px_rgba(13,148,136,0.12)] transition-all hover:shadow-[0_8px_32px_rgba(13,148,136,0.18)] hover:border-brand-400"
             >
               <Search className="h-5 w-5 text-brand-400" />
@@ -158,7 +158,7 @@ function PublicHome() {
                 <span key={tag} className="flex items-center gap-1.5">
                   {i > 0 && <span className="text-gray-200">·</span>}
                   <Link
-                    href="/login"
+                    href={`/courses?search=${encodeURIComponent(tag)}`}
                     className="rounded-full bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
                   >
                     {tag}
@@ -186,7 +186,7 @@ function PublicHome() {
             {SPECIALTIES.map((spec) => (
               <Link
                 key={spec.label}
-                href="/login"
+                href={`/courses?search=${encodeURIComponent(spec.label)}`}
                 className="group flex flex-col items-center gap-2 rounded-2xl border border-gray-100 bg-white px-3 py-4 transition-all hover:shadow-lg hover:shadow-brand-100/50 hover:-translate-y-1 hover:border-brand-200"
               >
                 <div className={cn(
@@ -220,7 +220,7 @@ function PublicHome() {
               {courses.slice(0, 4).map((course) => (
                 <Link
                   key={course.id}
-                  href="/login"
+                  href={`/courses/${course.id}`}
                   className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-xl hover:shadow-brand-100/40 hover:ring-brand-200"
                 >
                   <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
@@ -273,7 +273,7 @@ function PublicHome() {
             {/* View all courses CTA */}
             <div className="mt-10 text-center">
               <Link
-                href="/login"
+                href="/courses"
                 className="inline-flex items-center gap-2 rounded-full border-2 border-brand-500 px-6 py-2.5 text-sm font-semibold text-brand-600 transition-all hover:bg-brand-500 hover:text-white"
               >
                 전체 강좌 보기

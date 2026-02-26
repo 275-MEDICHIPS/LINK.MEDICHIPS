@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Search, BookOpen, Video, X, ChevronRight, Play } from "lucide-react";
+import { useAuthStore } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -214,11 +216,14 @@ type FilterKey = "all" | "inProgress" | "completed" | string;
 export default function CoursesPage() {
   const t = useTranslations("course");
   const tc = useTranslations("common");
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const urlSearchParams = useSearchParams();
+  const initialSearch = urlSearchParams.get("search") || "";
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [userSpecialty, setUserSpecialty] = useState<UserSpecialty | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
@@ -239,7 +244,10 @@ export default function CoursesPage() {
       } else if (specId) {
         params.set("specialtyId", specId);
       }
-      const res = await fetch(`/api/v1/learner/courses?${params.toString()}`);
+      const apiUrl = isAuthenticated
+        ? `/api/v1/learner/courses?${params.toString()}`
+        : `/api/v1/public/courses?${params.toString()}`;
+      const res = await fetch(apiUrl);
       if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error(`Failed to load courses (${res.status})`);
       const json = await res.json();
@@ -252,7 +260,7 @@ export default function CoursesPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch]);
+  }, [debouncedSearch, isAuthenticated]);
 
   useEffect(() => {
     fetchCourses(userSpecialty?.id);
@@ -352,7 +360,7 @@ export default function CoursesPage() {
             <h1 className="text-[18px] font-bold text-gray-900">
               {userSpecialty ? userSpecialty.name : "코스 탐색"}
             </h1>
-            {userSpecialty && (
+            {isAuthenticated && userSpecialty && (
               <Link
                 href="/onboarding/specialty"
                 className="flex items-center gap-0.5 text-[12px] font-medium text-gray-400 hover:text-brand-500 transition-colors"
@@ -371,7 +379,7 @@ export default function CoursesPage() {
               active={activeFilter === "all"}
               onClick={() => setActiveFilter("all")}
             />
-            {inProgressCount > 0 && (
+            {isAuthenticated && inProgressCount > 0 && (
               <FilterPill
                 label="수강 중"
                 count={inProgressCount}
@@ -379,7 +387,7 @@ export default function CoursesPage() {
                 onClick={() => setActiveFilter("inProgress")}
               />
             )}
-            {completedCount > 0 && (
+            {isAuthenticated && completedCount > 0 && (
               <FilterPill
                 label="완료"
                 count={completedCount}

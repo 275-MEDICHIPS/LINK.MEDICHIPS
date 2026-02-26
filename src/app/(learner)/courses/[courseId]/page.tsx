@@ -18,8 +18,10 @@ import {
   Clock,
   Video,
   Users,
+  LogIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/utils/csrf";
 
@@ -132,11 +134,13 @@ function ModuleAccordion({
   courseId,
   isExpanded,
   onToggle,
+  isAuthenticated,
 }: {
   module: ModuleItem;
   courseId: string;
   isExpanded: boolean;
   onToggle: () => void;
+  isAuthenticated: boolean;
 }) {
   const allCompleted = module.completedLessons === module.totalLessons && module.totalLessons > 0;
 
@@ -167,7 +171,9 @@ function ModuleAccordion({
             {module.title}
           </h3>
           <p className="text-[10px] text-gray-400">
-            {module.completedLessons}/{module.totalLessons}
+            {isAuthenticated
+              ? `${module.completedLessons}/${module.totalLessons}`
+              : `${module.totalLessons}개 레슨`}
           </p>
         </div>
         <ChevronDown
@@ -182,64 +188,97 @@ function ModuleAccordion({
       {/* Lesson List */}
       {isExpanded && (
         <ul className="border-t border-gray-50">
-          {module.lessons.map((lesson) => (
-            <li key={lesson.id}>
-              {lesson.isUnlocked ? (
-                <Link
-                  href={`/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}`}
-                  className={cn(
-                    "flex items-center gap-3 border-b border-gray-50 px-3 py-2.5 transition-colors last:border-b-0",
-                    lesson.isCompleted
-                      ? "bg-accent-50/50 hover:bg-accent-50"
-                      : "hover:bg-gray-50"
-                  )}
-                >
-                  <div
+          {module.lessons.map((lesson) => {
+            // Unauthenticated: all lessons link to login
+            if (!isAuthenticated) {
+              return (
+                <li key={lesson.id}>
+                  <Link
+                    href={`/login?redirect=/courses/${courseId}`}
+                    className="flex items-center gap-3 border-b border-gray-50 px-3 py-2.5 transition-colors last:border-b-0 hover:bg-gray-50"
+                  >
+                    <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                      {lesson.contentType === "VIDEO" || lesson.contentType === "MIXED" ? (
+                        <Play className="ml-0.5 h-3 w-3" aria-hidden="true" />
+                      ) : (
+                        <ContentTypeIcon type={lesson.contentType} className="h-3 w-3" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-900">
+                        {lesson.title}
+                      </p>
+                    </div>
+                    {lesson.durationMin && (
+                      <span className="text-[10px] text-gray-400">
+                        {lesson.durationMin}m
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            }
+
+            // Authenticated: original behavior
+            return (
+              <li key={lesson.id}>
+                {lesson.isUnlocked ? (
+                  <Link
+                    href={`/courses/${courseId}/modules/${module.id}/lessons/${lesson.id}`}
                     className={cn(
-                      "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full",
+                      "flex items-center gap-3 border-b border-gray-50 px-3 py-2.5 transition-colors last:border-b-0",
                       lesson.isCompleted
-                        ? "bg-accent-100 text-accent-600"
-                        : "bg-gray-100 text-gray-400"
+                        ? "bg-accent-50/50 hover:bg-accent-50"
+                        : "hover:bg-gray-50"
                     )}
                   >
-                    {lesson.isCompleted ? (
-                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    ) : lesson.contentType === "VIDEO" || lesson.contentType === "MIXED" ? (
-                      <Play className="ml-0.5 h-3 w-3" aria-hidden="true" />
-                    ) : (
-                      <ContentTypeIcon type={lesson.contentType} className="h-3 w-3" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p
+                    <div
                       className={cn(
-                        "truncate text-sm",
+                        "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full",
                         lesson.isCompleted
-                          ? "font-medium text-accent-700"
-                          : "font-medium text-gray-900"
+                          ? "bg-accent-100 text-accent-600"
+                          : "bg-gray-100 text-gray-400"
                       )}
                     >
+                      {lesson.isCompleted ? (
+                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      ) : lesson.contentType === "VIDEO" || lesson.contentType === "MIXED" ? (
+                        <Play className="ml-0.5 h-3 w-3" aria-hidden="true" />
+                      ) : (
+                        <ContentTypeIcon type={lesson.contentType} className="h-3 w-3" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={cn(
+                          "truncate text-sm",
+                          lesson.isCompleted
+                            ? "font-medium text-accent-700"
+                            : "font-medium text-gray-900"
+                        )}
+                      >
+                        {lesson.title}
+                      </p>
+                    </div>
+                    {lesson.durationMin && (
+                      <span className="text-[10px] text-gray-400">
+                        {lesson.durationMin}m
+                      </span>
+                    )}
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 border-b border-gray-50 px-3 py-2.5 opacity-40 last:border-b-0">
+                    <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-300">
+                      <Lock className="h-3 w-3" aria-hidden="true" />
+                    </div>
+                    <p className="flex-1 truncate text-sm font-medium text-gray-400">
                       {lesson.title}
                     </p>
                   </div>
-                  {lesson.durationMin && (
-                    <span className="text-[10px] text-gray-400">
-                      {lesson.durationMin}m
-                    </span>
-                  )}
-                </Link>
-              ) : (
-                <div className="flex items-center gap-3 border-b border-gray-50 px-3 py-2.5 opacity-40 last:border-b-0">
-                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-300">
-                    <Lock className="h-3 w-3" aria-hidden="true" />
-                  </div>
-                  <p className="flex-1 truncate text-sm font-medium text-gray-400">
-                    {lesson.title}
-                  </p>
-                </div>
-              )}
-            </li>
-          ))}
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -253,6 +292,7 @@ export default function CourseDetailPage() {
   const tc = useTranslations("common");
   const params = useParams<{ courseId: string }>();
   const router = useRouter();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -265,7 +305,10 @@ export default function CourseDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/api/v1/learner/courses/${params.courseId}`);
+      const apiUrl = isAuthenticated
+        ? `/api/v1/learner/courses/${params.courseId}`
+        : `/api/v1/public/courses/${params.courseId}`;
+      const res = await fetch(apiUrl);
       if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error(`Failed to load course (${res.status})`);
       const json = await res.json();
@@ -287,7 +330,7 @@ export default function CourseDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [params.courseId]);
+  }, [params.courseId, isAuthenticated]);
 
   useEffect(() => {
     fetchCourse();
@@ -487,13 +530,22 @@ export default function CourseDetailPage() {
             courseId={course.id}
             isExpanded={expandedModules.has(module.id)}
             onToggle={() => toggleModule(module.id)}
+            isAuthenticated={isAuthenticated}
           />
         ))}
       </div>
 
       {/* ─── CTA Button ─── */}
-      <div className="fixed bottom-20 left-0 right-0 z-30 px-4">
-        {course.isEnrolled && course.continueLesson ? (
+      <div className={cn("fixed left-0 right-0 z-30 px-4", isAuthenticated ? "bottom-20" : "bottom-6")}>
+        {!isAuthenticated ? (
+          <Link
+            href={`/login?redirect=/courses/${course.id}`}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-brand-600"
+          >
+            <LogIn className="h-4 w-4" aria-hidden="true" />
+            로그인하고 수강하기
+          </Link>
+        ) : course.isEnrolled && course.continueLesson ? (
           <Link
             href={`/courses/${course.id}/modules/${course.continueLesson.moduleId}/lessons/${course.continueLesson.lessonId}`}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-brand-600"
