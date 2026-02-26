@@ -19,7 +19,7 @@ export function LogoCarousel() {
   const t = useTranslations("landing");
 
   return (
-    <section className="overflow-hidden border-y border-brand-100/50 bg-gradient-to-r from-white via-brand-50/20 to-white py-8">
+    <section className="overflow-hidden border-y border-gray-100 bg-gray-50 py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="mb-6 text-center text-sm font-medium text-gray-500">
           {t("trustedBy")}

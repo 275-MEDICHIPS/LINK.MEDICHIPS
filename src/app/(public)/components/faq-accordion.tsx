@@ -18,7 +18,7 @@ export function FaqAccordion() {
   ];
 
   return (
-    <section className="bg-gradient-to-b from-brand-50/20 to-white py-20 sm:py-28">
+    <section className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">

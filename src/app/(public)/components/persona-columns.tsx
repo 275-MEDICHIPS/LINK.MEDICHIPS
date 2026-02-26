@@ -76,7 +76,7 @@ export function PersonaColumns() {
   ];
 
   return (
-    <section className="bg-gradient-to-b from-white to-brand-50/30 py-20 sm:py-28">
+    <section className="bg-brand-50/40 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">

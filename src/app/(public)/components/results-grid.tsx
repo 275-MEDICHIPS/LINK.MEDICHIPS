@@ -20,7 +20,7 @@ export function ResultsGrid() {
   const t = useTranslations("landing");
 
   return (
-    <section id="impact" className="scroll-mt-20 bg-gradient-to-b from-brand-50/40 to-white py-20 sm:py-28">
+    <section id="impact" className="scroll-mt-20 bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">

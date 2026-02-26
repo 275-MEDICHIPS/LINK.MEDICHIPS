@@ -175,7 +175,7 @@ function PublicHome() {
 
       {/* ─── Popular Courses ─── */}
       {courses.length > 0 && (
-        <section className="bg-gray-50/80 py-16 sm:py-20">
+        <section className="bg-gray-50 py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-10 text-center">
               <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">Popular</p>

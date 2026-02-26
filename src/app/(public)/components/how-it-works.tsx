@@ -59,7 +59,7 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="scroll-mt-20 bg-gradient-to-b from-white to-brand-50/40 py-20 sm:py-28"
+      className="scroll-mt-20 bg-white py-20 sm:py-28"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">

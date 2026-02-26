@@ -50,7 +50,7 @@ export function PlatformTabs() {
   ];
 
   return (
-    <section id="features" className="scroll-mt-20 py-20 sm:py-28">
+    <section id="features" className="scroll-mt-20 bg-brand-50/40 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">
