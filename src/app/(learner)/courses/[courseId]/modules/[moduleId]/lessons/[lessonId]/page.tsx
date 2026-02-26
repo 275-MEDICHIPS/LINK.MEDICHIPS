@@ -59,6 +59,8 @@ interface LessonData {
 interface LessonBody {
   videoUrl?: string;
   videoPlaybackId?: string;
+  startTimeSec?: number;
+  endTimeSec?: number;
   audioUrl?: string;
   markdownContent?: string;
   htmlContent?: string;
@@ -117,12 +119,24 @@ function getYouTubeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-function YouTubePlayer({ videoId }: { videoId: string }) {
+function YouTubePlayer({
+  videoId,
+  startTimeSec,
+  endTimeSec,
+}: {
+  videoId: string;
+  startTimeSec?: number;
+  endTimeSec?: number;
+}) {
+  const params = new URLSearchParams({ rel: "0" });
+  if (startTimeSec !== undefined) params.set("start", String(startTimeSec));
+  if (endTimeSec !== undefined) params.set("end", String(endTimeSec));
+
   return (
     <div className="-mx-4 bg-black">
       <div className="relative aspect-video">
         <iframe
-          src={`https://www.youtube.com/embed/${videoId}?rel=0`}
+          src={`https://www.youtube.com/embed/${videoId}?${params.toString()}`}
           className="h-full w-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -136,11 +150,15 @@ function YouTubePlayer({ videoId }: { videoId: string }) {
 function VideoPlayer({
   videoUrl,
   playbackId,
+  startTimeSec,
+  endTimeSec,
   lastPosition,
   onTimeUpdate,
 }: {
   videoUrl?: string;
   playbackId?: string;
+  startTimeSec?: number;
+  endTimeSec?: number;
   lastPosition?: number | null;
   onTimeUpdate?: (time: number) => void;
 }) {
@@ -151,6 +169,9 @@ function VideoPlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [hlsLoaded, setHlsLoaded] = useState(false);
+
+  const segStart = startTimeSec ?? 0;
+  const segEnd = endTimeSec; // undefined means play to end
 
   // Construct HLS URL from Mux playback ID
   const src = playbackId
@@ -195,19 +216,35 @@ function VideoPlayer({
     }
   }, [src]);
 
-  // Restore position
+  // Restore position or seek to segment start
   useEffect(() => {
-    if (hlsLoaded && videoRef.current && lastPosition && lastPosition > 0) {
-      videoRef.current.currentTime = lastPosition;
+    if (!hlsLoaded || !videoRef.current) return;
+    if (lastPosition && lastPosition > 0) {
+      // Clamp restored position within segment range
+      const clamped = Math.max(segStart, Math.min(lastPosition, segEnd ?? Infinity));
+      videoRef.current.currentTime = clamped;
+    } else if (segStart > 0) {
+      videoRef.current.currentTime = segStart;
     }
-  }, [hlsLoaded, lastPosition]);
+  }, [hlsLoaded, lastPosition, segStart, segEnd]);
 
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
     const time = videoRef.current.currentTime;
+    // Pause at segment end
+    if (segEnd !== undefined && time >= segEnd) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = segEnd;
+      setCurrentTime(segEnd);
+      setIsPlaying(false);
+      onTimeUpdate?.(segEnd);
+      return;
+    }
     setCurrentTime(time);
     onTimeUpdate?.(time);
   };
+
+  const segDuration = segEnd !== undefined ? segEnd - segStart : duration - segStart;
 
   const formatTime = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -217,6 +254,10 @@ function VideoPlayer({
 
   const togglePlay = () => {
     if (!videoRef.current) return;
+    // If at segment end, restart from segment start
+    if (segEnd !== undefined && videoRef.current.currentTime >= segEnd) {
+      videoRef.current.currentTime = segStart;
+    }
     if (videoRef.current.paused) {
       videoRef.current.play();
       setIsPlaying(true);
@@ -228,14 +269,24 @@ function VideoPlayer({
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!videoRef.current) return;
-    const time = Number(e.target.value);
-    videoRef.current.currentTime = time;
-    setCurrentTime(time);
+    // Slider value is relative to segment (0 to segDuration)
+    const relativeTime = Number(e.target.value);
+    const absoluteTime = segStart + relativeTime;
+    videoRef.current.currentTime = absoluteTime;
+    setCurrentTime(absoluteTime);
   };
 
   if (youtubeId) {
-    return <YouTubePlayer videoId={youtubeId} />;
+    return (
+      <YouTubePlayer
+        videoId={youtubeId}
+        startTimeSec={startTimeSec}
+        endTimeSec={endTimeSec}
+      />
+    );
   }
+
+  const relCurrent = Math.max(0, currentTime - segStart);
 
   return (
     <div className="-mx-4 bg-black">
@@ -280,19 +331,19 @@ function VideoPlayer({
           )}
         </button>
         <span className="text-[10px] text-white/70">
-          {formatTime(currentTime)}
+          {formatTime(relCurrent)}
         </span>
         <input
           type="range"
           min={0}
-          max={duration || 0}
-          value={currentTime}
+          max={segDuration || 0}
+          value={relCurrent}
           onChange={handleSeek}
           className="h-1 flex-1 cursor-pointer accent-brand-400"
           aria-label="Video progress"
         />
         <span className="text-[10px] text-white/70">
-          {formatTime(duration)}
+          {formatTime(segDuration)}
         </span>
       </div>
     </div>
@@ -916,12 +967,37 @@ export default function LessonViewerPage() {
 
       {/* Content Area */}
       <div className="space-y-5">
+        {/* Segment Info */}
+        {(lesson.contentType === "VIDEO" || lesson.contentType === "MIXED") &&
+          lesson.body.startTimeSec !== undefined &&
+          lesson.body.endTimeSec !== undefined && (() => {
+            const s = lesson.body.startTimeSec!;
+            const e = lesson.body.endTimeSec!;
+            const dur = e - s;
+            const fmt = (sec: number) => {
+              const m = Math.floor(sec / 60);
+              const ss = Math.floor(sec % 60);
+              return `${m}:${ss.toString().padStart(2, "0")}`;
+            };
+            const durMin = Math.floor(dur / 60);
+            const durSec = Math.floor(dur % 60);
+            const durLabel = durSec > 0 ? `${durMin}분 ${durSec}초` : `${durMin}분`;
+            return (
+              <div className="flex items-center gap-2 rounded-lg bg-brand-50 px-3 py-2 text-xs font-medium text-brand-700">
+                <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>구간 {fmt(s)} – {fmt(e)} · {durLabel}</span>
+              </div>
+            );
+          })()}
+
         {/* Video Content */}
         {(lesson.contentType === "VIDEO" || lesson.contentType === "MIXED") &&
           (lesson.body.videoUrl || lesson.body.videoPlaybackId) && (
             <VideoPlayer
               videoUrl={lesson.body.videoUrl}
               playbackId={lesson.body.videoPlaybackId}
+              startTimeSec={lesson.body.startTimeSec}
+              endTimeSec={lesson.body.endTimeSec}
               lastPosition={lesson.progress?.lastPosition}
               onTimeUpdate={handleVideoTimeUpdate}
             />

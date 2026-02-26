@@ -101,6 +101,8 @@ export async function GET(
       body: {
         videoUrl: body.videoUrl as string | undefined,
         videoPlaybackId: body.videoPlaybackId as string | undefined,
+        startTimeSec: body.startTimeSec as number | undefined,
+        endTimeSec: body.endTimeSec as number | undefined,
         audioUrl: body.audioUrl as string | undefined,
         markdownContent: body.markdownContent as string | undefined,
         htmlContent: body.htmlContent as string | undefined,

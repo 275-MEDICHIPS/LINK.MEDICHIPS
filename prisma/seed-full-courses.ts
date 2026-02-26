@@ -13,6 +13,8 @@ interface LessonDef {
   title_en: string;
   videoUrl: string;
   durationMin: number;
+  startTimeSec?: number;
+  endTimeSec?: number;
 }
 
 interface ModuleDef {
@@ -96,13 +98,20 @@ async function seedCourse(orgId: string, creatorId: string, courseData: CourseDe
           },
         },
       });
+      // Compute segment: use explicit values or default to 0..durationMin*60
+      const startSec = l.startTimeSec ?? 0;
+      const endSec = l.endTimeSec ?? l.durationMin * 60;
       await prisma.contentVersion.create({
         data: {
           lessonId: lesson.id,
           version: 1,
           status: "PUBLISHED",
           publishedAt: new Date(),
-          body: { videoUrl: l.videoUrl },
+          body: {
+            videoUrl: l.videoUrl,
+            startTimeSec: startSec,
+            endTimeSec: endSec,
+          },
         },
       });
     }
