@@ -24,15 +24,9 @@ export function Header() {
           <LanguageSelector />
           <Link
             href="/login"
-            className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-          >
-            로그인
-          </Link>
-          <Link
-            href="/register"
             className="rounded-full bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-brand-500/25 transition-all hover:bg-brand-600 hover:shadow-lg hover:shadow-brand-500/30 hover:-translate-y-px"
           >
-            {t("getStarted")}
+            시작하기
           </Link>
         </div>
       </div>
