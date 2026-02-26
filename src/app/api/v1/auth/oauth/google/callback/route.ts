@@ -82,52 +82,84 @@ export async function GET(req: NextRequest) {
     });
 
     if (!userAuth) {
-      // Auto-register: create user + auth + default org membership
-      let defaultOrg = await prisma.organization.findFirst({
-        where: { deletedAt: null },
-        orderBy: { createdAt: "asc" },
+      // Check if user already exists (e.g. registered via PIN/email before)
+      const existingUser = await prisma.user.findUnique({
+        where: { email: googleUser.email },
+        include: { memberships: { where: { isActive: true }, take: 1 } },
       });
 
-      if (!defaultOrg) {
-        defaultOrg = await prisma.organization.create({
-          data: { name: "MEDICHIPS-LINK", slug: "medichips-link" },
+      if (existingUser) {
+        // Link Google OAuth to existing user
+        const newAuth = await prisma.userAuth.create({
+          data: {
+            userId: existingUser.id,
+            method: "OAUTH_GOOGLE",
+            identifier: googleUser.email,
+            credential: googleUser.sub,
+          },
         });
+
+        // Update avatar if missing
+        if (!existingUser.avatarUrl && googleUser.picture) {
+          await prisma.user.update({
+            where: { id: existingUser.id },
+            data: { avatarUrl: googleUser.picture },
+          });
+        }
+
+        userAuth = {
+          ...newAuth,
+          user: existingUser,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
+      } else {
+        // Brand new user — create everything
+        let defaultOrg = await prisma.organization.findFirst({
+          where: { deletedAt: null },
+          orderBy: { createdAt: "asc" },
+        });
+
+        if (!defaultOrg) {
+          defaultOrg = await prisma.organization.create({
+            data: { name: "MEDICHIPS-LINK", slug: "medichips-link" },
+          });
+        }
+
+        const newUser = await prisma.user.create({
+          data: {
+            name: googleUser.name,
+            email: googleUser.email,
+            avatarUrl: googleUser.picture || null,
+            preferredLocale: "ko",
+            memberships: {
+              create: {
+                organizationId: defaultOrg.id,
+                role: "LEARNER",
+              },
+            },
+            authMethods: {
+              create: {
+                method: "OAUTH_GOOGLE",
+                identifier: googleUser.email,
+                credential: googleUser.sub,
+              },
+            },
+          },
+          include: {
+            authMethods: { where: { method: "OAUTH_GOOGLE" } },
+            memberships: { where: { isActive: true }, take: 1 },
+          },
+        });
+
+        userAuth = {
+          ...newUser.authMethods[0],
+          user: {
+            ...newUser,
+            memberships: newUser.memberships,
+          },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any;
       }
-
-      const newUser = await prisma.user.create({
-        data: {
-          name: googleUser.name,
-          email: googleUser.email,
-          avatarUrl: googleUser.picture || null,
-          preferredLocale: "ko",
-          memberships: {
-            create: {
-              organizationId: defaultOrg.id,
-              role: "LEARNER",
-            },
-          },
-          authMethods: {
-            create: {
-              method: "OAUTH_GOOGLE",
-              identifier: googleUser.email,
-              credential: googleUser.sub,
-            },
-          },
-        },
-        include: {
-          authMethods: { where: { method: "OAUTH_GOOGLE" } },
-          memberships: { where: { isActive: true }, take: 1 },
-        },
-      });
-
-      userAuth = {
-        ...newUser.authMethods[0],
-        user: {
-          ...newUser,
-          memberships: newUser.memberships,
-        },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any;
     } else {
       // Update avatar/name if changed
       if (googleUser.picture && googleUser.picture !== userAuth.user.avatarUrl) {
