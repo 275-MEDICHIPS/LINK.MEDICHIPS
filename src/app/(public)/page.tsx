@@ -132,6 +132,8 @@ function PublicHome() {
 
             <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
               {t("heroTitle")}
+              <br />
+              <span className="text-brand-500">{t("heroTitleHighlight")}</span>
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-gray-500">
               {t("heroSubtitle")}
