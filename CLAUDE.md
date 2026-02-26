@@ -27,12 +27,16 @@ pnpm db:studio        # Prisma Studio
 
 ## Local Dev Setup
 ```bash
-docker compose -f docker/docker-compose.yml up -d  # PostgreSQL + Redis
-cp .env.example .env  # Then fill in secrets
+cp .env.example .env  # Then fill in secrets (DATABASE_URL → GCP Cloud SQL)
 pnpm install
-pnpm db:migrate
+npx prisma db push    # Sync schema to Cloud SQL
 pnpm dev
 ```
+
+## Database
+- GCP Cloud SQL (PostgreSQL 15): `medichips-link-db` (asia-northeast3)
+- Public IP: 34.50.54.174 (authorized networks 설정 필요)
+- `npx prisma db push` for schema sync, `npx prisma studio` for GUI
 
 ## Key Directories
 - `prisma/schema.prisma` — 46 models, 18 enums
