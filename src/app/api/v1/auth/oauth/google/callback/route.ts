@@ -9,6 +9,7 @@ import {
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 interface GoogleTokenResponse {
   access_token: string;
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const callbackUrl = new URL("/api/v1/auth/oauth/google/callback", req.url);
+    const redirectUri = `${APP_URL}/api/v1/auth/oauth/google/callback`;
 
     // Exchange code for tokens
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
         code,
         client_id: GOOGLE_CLIENT_ID,
         client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: callbackUrl.origin + callbackUrl.pathname,
+        redirect_uri: redirectUri,
         grant_type: "authorization_code",
       }),
     });

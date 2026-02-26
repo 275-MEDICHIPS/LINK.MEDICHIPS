@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 export async function GET(req: NextRequest) {
   const redirect = req.nextUrl.searchParams.get("redirect") || "/";
 
-  const callbackUrl = new URL("/api/v1/auth/oauth/google/callback", req.url);
+  const redirectUri = `${APP_URL}/api/v1/auth/oauth/google/callback`;
 
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: callbackUrl.origin + callbackUrl.pathname,
+    redirect_uri: redirectUri,
     response_type: "code",
     scope: "openid email profile",
     access_type: "offline",
