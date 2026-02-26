@@ -92,7 +92,7 @@ function PageSkeleton() {
         <div className="grid grid-cols-2 gap-3">
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="rounded-2xl bg-white p-3 shadow-sm">
-              <Skeleton className="aspect-[4/3] w-full rounded-xl" />
+              <Skeleton className="aspect-video w-full rounded-xl" />
               <Skeleton className="mt-3 h-4 w-4/5" />
               <Skeleton className="mt-2 h-3 w-3/5" />
             </div>
@@ -184,7 +184,7 @@ function CourseCard({ course }: { course: CourseItem }) {
       className="group block overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-md hover:ring-gray-200"
     >
       {/* Thumbnail */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-50">
+      <div className="relative aspect-video w-full overflow-hidden bg-gray-50">
         {course.thumbnailUrl ? (
           <img
             src={course.thumbnailUrl}
