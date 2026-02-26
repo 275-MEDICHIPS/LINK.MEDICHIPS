@@ -3,7 +3,16 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Search, BookOpen, Video, X, Play } from "lucide-react";
+import {
+  Search,
+  BookOpen,
+  Video,
+  X,
+  Play,
+  ChevronRight,
+  Clock,
+  ArrowRight,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -57,31 +66,108 @@ function categorize(slug: string): string {
   return "other";
 }
 
+function formatDuration(min: number): string {
+  if (min <= 0) return "";
+  if (min >= 60) {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+  }
+  return `${min}분`;
+}
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse bg-gray-100", className)} />;
+  return <div className={cn("animate-pulse rounded-lg bg-gray-100", className)} />;
 }
 
 function PageSkeleton() {
   return (
-    <div className="space-y-8" role="status">
+    <div className="space-y-6" role="status">
       <Skeleton className="h-11 w-full rounded-xl" />
-      <Skeleton className="h-8 w-48" />
-      <div className="flex gap-6 border-b border-gray-100 pb-px">
-        {[0, 1, 2].map((i) => <Skeleton key={i} className="h-4 w-14 rounded" />)}
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-8">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i}>
-            <Skeleton className="aspect-video w-full rounded-xl" />
-            <Skeleton className="mt-3 h-4 w-4/5 rounded" />
-            <Skeleton className="mt-2 h-3 w-3/5 rounded" />
-          </div>
-        ))}
+      <Skeleton className="h-[140px] w-full rounded-2xl" />
+      <div className="space-y-4">
+        <Skeleton className="h-5 w-24" />
+        <div className="grid grid-cols-2 gap-3">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded-2xl bg-white p-3 shadow-sm">
+              <Skeleton className="aspect-[4/3] w-full rounded-xl" />
+              <Skeleton className="mt-3 h-4 w-4/5" />
+              <Skeleton className="mt-2 h-3 w-3/5" />
+            </div>
+          ))}
+        </div>
       </div>
       <span className="sr-only">Loading...</span>
     </div>
+  );
+}
+
+// ─── Continue Learning Card ───────────────────────────────────────────────────
+
+function ContinueLearningCard({ course }: { course: CourseItem }) {
+  const progress = course.progressPct ?? 0;
+
+  return (
+    <Link
+      href={`/courses/${course.id}`}
+      className="group block overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 transition-shadow hover:shadow-md"
+    >
+      <div className="flex gap-4 p-4">
+        {/* Thumbnail */}
+        <div className="relative h-20 w-28 flex-shrink-0 overflow-hidden rounded-xl bg-gray-100">
+          {course.thumbnailUrl ? (
+            <img
+              src={course.thumbnailUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <BookOpen className="h-5 w-5 text-gray-200" />
+            </div>
+          )}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/10">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm opacity-0 transition-opacity group-hover:opacity-100">
+              <Play className="ml-0.5 h-3 w-3 text-gray-900" fill="currentColor" />
+            </div>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
+          <div>
+            <h3 className="line-clamp-2 text-[14px] font-semibold leading-snug text-gray-900">
+              {course.title}
+            </h3>
+            <p className="mt-0.5 text-[12px] text-gray-400">
+              {course.creator?.name}
+            </p>
+          </div>
+
+          {/* Progress */}
+          <div className="flex items-center gap-3">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="flex-shrink-0 text-[11px] font-medium tabular-nums text-emerald-600">
+              {Math.round(progress)}%
+            </span>
+          </div>
+        </div>
+
+        {/* Arrow */}
+        <div className="flex flex-shrink-0 items-center">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 transition-colors group-hover:bg-gray-800">
+            <ArrowRight className="h-3.5 w-3.5 text-white" />
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -90,16 +176,15 @@ function PageSkeleton() {
 function CourseCard({ course }: { course: CourseItem }) {
   const progress = course.progressPct ?? 0;
   const isCompleted = progress >= 100;
-  const duration = course.totalDurationMin > 0
-    ? course.totalDurationMin >= 60
-      ? `${Math.floor(course.totalDurationMin / 60)}시간 ${course.totalDurationMin % 60 > 0 ? `${course.totalDurationMin % 60}분` : ""}`
-      : `${course.totalDurationMin}분`
-    : null;
+  const duration = formatDuration(course.totalDurationMin);
 
   return (
-    <Link href={`/courses/${course.id}`} className="group block">
+    <Link
+      href={`/courses/${course.id}`}
+      className="group block overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-md hover:ring-gray-200"
+    >
       {/* Thumbnail */}
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-gray-100">
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-50">
         {course.thumbnailUrl ? (
           <img
             src={course.thumbnailUrl}
@@ -108,33 +193,33 @@ function CourseCard({ course }: { course: CourseItem }) {
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gray-50">
-            <BookOpen className="h-6 w-6 text-gray-200" />
+          <div className="flex h-full w-full items-center justify-center">
+            <BookOpen className="h-8 w-8 text-gray-200" />
           </div>
         )}
 
-        {/* Hover play */}
+        {/* Hover play overlay */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-300 group-hover:bg-black/20">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 opacity-0 shadow-sm transition-all duration-300 group-hover:opacity-100">
-            <Play className="h-4 w-4 text-gray-900 ml-0.5" fill="currentColor" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 opacity-0 shadow-md transition-all duration-300 group-hover:opacity-100 group-hover:scale-100 scale-90">
+            <Play className="ml-0.5 h-4 w-4 text-gray-900" fill="currentColor" />
           </div>
         </div>
 
-        {/* Video count */}
+        {/* Video count badge */}
         {course.videoCount > 0 && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
             <Video className="h-2.5 w-2.5" />
             {course.videoCount}
           </div>
         )}
 
-        {/* Progress bar at bottom edge */}
-        {course.isEnrolled && (
+        {/* Progress bar at bottom */}
+        {course.isEnrolled && progress > 0 && (
           <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/10">
             <div
               className={cn(
                 "h-full transition-all",
-                isCompleted ? "bg-brand-500" : "bg-brand-400"
+                isCompleted ? "bg-emerald-500" : "bg-emerald-400"
               )}
               style={{ width: `${progress}%` }}
             />
@@ -143,27 +228,75 @@ function CourseCard({ course }: { course: CourseItem }) {
       </div>
 
       {/* Info */}
-      <div className="mt-3 space-y-1">
-        <h3 className="line-clamp-2 text-[13px] font-semibold leading-[1.4] text-gray-900">
+      <div className="p-3">
+        <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900">
           {course.title}
         </h3>
-        <p className="text-[11px] text-gray-400">
-          {[
-            course.creator?.name,
-            duration,
-            course.videoCount > 0 ? `영상 ${course.videoCount}개` : null,
-          ].filter(Boolean).join(" · ")}
+        <p className="mt-1.5 flex items-center gap-1 text-[11px] text-gray-400">
+          {course.creator?.name}
+          {duration && (
+            <>
+              <span className="text-gray-200">·</span>
+              <Clock className="h-2.5 w-2.5" />
+              {duration}
+            </>
+          )}
         </p>
+
+        {/* Enrollment status */}
         {course.isEnrolled && (
-          <p className={cn(
-            "text-[11px] font-medium",
-            isCompleted ? "text-brand-500" : "text-gray-400"
-          )}>
-            {isCompleted ? "수강 완료" : `${Math.round(progress)}% 진행 중`}
-          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-gray-100">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  isCompleted ? "bg-emerald-500" : "bg-emerald-400"
+                )}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className={cn(
+              "text-[10px] font-medium tabular-nums",
+              isCompleted ? "text-emerald-600" : "text-gray-400"
+            )}>
+              {isCompleted ? "완료" : `${Math.round(progress)}%`}
+            </span>
+          </div>
         )}
       </div>
     </Link>
+  );
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+
+function SectionHeader({
+  title,
+  count,
+  onViewAll,
+}: {
+  title: string;
+  count: number;
+  onViewAll?: () => void;
+}) {
+  return (
+    <div className="mb-3 flex items-center justify-between">
+      <div className="flex items-baseline gap-2">
+        <h2 className="text-[16px] font-bold text-gray-900">{title}</h2>
+        <span className="text-[12px] font-medium tabular-nums text-gray-300">
+          {count}
+        </span>
+      </div>
+      {onViewAll && (
+        <button
+          onClick={onViewAll}
+          className="flex items-center gap-0.5 text-[12px] font-medium text-gray-400 transition-colors hover:text-gray-600"
+        >
+          전체보기
+          <ChevronRight className="h-3 w-3" />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -189,7 +322,7 @@ export default function CoursesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [userSpecialty, setUserSpecialty] = useState<UserSpecialty | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("all");
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const isSearching = debouncedSearch.length > 0;
 
@@ -228,86 +361,54 @@ export default function CoursesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  // Build tabs from course data
-  const tabs = useMemo(() => {
+  // Build section data
+  const { enrolledCourses, continueCourse, sections } = useMemo(() => {
     const enrolled = courses.filter((c) => c.isEnrolled);
-    const groups: Record<string, CourseItem[]> = {};
+    const inProgress = enrolled
+      .filter((c) => (c.progressPct ?? 0) > 0 && (c.progressPct ?? 0) < 100)
+      .sort((a, b) => (b.progressPct ?? 0) - (a.progressPct ?? 0));
 
+    // Group by subcategory
+    const groups: Record<string, CourseItem[]> = {};
     for (const course of courses) {
       const cat = categorize(course.slug);
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(course);
     }
 
-    const result: Array<{ key: string; label: string; courses: CourseItem[] }> = [];
-    result.push({ key: "all", label: "전체", courses });
-
-    if (enrolled.length > 0) {
-      result.push({ key: "enrolled", label: "수강 중", courses: enrolled });
-    }
-
+    const secs: Array<{ key: string; label: string; courses: CourseItem[] }> = [];
     for (const [key, meta] of Object.entries(SUB_CATEGORIES)) {
       if (groups[key]?.length) {
-        result.push({ key, label: meta.label, courses: groups[key] });
+        secs.push({ key, label: meta.label, courses: groups[key] });
       }
     }
     if (groups["other"]?.length) {
-      result.push({ key: "other", label: t("other"), courses: groups["other"] });
+      secs.push({ key: "other", label: t("other"), courses: groups["other"] });
     }
 
-    return result;
+    // If no subcategory sections, show all as one section
+    if (secs.length === 0 && courses.length > 0) {
+      secs.push({ key: "all", label: "전체 코스", courses });
+    }
+
+    return {
+      enrolledCourses: enrolled,
+      continueCourse: inProgress[0] ?? null,
+      sections: secs,
+    };
   }, [courses, t]);
 
-  // Active tab courses
-  const activeCourses = useMemo(() => {
-    const tab = tabs.find((t) => t.key === activeTab);
-    return tab?.courses ?? courses;
-  }, [tabs, activeTab, courses]);
-
-  // Reset tab when tabs change
-  useEffect(() => {
-    if (!tabs.find((t) => t.key === activeTab)) {
-      setActiveTab("all");
-    }
-  }, [tabs, activeTab]);
-
   return (
-    <div>
-      {/* Header section */}
-      <div className="mb-8">
-        {userSpecialty && !isSearching ? (
-          <div className="flex items-baseline justify-between">
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-gray-300">
-                관심 분야
-              </p>
-              <h1 className="mt-1 text-[24px] font-bold tracking-tight text-gray-900">
-                {userSpecialty.name}
-              </h1>
-            </div>
-            <Link
-              href="/onboarding/specialty"
-              className="text-[12px] text-gray-300 transition-colors hover:text-gray-500"
-            >
-              변경
-            </Link>
-          </div>
-        ) : !isSearching ? (
-          <h1 className="text-[24px] font-bold tracking-tight text-gray-900">
-            코스
-          </h1>
-        ) : null}
-      </div>
-
+    <div className="pb-8">
       {/* Search */}
-      <div className="relative mb-8">
+      <div className="relative mb-6">
         <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300" />
         <input
           type="search"
           placeholder={t("searchCourses")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-10 text-[14px] text-gray-900 ring-1 ring-gray-100 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
+          className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-10 text-[14px] text-gray-900 shadow-sm ring-1 ring-gray-100 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
         />
         {searchQuery && (
           <button
@@ -333,13 +434,13 @@ export default function CoursesPage() {
           </button>
         </div>
       ) : isSearching ? (
-        /* Search results */
+        /* ─── Search Results ─── */
         <div>
-          <p className="mb-6 text-[11px] font-medium uppercase tracking-[0.1em] text-gray-300">
-            검색 결과 — {courses.length}개
+          <p className="mb-4 text-[12px] font-medium text-gray-400">
+            검색 결과 <span className="tabular-nums text-gray-900">{courses.length}</span>개
           </p>
           {courses.length > 0 ? (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8">
+            <div className="grid grid-cols-2 gap-3">
               {courses.map((c) => <CourseCard key={c.id} course={c} />)}
             </div>
           ) : (
@@ -347,38 +448,94 @@ export default function CoursesPage() {
           )}
         </div>
       ) : (
-        /* Tab-based view */
-        <div>
-          {/* Tab bar */}
-          {tabs.length > 1 && (
-            <div className="mb-8 flex gap-6 border-b border-gray-100">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={cn(
-                    "relative pb-3 text-[13px] font-medium transition-colors",
-                    activeTab === tab.key
-                      ? "text-gray-900"
-                      : "text-gray-300 hover:text-gray-500"
-                  )}
-                >
-                  {tab.label}
-                  {/* Active underline */}
-                  {activeTab === tab.key && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900" />
-                  )}
-                </button>
-              ))}
+        /* ─── Main View ─── */
+        <div className="space-y-8">
+          {/* Specialty header */}
+          {userSpecialty && (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-widest text-gray-300">
+                  관심 분야
+                </p>
+                <h1 className="mt-0.5 text-[22px] font-bold tracking-tight text-gray-900">
+                  {userSpecialty.name}
+                </h1>
+              </div>
+              <Link
+                href="/onboarding/specialty"
+                className="rounded-full bg-gray-50 px-3 py-1.5 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-100"
+              >
+                변경
+              </Link>
             </div>
           )}
 
-          {/* Course grid */}
-          {activeCourses.length > 0 ? (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8">
-              {activeCourses.map((c) => <CourseCard key={c.id} course={c} />)}
+          {!userSpecialty && (
+            <h1 className="text-[22px] font-bold tracking-tight text-gray-900">
+              코스
+            </h1>
+          )}
+
+          {/* Continue Learning */}
+          {continueCourse && (
+            <div>
+              <div className="mb-3 flex items-baseline gap-2">
+                <h2 className="text-[16px] font-bold text-gray-900">이어서 학습</h2>
+              </div>
+              <ContinueLearningCard course={continueCourse} />
             </div>
-          ) : (
+          )}
+
+          {/* Enrolled courses (completed or newly enrolled) */}
+          {enrolledCourses.length > 1 && (
+            <div>
+              <SectionHeader
+                title="수강 중"
+                count={enrolledCourses.length}
+                onViewAll={
+                  enrolledCourses.length > 4
+                    ? () => setExpandedSection(expandedSection === "enrolled" ? null : "enrolled")
+                    : undefined
+                }
+              />
+              <div className="grid grid-cols-2 gap-3">
+                {(expandedSection === "enrolled"
+                  ? enrolledCourses
+                  : enrolledCourses.slice(0, 4)
+                ).map((c) => (
+                  <CourseCard key={c.id} course={c} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Subcategory Sections */}
+          {sections.map((section) => (
+            <div key={section.key}>
+              <SectionHeader
+                title={section.label}
+                count={section.courses.length}
+                onViewAll={
+                  section.courses.length > 4
+                    ? () => setExpandedSection(
+                        expandedSection === section.key ? null : section.key
+                      )
+                    : undefined
+                }
+              />
+              <div className="grid grid-cols-2 gap-3">
+                {(expandedSection === section.key
+                  ? section.courses
+                  : section.courses.slice(0, 4)
+                ).map((c) => (
+                  <CourseCard key={c.id} course={c} />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* No courses at all */}
+          {courses.length === 0 && (
             <EmptyState
               title={t("noCoursesAvailable")}
               desc={t("noCoursesAvailableDesc")}
