@@ -62,12 +62,12 @@ interface PublicCourse {
 }
 
 const SPECIALTIES = [
-  { icon: Scan, label: "내시경", desc: "Endoscopy" },
-  { icon: Heart, label: "심초음파", desc: "Echo" },
-  { icon: Activity, label: "초음파", desc: "Ultrasound" },
-  { icon: Syringe, label: "시술", desc: "Procedure" },
-  { icon: Stethoscope, label: "갑상선", desc: "Thyroid" },
-  { icon: Microscope, label: "관절", desc: "Joint" },
+  { icon: Scan, label: "내시경", desc: "Endoscopy", bg: "bg-teal-50", text: "text-teal-600", count: "12 코스" },
+  { icon: Heart, label: "심초음파", desc: "Echo", bg: "bg-rose-50", text: "text-rose-500", count: "3 코스" },
+  { icon: Activity, label: "초음파", desc: "Ultrasound", bg: "bg-blue-50", text: "text-blue-500", count: "6 코스" },
+  { icon: Syringe, label: "시술", desc: "Procedure", bg: "bg-amber-50", text: "text-amber-600", count: "5 코스" },
+  { icon: Stethoscope, label: "갑상선", desc: "Thyroid", bg: "bg-purple-50", text: "text-purple-500", count: "4 코스" },
+  { icon: Microscope, label: "관절", desc: "Joint", bg: "bg-emerald-50", text: "text-emerald-600", count: "3 코스" },
 ];
 
 const POPULAR_TAGS = ["대장내시경", "위내시경", "복부초음파", "갑상선초음파"];
@@ -88,41 +88,55 @@ function PublicHome() {
   return (
     <>
       {/* ─── Hero ─── */}
-      <section className="bg-white pb-16 pt-28 sm:pt-32 sm:pb-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/60 via-white to-white pb-20 pt-28 sm:pt-36 sm:pb-24">
+        {/* Decorative background pattern */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-brand-100/40 blur-3xl" />
+          <div className="absolute -left-20 top-1/2 h-60 w-60 rounded-full bg-accent-100/30 blur-3xl" />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
+            {/* Badge */}
+            <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5">
+              <span className="h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
+              <span className="text-xs font-semibold text-brand-700">AI-Powered Medical Education</span>
+            </div>
+
             <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
               {t("heroTitle")}
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-lg text-gray-500">
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-gray-500">
               {t("heroSubtitle")}
             </p>
 
-            {/* Search bar */}
+            {/* Search bar — 강화된 그린 아웃라인 */}
             <Link
               href="/login"
-              className="group mx-auto mt-8 flex max-w-lg items-center gap-3 rounded-full border border-gray-200 bg-white px-5 py-3.5 shadow-lg shadow-gray-200/50 transition-all hover:shadow-xl hover:border-brand-200"
+              className="group mx-auto mt-10 flex max-w-lg items-center gap-3 rounded-full border-2 border-brand-300 bg-white px-5 py-4 shadow-[0_4px_24px_rgba(13,148,136,0.12)] transition-all hover:shadow-[0_8px_32px_rgba(13,148,136,0.18)] hover:border-brand-400"
             >
-              <Search className="h-5 w-5 text-gray-300" />
+              <Search className="h-5 w-5 text-brand-400" />
               <span className="flex-1 text-left text-[15px] text-gray-400">
                 전문분야 또는 강좌명 검색...
               </span>
-              <span className="rounded-full bg-brand-500 px-4 py-1.5 text-sm font-semibold text-white transition-colors group-hover:bg-brand-600">
+              <span className="rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-500/25 transition-all group-hover:bg-brand-600 group-hover:shadow-md group-hover:shadow-brand-500/30">
                 검색
               </span>
             </Link>
 
             {/* Popular tags */}
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-              <span className="text-xs text-gray-400">인기:</span>
-              {POPULAR_TAGS.map((tag) => (
-                <Link
-                  key={tag}
-                  href="/login"
-                  className="text-xs font-medium text-brand-500 hover:text-brand-600 hover:underline"
-                >
-                  {tag}
-                </Link>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-1.5">
+              <span className="text-xs font-medium text-gray-400">인기:</span>
+              {POPULAR_TAGS.map((tag, i) => (
+                <span key={tag} className="flex items-center gap-1.5">
+                  {i > 0 && <span className="text-gray-200">·</span>}
+                  <Link
+                    href="/login"
+                    className="rounded-full bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
+                  >
+                    {tag}
+                  </Link>
+                </span>
               ))}
             </div>
           </div>
@@ -130,23 +144,29 @@ function PublicHome() {
       </section>
 
       {/* ─── Specialty Grid ─── */}
-      <section className="bg-gray-50/50 py-16 sm:py-20">
+      <section className="bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-8 text-center text-2xl font-bold text-gray-900 sm:text-3xl">
-            전문분야별 교육
-          </h2>
-          <div className="mx-auto grid max-w-3xl grid-cols-3 gap-4 sm:grid-cols-6">
+          <div className="mb-10 text-center">
+            <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">Specialties</p>
+            <h2 className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">
+              전문분야별 교육
+            </h2>
+          </div>
+          <div className="mx-auto grid max-w-4xl grid-cols-3 gap-4 sm:grid-cols-6 sm:gap-5">
             {SPECIALTIES.map((spec) => (
               <Link
                 key={spec.label}
                 href="/login"
-                className="group flex flex-col items-center gap-2 rounded-2xl bg-white p-4 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
+                className="group flex flex-col items-center gap-2.5 rounded-2xl border border-gray-100 bg-white p-5 transition-all hover:shadow-lg hover:shadow-brand-100/50 hover:-translate-y-1 hover:border-brand-200"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-500 transition-colors group-hover:bg-brand-100">
-                  <spec.icon className="h-6 w-6" />
+                <div className={cn(
+                  "flex h-14 w-14 items-center justify-center rounded-2xl transition-transform group-hover:scale-110",
+                  spec.bg, spec.text
+                )}>
+                  <spec.icon className="h-7 w-7" />
                 </div>
-                <span className="text-sm font-semibold text-gray-900">{spec.label}</span>
-                <span className="text-[10px] text-gray-400">{spec.desc}</span>
+                <span className="text-sm font-bold text-gray-900">{spec.label}</span>
+                <span className="text-[10px] font-medium text-gray-400">{spec.count}</span>
               </Link>
             ))}
           </div>
@@ -155,13 +175,14 @@ function PublicHome() {
 
       {/* ─── Popular Courses ─── */}
       {courses.length > 0 && (
-        <section className="bg-white py-16 sm:py-20">
+        <section className="bg-gray-50/80 py-16 sm:py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+            <div className="mb-10 text-center">
+              <p className="text-sm font-semibold uppercase tracking-wider text-brand-500">Popular</p>
+              <h2 className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">
                 인기 강좌
               </h2>
-              <p className="mt-2 text-gray-500">
+              <p className="mt-3 text-gray-500">
                 실전 의료 영상으로 배우는 전문 교육과정
               </p>
             </div>
@@ -170,7 +191,7 @@ function PublicHome() {
                 <Link
                   key={course.id}
                   href="/login"
-                  className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-lg hover:ring-brand-200"
+                  className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100 transition-all hover:shadow-xl hover:shadow-brand-100/40 hover:ring-brand-200"
                 >
                   <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
                     {course.thumbnailUrl ? (
@@ -191,10 +212,14 @@ function PublicHome() {
                         <Play className="ml-0.5 h-5 w-5 text-gray-800" />
                       </div>
                     </div>
+                    {/* Risk level badge */}
+                    <div className="absolute left-2 top-2 rounded-md bg-brand-500/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                      {course.riskLevel}
+                    </div>
                     {course.videoCount > 0 && (
                       <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
                         <Video className="h-3 w-3" />
-                        {course.videoCount}
+                        {course.videoCount}개 영상
                       </div>
                     )}
                   </div>
@@ -202,14 +227,28 @@ function PublicHome() {
                     <h3 className="line-clamp-1 text-base font-bold text-gray-900">
                       {course.title}
                     </h3>
-                    <p className="mt-1 text-sm text-gray-400">
+                    <p className="mt-1.5 text-sm text-gray-400">
                       {[course.creator?.name, `${course.moduleCount}개 모듈`]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
+                    {course.creator?.creatorTitle && (
+                      <p className="mt-1 text-xs text-gray-300">{course.creator.creatorTitle}</p>
+                    )}
                   </div>
                 </Link>
               ))}
+            </div>
+
+            {/* View all courses CTA */}
+            <div className="mt-10 text-center">
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 rounded-full border-2 border-brand-500 px-6 py-2.5 text-sm font-semibold text-brand-600 transition-all hover:bg-brand-500 hover:text-white"
+              >
+                전체 강좌 보기
+                <ChevronRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
         </section>
@@ -734,13 +773,13 @@ function AuthenticatedHome() {
       <section className="space-y-4">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300" />
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-400" />
           <input
             type="search"
             placeholder={tCourse("searchCourses")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-10 text-[14px] text-gray-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)] placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-300/50 transition-all"
+            className="w-full rounded-xl border-2 border-brand-200 bg-white py-3 pl-10 pr-10 text-[14px] text-gray-900 shadow-[0_2px_8px_rgba(13,148,136,0.08)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-300/40 focus:border-brand-400 transition-all"
           />
           {searchQuery && (
             <button
