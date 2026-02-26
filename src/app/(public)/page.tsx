@@ -43,9 +43,13 @@ import { CelebrationModal } from "@/components/gamification/celebration-modal";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { cn } from "@/lib/utils";
 
+import { HeroSection } from "./components/hero-section";
 import { LogoCarousel } from "./components/logo-carousel";
 import { HowItWorks } from "./components/how-it-works";
+import { PlatformTabs } from "./components/platform-tabs";
 import { ResultsGrid } from "./components/results-grid";
+import { ValueCards } from "./components/value-cards";
+import { PersonaColumns } from "./components/persona-columns";
 import { FaqAccordion } from "./components/faq-accordion";
 import { CtaSection } from "./components/cta-section";
 
@@ -53,6 +57,24 @@ import { CtaSection } from "./components/cta-section";
 
 export default function UnifiedHomePage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const setUser = useAuthStore((s) => s.setUser);
+
+  // Pick up oauth_user cookie after Google callback redirect
+  useEffect(() => {
+    const cookieStr = document.cookie
+      .split("; ")
+      .find((c) => c.startsWith("oauth_user="));
+    if (cookieStr) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(cookieStr.split("=").slice(1).join("=")));
+        setUser(userData);
+        document.cookie = "oauth_user=; path=/; max-age=0";
+      } catch {
+        // ignore
+      }
+    }
+  }, [setUser]);
+
   return isAuthenticated ? <AuthenticatedHome /> : <PublicHome />;
 }
 
@@ -100,7 +122,6 @@ const SPECIALTIES = [
 const POPULAR_TAGS = ["대장내시경", "위내시경", "복부초음파", "갑상선초음파"];
 
 function PublicHome() {
-  const t = useTranslations("landing");
   const [courses, setCourses] = useState<PublicCourse[]>([]);
 
   useEffect(() => {
@@ -114,35 +135,16 @@ function PublicHome() {
 
   return (
     <>
-      {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/60 via-white to-white pb-20 pt-28 sm:pt-36 sm:pb-24">
-        {/* Decorative background pattern */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-brand-100/40 blur-3xl" />
-          <div className="absolute -left-20 top-1/2 h-60 w-60 rounded-full bg-accent-100/30 blur-3xl" />
-        </div>
+      {/* ─── Production Hero (video player) ─── */}
+      <HeroSection />
 
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* ─── Search bar ─── */}
+      <section className="bg-white py-12 sm:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            {/* Badge */}
-            <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5">
-              <span className="h-2 w-2 rounded-full bg-brand-500 animate-pulse" />
-              <span className="text-xs font-semibold text-brand-700">AI-Powered Medical Education</span>
-            </div>
-
-            <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-              {t("heroTitle")}
-              <br />
-              <span className="text-brand-500">{t("heroTitleHighlight")}</span>
-            </h1>
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-gray-500">
-              {t("heroSubtitle")}
-            </p>
-
-            {/* Search bar — 강화된 그린 아웃라인 */}
             <Link
               href="/courses"
-              className="group mx-auto mt-10 flex max-w-lg items-center gap-3 rounded-full border-2 border-brand-300 bg-white px-5 py-4 shadow-[0_4px_24px_rgba(13,148,136,0.12)] transition-all hover:shadow-[0_8px_32px_rgba(13,148,136,0.18)] hover:border-brand-400"
+              className="group mx-auto flex max-w-lg items-center gap-3 rounded-full border-2 border-brand-300 bg-white px-5 py-4 shadow-[0_4px_24px_rgba(13,148,136,0.12)] transition-all hover:shadow-[0_8px_32px_rgba(13,148,136,0.18)] hover:border-brand-400"
             >
               <Search className="h-5 w-5 text-brand-400" />
               <span className="flex-1 text-left text-[15px] text-gray-400">
@@ -286,10 +288,13 @@ function PublicHome() {
         </section>
       )}
 
-      {/* ─── Reused sections ─── */}
-      <HowItWorks />
-      <ResultsGrid />
+      {/* ─── Production sections ─── */}
       <LogoCarousel />
+      <HowItWorks />
+      <PlatformTabs />
+      <ResultsGrid />
+      <ValueCards />
+      <PersonaColumns />
       <FaqAccordion />
       <CtaSection />
     </>
@@ -527,6 +532,7 @@ function AuthenticatedHome() {
   const tc = useTranslations("common");
   const tCourse = useTranslations("course");
   const router = useRouter();
+  const logout = useAuthStore((s) => s.logout);
 
   // Dashboard data
   const [dashData, setDashData] = useState<DashboardData | null>(null);
@@ -559,7 +565,7 @@ function AuthenticatedHome() {
       setDashLoading(true);
       setDashError(null);
       const res = await fetch("/api/v1/learner/dashboard");
-      if (res.status === 401) { window.location.href = "/login"; return; }
+      if (res.status === 401) { logout(); return; }
       if (!res.ok) throw new Error(`Failed to load (${res.status})`);
       const json = await res.json();
       setDashData(json.data);
