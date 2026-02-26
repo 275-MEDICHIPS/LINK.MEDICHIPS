@@ -1,7 +1,11 @@
 "use client";
 
+import Link from "next/link";
+import { Search } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
+
+const POPULAR_TAGS = ["대장내시경", "위내시경", "복부초음파", "갑상선초음파"];
 
 const DEMO_INTRO_URL =
   "https://storage.googleapis.com/medichips-link-assets/videos/demo-intro.mp4";
@@ -76,10 +80,10 @@ export function HeroSection() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           {/* Headline */}
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl lg:leading-[1.1]">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl lg:leading-[1.25]">
             {t("heroTitle")}
             <br />
-            <span className="bg-gradient-to-r from-brand-600 via-brand-500 to-accent-500 bg-clip-text text-transparent">
+            <span className="inline-block bg-gradient-to-r from-brand-600 via-brand-500 to-accent-500 bg-clip-text pb-1 text-transparent">
               {t("heroTitleHighlight")}
             </span>
           </h1>
@@ -89,6 +93,35 @@ export function HeroSection() {
             {t("heroSubtitle")}
           </p>
 
+          {/* Search bar */}
+          <div className="mx-auto mt-8 max-w-lg">
+            <Link
+              href="/courses"
+              className="group flex items-center gap-3 rounded-full border-2 border-brand-300 bg-white px-5 py-3.5 shadow-[0_4px_24px_rgba(13,148,136,0.12)] transition-all hover:shadow-[0_8px_32px_rgba(13,148,136,0.18)] hover:border-brand-400"
+            >
+              <Search className="h-5 w-5 text-brand-400" />
+              <span className="flex-1 text-left text-[15px] text-gray-400">
+                전문분야 또는 강좌명 검색...
+              </span>
+              <span className="rounded-full bg-brand-500 px-5 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-500/25 transition-all group-hover:bg-brand-600">
+                검색
+              </span>
+            </Link>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+              <span className="text-xs font-medium text-gray-400">인기:</span>
+              {POPULAR_TAGS.map((tag, i) => (
+                <span key={tag} className="flex items-center gap-1.5">
+                  {i > 0 && <span className="text-gray-300">·</span>}
+                  <Link
+                    href={`/courses?search=${encodeURIComponent(tag)}`}
+                    className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
+                  >
+                    {tag}
+                  </Link>
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Video / Product Preview */}
