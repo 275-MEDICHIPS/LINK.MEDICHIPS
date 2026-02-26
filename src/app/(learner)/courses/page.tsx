@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Search, BookOpen, Video, X } from "lucide-react";
+import { Search, BookOpen, Video, X, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ interface UserSpecialty {
   name: string;
 }
 
-// ─── Subcategory grouping ────────────────────────────────────────────────────
+// ─── Subcategory ──────────────────────────────────────────────────────────────
 
 const SUB_CATEGORIES: Record<string, { label: string; keywords: string[] }> = {
   endoscopy:  { label: "내시경",   keywords: ["endoscopy", "colonoscopy", "gastroscopy"] },
@@ -60,24 +60,25 @@ function categorize(slug: string): string {
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-lg bg-gray-100", className)} />;
+  return <div className={cn("animate-pulse bg-gray-100", className)} />;
 }
 
 function PageSkeleton() {
   return (
-    <div className="space-y-10" role="status">
+    <div className="space-y-8" role="status">
       <Skeleton className="h-11 w-full rounded-xl" />
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-16" />
-        <div className="flex gap-4 overflow-hidden">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="w-[200px] flex-shrink-0">
-              <Skeleton className="aspect-video w-full rounded-xl" />
-              <Skeleton className="mt-3 h-4 w-3/4" />
-              <Skeleton className="mt-2 h-3 w-1/2" />
-            </div>
-          ))}
-        </div>
+      <Skeleton className="h-8 w-48" />
+      <div className="flex gap-6 border-b border-gray-100 pb-px">
+        {[0, 1, 2].map((i) => <Skeleton key={i} className="h-4 w-14 rounded" />)}
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-8">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i}>
+            <Skeleton className="aspect-video w-full rounded-xl" />
+            <Skeleton className="mt-3 h-4 w-4/5 rounded" />
+            <Skeleton className="mt-2 h-3 w-3/5 rounded" />
+          </div>
+        ))}
       </div>
       <span className="sr-only">Loading...</span>
     </div>
@@ -86,15 +87,17 @@ function PageSkeleton() {
 
 // ─── Course Card ──────────────────────────────────────────────────────────────
 
-function CourseCard({ course, className }: { course: CourseItem; className?: string }) {
+function CourseCard({ course }: { course: CourseItem }) {
   const progress = course.progressPct ?? 0;
   const isCompleted = progress >= 100;
+  const duration = course.totalDurationMin > 0
+    ? course.totalDurationMin >= 60
+      ? `${Math.floor(course.totalDurationMin / 60)}시간 ${course.totalDurationMin % 60 > 0 ? `${course.totalDurationMin % 60}분` : ""}`
+      : `${course.totalDurationMin}분`
+    : null;
 
   return (
-    <Link
-      href={`/courses/${course.id}`}
-      className={cn("group block", className)}
-    >
+    <Link href={`/courses/${course.id}`} className="group block">
       {/* Thumbnail */}
       <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-gray-100">
         {course.thumbnailUrl ? (
@@ -110,21 +113,28 @@ function CourseCard({ course, className }: { course: CourseItem; className?: str
           </div>
         )}
 
+        {/* Hover play */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-300 group-hover:bg-black/20">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 opacity-0 shadow-sm transition-all duration-300 group-hover:opacity-100">
+            <Play className="h-4 w-4 text-gray-900 ml-0.5" fill="currentColor" />
+          </div>
+        </div>
+
         {/* Video count */}
         {course.videoCount > 0 && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm">
             <Video className="h-2.5 w-2.5" />
             {course.videoCount}
           </div>
         )}
 
-        {/* Progress overlay */}
+        {/* Progress bar at bottom edge */}
         {course.isEnrolled && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200/50">
+          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-black/10">
             <div
               className={cn(
                 "h-full transition-all",
-                isCompleted ? "bg-gray-900" : "bg-brand-500"
+                isCompleted ? "bg-brand-500" : "bg-brand-400"
               )}
               style={{ width: `${progress}%` }}
             />
@@ -132,74 +142,28 @@ function CourseCard({ course, className }: { course: CourseItem; className?: str
         )}
       </div>
 
-      {/* Text */}
-      <div className="mt-3">
-        <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900">
+      {/* Info */}
+      <div className="mt-3 space-y-1">
+        <h3 className="line-clamp-2 text-[13px] font-semibold leading-[1.4] text-gray-900">
           {course.title}
         </h3>
-        <div className="mt-1.5 flex items-center gap-2 text-[11px] text-gray-400">
-          {course.creator && (
-            <span>{course.creator.name}</span>
-          )}
-          {course.creator && course.totalDurationMin > 0 && (
-            <span className="text-gray-200">·</span>
-          )}
-          {course.totalDurationMin > 0 && (
-            <span>
-              {course.totalDurationMin >= 60
-                ? `${Math.floor(course.totalDurationMin / 60)}시간 ${course.totalDurationMin % 60}분`
-                : `${course.totalDurationMin}분`}
-            </span>
-          )}
-        </div>
-        {course.isEnrolled && !isCompleted && (
-          <span className="mt-1 inline-block text-[11px] font-medium text-brand-500">
-            {Math.round(progress)}% 진행
-          </span>
-        )}
-        {isCompleted && (
-          <span className="mt-1 inline-block text-[11px] font-medium text-gray-400">
-            수강 완료
-          </span>
+        <p className="text-[11px] text-gray-400">
+          {[
+            course.creator?.name,
+            duration,
+            course.videoCount > 0 ? `영상 ${course.videoCount}개` : null,
+          ].filter(Boolean).join(" · ")}
+        </p>
+        {course.isEnrolled && (
+          <p className={cn(
+            "text-[11px] font-medium",
+            isCompleted ? "text-brand-500" : "text-gray-400"
+          )}>
+            {isCompleted ? "수강 완료" : `${Math.round(progress)}% 진행 중`}
+          </p>
         )}
       </div>
     </Link>
-  );
-}
-
-// ─── Horizontal Section ───────────────────────────────────────────────────────
-
-function CourseSection({
-  title,
-  courses,
-}: {
-  title: string;
-  courses: CourseItem[];
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  if (courses.length === 0) return null;
-
-  return (
-    <section>
-      <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-[15px] font-semibold text-gray-900">{title}</h2>
-        <span className="text-[12px] tabular-nums text-gray-300">
-          {courses.length}
-        </span>
-      </div>
-      <div
-        ref={scrollRef}
-        className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide"
-      >
-        {courses.map((course) => (
-          <CourseCard
-            key={course.id}
-            course={course}
-            className="w-[200px] flex-shrink-0"
-          />
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -207,9 +171,9 @@ function CourseSection({
 
 function EmptyState({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="py-16 text-center">
-      <p className="text-[14px] font-medium text-gray-900">{title}</p>
-      <p className="mt-1 text-[13px] text-gray-400">{desc}</p>
+    <div className="py-20 text-center">
+      <p className="text-[14px] font-medium text-gray-400">{title}</p>
+      <p className="mt-1 text-[13px] text-gray-300">{desc}</p>
     </div>
   );
 }
@@ -225,12 +189,13 @@ export default function CoursesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [userSpecialty, setUserSpecialty] = useState<UserSpecialty | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("all");
 
   const isSearching = debouncedSearch.length > 0;
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   const fetchCourses = useCallback(async (specId?: string | null) => {
@@ -263,57 +228,86 @@ export default function CoursesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  const enrolledCourses = useMemo(
-    () => courses.filter((c) => c.isEnrolled),
-    [courses]
-  );
-
-  const subcategoryGroups = useMemo(() => {
-    const rest = courses.filter((c) => !c.isEnrolled);
+  // Build tabs from course data
+  const tabs = useMemo(() => {
+    const enrolled = courses.filter((c) => c.isEnrolled);
     const groups: Record<string, CourseItem[]> = {};
-    for (const course of rest) {
+
+    for (const course of courses) {
       const cat = categorize(course.slug);
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(course);
     }
-    const ordered: Array<{ key: string; label: string; courses: CourseItem[] }> = [];
+
+    const result: Array<{ key: string; label: string; courses: CourseItem[] }> = [];
+    result.push({ key: "all", label: "전체", courses });
+
+    if (enrolled.length > 0) {
+      result.push({ key: "enrolled", label: "수강 중", courses: enrolled });
+    }
+
     for (const [key, meta] of Object.entries(SUB_CATEGORIES)) {
       if (groups[key]?.length) {
-        ordered.push({ key, label: meta.label, courses: groups[key] });
+        result.push({ key, label: meta.label, courses: groups[key] });
       }
     }
     if (groups["other"]?.length) {
-      ordered.push({ key: "other", label: t("other"), courses: groups["other"] });
+      result.push({ key: "other", label: t("other"), courses: groups["other"] });
     }
-    return ordered;
+
+    return result;
   }, [courses, t]);
 
+  // Active tab courses
+  const activeCourses = useMemo(() => {
+    const tab = tabs.find((t) => t.key === activeTab);
+    return tab?.courses ?? courses;
+  }, [tabs, activeTab, courses]);
+
+  // Reset tab when tabs change
+  useEffect(() => {
+    if (!tabs.find((t) => t.key === activeTab)) {
+      setActiveTab("all");
+    }
+  }, [tabs, activeTab]);
+
   return (
-    <div className="space-y-8">
-      {/* Specialty header */}
-      {userSpecialty && !isSearching && (
-        <div className="flex items-baseline justify-between">
-          <h1 className="text-[22px] font-bold tracking-tight text-gray-900">
-            {userSpecialty.name}
+    <div>
+      {/* Header section */}
+      <div className="mb-8">
+        {userSpecialty && !isSearching ? (
+          <div className="flex items-baseline justify-between">
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-gray-300">
+                관심 분야
+              </p>
+              <h1 className="mt-1 text-[24px] font-bold tracking-tight text-gray-900">
+                {userSpecialty.name}
+              </h1>
+            </div>
+            <Link
+              href="/onboarding/specialty"
+              className="text-[12px] text-gray-300 transition-colors hover:text-gray-500"
+            >
+              변경
+            </Link>
+          </div>
+        ) : !isSearching ? (
+          <h1 className="text-[24px] font-bold tracking-tight text-gray-900">
+            코스
           </h1>
-          <Link
-            href="/onboarding/specialty"
-            className="text-[12px] text-gray-300 transition-colors hover:text-gray-500"
-          >
-            변경
-          </Link>
-        </div>
-      )}
+        ) : null}
+      </div>
 
       {/* Search */}
-      <div className="relative">
+      <div className="relative mb-8">
         <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300" />
         <input
           type="search"
           placeholder={t("searchCourses")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-10 text-[14px] text-gray-900 shadow-none ring-1 ring-gray-100 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
+          className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-10 text-[14px] text-gray-900 ring-1 ring-gray-100 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
         />
         {searchQuery && (
           <button
@@ -329,65 +323,66 @@ export default function CoursesPage() {
       {loading ? (
         <PageSkeleton />
       ) : error ? (
-        <div className="py-16 text-center">
+        <div className="py-20 text-center">
           <p className="text-[13px] text-gray-400">{error}</p>
           <button
             onClick={() => fetchCourses(userSpecialty?.id)}
-            className="mt-4 text-[13px] font-medium text-gray-900 hover:text-gray-600"
+            className="mt-3 text-[13px] font-medium text-gray-900 hover:text-gray-600"
           >
             {tc("tryAgain")}
           </button>
         </div>
       ) : isSearching ? (
         /* Search results */
-        <div className="space-y-5">
-          <p className="text-[13px] text-gray-400">
-            {courses.length}개의 결과
+        <div>
+          <p className="mb-6 text-[11px] font-medium uppercase tracking-[0.1em] text-gray-300">
+            검색 결과 — {courses.length}개
           </p>
           {courses.length > 0 ? (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-              {courses.map((c) => (
-                <CourseCard key={c.id} course={c} />
-              ))}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8">
+              {courses.map((c) => <CourseCard key={c.id} course={c} />)}
             </div>
           ) : (
-            <EmptyState
-              title={t("noSearchResults")}
-              desc={t("noSearchResultsDesc")}
-            />
+            <EmptyState title={t("noSearchResults")} desc={t("noSearchResultsDesc")} />
           )}
         </div>
       ) : (
-        /* Default view */
-        <div className="space-y-10">
-          {enrolledCourses.length > 0 && (
-            <CourseSection
-              title={t("myCourses")}
-              courses={enrolledCourses}
-            />
+        /* Tab-based view */
+        <div>
+          {/* Tab bar */}
+          {tabs.length > 1 && (
+            <div className="mb-8 flex gap-6 border-b border-gray-100">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    "relative pb-3 text-[13px] font-medium transition-colors",
+                    activeTab === tab.key
+                      ? "text-gray-900"
+                      : "text-gray-300 hover:text-gray-500"
+                  )}
+                >
+                  {tab.label}
+                  {/* Active underline */}
+                  {activeTab === tab.key && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gray-900" />
+                  )}
+                </button>
+              ))}
+            </div>
           )}
 
-          {subcategoryGroups.map((g) => (
-            <CourseSection
-              key={g.key}
-              title={g.label}
-              courses={g.courses}
-            />
-          ))}
-
-          {enrolledCourses.length === 0 && subcategoryGroups.length === 0 && courses.length === 0 && (
+          {/* Course grid */}
+          {activeCourses.length > 0 ? (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8">
+              {activeCourses.map((c) => <CourseCard key={c.id} course={c} />)}
+            </div>
+          ) : (
             <EmptyState
               title={t("noCoursesAvailable")}
               desc={t("noCoursesAvailableDesc")}
             />
-          )}
-
-          {enrolledCourses.length === 0 && subcategoryGroups.length === 0 && courses.length > 0 && (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-              {courses.map((c) => (
-                <CourseCard key={c.id} course={c} />
-              ))}
-            </div>
           )}
         </div>
       )}
