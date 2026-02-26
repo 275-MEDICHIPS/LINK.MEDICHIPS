@@ -3,19 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import {
-  Search,
-  BookOpen,
-  Video,
-  X,
-  ChevronRight,
-  Sparkles,
-  Clock,
-  Users,
-  Play,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Search, BookOpen, Video, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -53,13 +41,13 @@ interface UserSpecialty {
 
 // ─── Subcategory grouping ────────────────────────────────────────────────────
 
-const SUB_CATEGORIES: Record<string, { label: string; icon: string; keywords: string[] }> = {
-  endoscopy:  { label: "내시경",   icon: "🔍", keywords: ["endoscopy", "colonoscopy", "gastroscopy"] },
-  ultrasound: { label: "초음파",   icon: "📡", keywords: ["ultrasound"] },
-  procedure:  { label: "시술",     icon: "💉", keywords: ["nerve-block", "joint-injection", "biopsy", "procedure"] },
-  basic:      { label: "기초의학", icon: "📚", keywords: ["basic", "fundamentals", "introduction", "intro"] },
-  diagnosis:  { label: "진단",     icon: "🩺", keywords: ["diagnosis", "diagnostic"] },
-  emergency:  { label: "응급",     icon: "🚑", keywords: ["emergency", "acute", "critical"] },
+const SUB_CATEGORIES: Record<string, { label: string; keywords: string[] }> = {
+  endoscopy:  { label: "내시경",   keywords: ["endoscopy", "colonoscopy", "gastroscopy"] },
+  ultrasound: { label: "초음파",   keywords: ["ultrasound"] },
+  procedure:  { label: "시술",     keywords: ["nerve-block", "joint-injection", "biopsy", "procedure"] },
+  basic:      { label: "기초의학", keywords: ["basic", "fundamentals", "introduction", "intro"] },
+  diagnosis:  { label: "진단",     keywords: ["diagnosis", "diagnostic"] },
+  emergency:  { label: "응급",     keywords: ["emergency", "acute", "critical"] },
 };
 
 function categorize(slug: string): string {
@@ -71,233 +59,143 @@ function categorize(slug: string): string {
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-function SkeletonPulse({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-xl bg-gray-100", className)} />;
-}
-
-function CardSkeleton({ horizontal }: { horizontal?: boolean }) {
-  return (
-    <div className={cn(
-      "overflow-hidden rounded-2xl bg-white shadow-sm",
-      horizontal ? "w-[200px] flex-shrink-0" : ""
-    )}>
-      <SkeletonPulse className="aspect-video w-full rounded-none" />
-      <div className="space-y-2.5 p-3.5">
-        <SkeletonPulse className="h-4 w-4/5" />
-        <SkeletonPulse className="h-3 w-3/5" />
-      </div>
-    </div>
-  );
-}
-
-function SectionSkeleton() {
-  return (
-    <div className="space-y-3">
-      <SkeletonPulse className="h-5 w-24" />
-      <div className="flex gap-3 overflow-hidden">
-        {[0, 1, 2].map((i) => <CardSkeleton key={i} horizontal />)}
-      </div>
-    </div>
-  );
+function Skeleton({ className }: { className?: string }) {
+  return <div className={cn("animate-pulse rounded-lg bg-gray-100", className)} />;
 }
 
 function PageSkeleton() {
   return (
-    <div className="space-y-8" role="status" aria-label="Loading">
-      <SkeletonPulse className="h-11 w-full" />
-      <SectionSkeleton />
-      <SectionSkeleton />
+    <div className="space-y-10" role="status">
+      <Skeleton className="h-11 w-full rounded-xl" />
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-16" />
+        <div className="flex gap-4 overflow-hidden">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="w-[200px] flex-shrink-0">
+              <Skeleton className="aspect-video w-full rounded-xl" />
+              <Skeleton className="mt-3 h-4 w-3/4" />
+              <Skeleton className="mt-2 h-3 w-1/2" />
+            </div>
+          ))}
+        </div>
+      </div>
       <span className="sr-only">Loading...</span>
     </div>
   );
 }
 
-function GridSkeleton() {
-  return (
-    <div className="space-y-4" role="status" aria-label="Loading">
-      <SkeletonPulse className="h-5 w-32" />
-      <div className="grid grid-cols-2 gap-3">
-        {[0, 1, 2, 3].map((i) => <CardSkeleton key={i} />)}
-      </div>
-    </div>
-  );
-}
+// ─── Course Card ──────────────────────────────────────────────────────────────
 
-// ─── Video Course Card ───────────────────────────────────────────────────────
-
-function VideoCourseCard({ course, className }: { course: CourseItem; className?: string }) {
+function CourseCard({ course, className }: { course: CourseItem; className?: string }) {
   const progress = course.progressPct ?? 0;
   const isCompleted = progress >= 100;
-  const durationText = course.totalDurationMin > 0
-    ? course.totalDurationMin >= 60
-      ? `${Math.floor(course.totalDurationMin / 60)}h ${course.totalDurationMin % 60}m`
-      : `${course.totalDurationMin}분`
-    : null;
 
   return (
     <Link
       href={`/courses/${course.id}`}
-      className={cn(
-        "group block overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2",
-        className
-      )}
+      className={cn("group block", className)}
     >
-      {/* Thumbnail — 16:9 */}
-      <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
+      {/* Thumbnail */}
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-gray-100">
         {course.thumbnailUrl ? (
           <img
             src={course.thumbnailUrl}
             alt=""
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-100 via-brand-50 to-accent-50">
-            <BookOpen className="h-8 w-8 text-brand-300" aria-hidden="true" />
+          <div className="flex h-full w-full items-center justify-center bg-gray-50">
+            <BookOpen className="h-6 w-6 text-gray-200" />
           </div>
         )}
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-        {/* Play button on hover */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur-sm">
-            <Play className="h-4 w-4 text-brand-600 ml-0.5" fill="currentColor" />
-          </div>
-        </div>
-
-        {/* Creator pill (bottom-left) */}
-        {course.creator && (
-          <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 backdrop-blur-md">
-            {course.creator.avatarUrl ? (
-              <img
-                src={course.creator.avatarUrl}
-                alt=""
-                className="h-4 w-4 rounded-full object-cover ring-1 ring-white/30"
-              />
-            ) : (
-              <div className="flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-[8px] font-bold text-white">
-                {course.creator.name.charAt(0)}
-              </div>
-            )}
-            <span className="text-[10px] font-medium text-white/90">
-              {course.creator.name}
-            </span>
-          </div>
-        )}
-
-        {/* Video count (bottom-right) */}
+        {/* Video count */}
         {course.videoCount > 0 && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-md">
-            <Video className="h-3 w-3" aria-hidden="true" />
+          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">
+            <Video className="h-2.5 w-2.5" />
             {course.videoCount}
           </div>
         )}
 
-        {/* Risk level (top-left) */}
-        <div className="absolute left-2 top-2">
-          <span className={cn(
-            "inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-bold tracking-wide backdrop-blur-md",
-            course.riskLevel === "L1" && "bg-emerald-500/20 text-emerald-100",
-            course.riskLevel === "L2" && "bg-amber-500/20 text-amber-100",
-            course.riskLevel === "L3" && "bg-red-500/20 text-red-100"
-          )}>
-            {course.riskLevel}
-          </span>
-        </div>
-
-        {/* Completed overlay */}
-        {isCompleted && (
-          <div className="absolute inset-0 flex items-center justify-center bg-brand-900/60 backdrop-blur-sm">
-            <div className="flex items-center gap-1.5 rounded-full bg-accent-500 px-3 py-1.5 shadow-lg">
-              <Sparkles className="h-3.5 w-3.5 text-white" />
-              <span className="text-xs font-bold text-white">완료</span>
-            </div>
+        {/* Progress overlay */}
+        {course.isEnrolled && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200/50">
+            <div
+              className={cn(
+                "h-full transition-all",
+                isCompleted ? "bg-gray-900" : "bg-brand-500"
+              )}
+              style={{ width: `${progress}%` }}
+            />
           </div>
         )}
       </div>
 
-      {/* Content */}
-      <div className="p-3.5">
-        <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900 transition-colors group-hover:text-brand-600">
+      {/* Text */}
+      <div className="mt-3">
+        <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900">
           {course.title}
         </h3>
-
-        {/* Meta row */}
-        <div className="mt-2 flex items-center gap-3 text-[10px] text-gray-400">
-          {durationText && (
-            <span className="flex items-center gap-0.5">
-              <Clock className="h-3 w-3" />
-              {durationText}
-            </span>
+        <div className="mt-1.5 flex items-center gap-2 text-[11px] text-gray-400">
+          {course.creator && (
+            <span>{course.creator.name}</span>
           )}
-          {course.enrollmentCount > 0 && (
-            <span className="flex items-center gap-0.5">
-              <Users className="h-3 w-3" />
-              {course.enrollmentCount}
+          {course.creator && course.totalDurationMin > 0 && (
+            <span className="text-gray-200">·</span>
+          )}
+          {course.totalDurationMin > 0 && (
+            <span>
+              {course.totalDurationMin >= 60
+                ? `${Math.floor(course.totalDurationMin / 60)}시간 ${course.totalDurationMin % 60}분`
+                : `${course.totalDurationMin}분`}
             </span>
           )}
         </div>
-
-        {/* Progress Bar */}
         {course.isEnrolled && !isCompleted && (
-          <div className="mt-2.5 flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-500 transition-all duration-500"
-                style={{ width: `${progress}%` }}
-                role="progressbar"
-                aria-valuenow={Math.round(progress)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              />
-            </div>
-            <span className="text-[10px] font-semibold tabular-nums text-brand-500">
-              {Math.round(progress)}%
-            </span>
-          </div>
+          <span className="mt-1 inline-block text-[11px] font-medium text-brand-500">
+            {Math.round(progress)}% 진행
+          </span>
+        )}
+        {isCompleted && (
+          <span className="mt-1 inline-block text-[11px] font-medium text-gray-400">
+            수강 완료
+          </span>
         )}
       </div>
     </Link>
   );
 }
 
-// ─── Horizontal Scroll Section ────────────────────────────────────────────────
+// ─── Horizontal Section ───────────────────────────────────────────────────────
 
-function HorizontalCourseSection({
+function CourseSection({
   title,
-  icon,
   courses,
 }: {
   title: string;
-  icon?: string;
   courses: CourseItem[];
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-
   if (courses.length === 0) return null;
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {icon && <span className="text-base">{icon}</span>}
-          <h2 className="text-[15px] font-bold text-gray-900">{title}</h2>
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-gray-400">
-            {courses.length}
-          </span>
-        </div>
+    <section>
+      <div className="mb-4 flex items-baseline justify-between">
+        <h2 className="text-[15px] font-semibold text-gray-900">{title}</h2>
+        <span className="text-[12px] tabular-nums text-gray-300">
+          {courses.length}
+        </span>
       </div>
       <div
         ref={scrollRef}
-        className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-3 snap-x scrollbar-hide"
+        className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide"
       >
         {courses.map((course) => (
-          <VideoCourseCard
+          <CourseCard
             key={course.id}
             course={course}
-            className="w-[200px] flex-shrink-0 snap-start"
+            className="w-[200px] flex-shrink-0"
           />
         ))}
       </div>
@@ -305,23 +203,18 @@ function HorizontalCourseSection({
   );
 }
 
-// ─── Empty State ──────────────────────────────────────────────────────────────
+// ─── Empty ────────────────────────────────────────────────────────────────────
 
 function EmptyState({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-gray-200 bg-gradient-to-b from-white to-gray-50 px-8 py-12">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
-        <BookOpen className="h-6 w-6 text-gray-300" aria-hidden="true" />
-      </div>
-      <div className="text-center">
-        <p className="text-sm font-semibold text-gray-900">{title}</p>
-        <p className="mt-1.5 text-xs leading-relaxed text-gray-400">{desc}</p>
-      </div>
+    <div className="py-16 text-center">
+      <p className="text-[14px] font-medium text-gray-900">{title}</p>
+      <p className="mt-1 text-[13px] text-gray-400">{desc}</p>
     </div>
   );
 }
 
-// ─── Page Component ───────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CoursesPage() {
   const t = useTranslations("course");
@@ -335,10 +228,9 @@ export default function CoursesPage() {
 
   const isSearching = debouncedSearch.length > 0;
 
-  // Debounce search
   useEffect(() => {
-    const timeout = setTimeout(() => setDebouncedSearch(searchQuery), 300);
-    return () => clearTimeout(timeout);
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
   }, [searchQuery]);
 
   const fetchCourses = useCallback(async (specId?: string | null) => {
@@ -371,94 +263,91 @@ export default function CoursesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  // Group courses
   const enrolledCourses = useMemo(
     () => courses.filter((c) => c.isEnrolled),
     [courses]
   );
 
   const subcategoryGroups = useMemo(() => {
-    const nonEnrolled = courses.filter((c) => !c.isEnrolled);
+    const rest = courses.filter((c) => !c.isEnrolled);
     const groups: Record<string, CourseItem[]> = {};
-    for (const course of nonEnrolled) {
+    for (const course of rest) {
       const cat = categorize(course.slug);
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(course);
     }
-    const ordered: Array<{ key: string; label: string; icon: string; courses: CourseItem[] }> = [];
+    const ordered: Array<{ key: string; label: string; courses: CourseItem[] }> = [];
     for (const [key, meta] of Object.entries(SUB_CATEGORIES)) {
       if (groups[key]?.length) {
-        ordered.push({ key, label: meta.label, icon: meta.icon, courses: groups[key] });
+        ordered.push({ key, label: meta.label, courses: groups[key] });
       }
     }
     if (groups["other"]?.length) {
-      ordered.push({ key: "other", label: t("other"), icon: "📂", courses: groups["other"] });
+      ordered.push({ key: "other", label: t("other"), courses: groups["other"] });
     }
     return ordered;
   }, [courses, t]);
 
-  function clearSearch() {
-    setSearchQuery("");
-    setDebouncedSearch("");
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Search Bar */}
+    <div className="space-y-8">
+      {/* Specialty header */}
+      {userSpecialty && !isSearching && (
+        <div className="flex items-baseline justify-between">
+          <h1 className="text-[22px] font-bold tracking-tight text-gray-900">
+            {userSpecialty.name}
+          </h1>
+          <Link
+            href="/onboarding/specialty"
+            className="text-[12px] text-gray-300 transition-colors hover:text-gray-500"
+          >
+            변경
+          </Link>
+        </div>
+      )}
+
+      {/* Search */}
       <div className="relative">
-        <Search
-          className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300"
-          aria-hidden="true"
-        />
+        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300" />
         <input
           type="search"
           placeholder={t("searchCourses")}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-10 text-sm text-gray-900 shadow-sm ring-1 ring-gray-100 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-shadow"
-          aria-label={t("searchCourses")}
+          className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-10 text-[14px] text-gray-900 shadow-none ring-1 ring-gray-100 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
         />
         {searchQuery && (
           <button
-            onClick={clearSearch}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-gray-100 p-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600"
-            aria-label="Clear search"
+            onClick={() => { setSearchQuery(""); setDebouncedSearch(""); }}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
           >
-            <X className="h-3 w-3" />
+            <X className="h-4 w-4" />
           </button>
         )}
       </div>
 
       {/* Content */}
       {loading ? (
-        isSearching ? <GridSkeleton /> : <PageSkeleton />
+        <PageSkeleton />
       ) : error ? (
-        <div className="flex flex-col items-center justify-center gap-4 py-16">
-          <p className="text-sm text-gray-400">{error}</p>
-          <Button
-            variant="outline"
-            size="sm"
+        <div className="py-16 text-center">
+          <p className="text-[13px] text-gray-400">{error}</p>
+          <button
             onClick={() => fetchCourses(userSpecialty?.id)}
-            className="rounded-xl"
+            className="mt-4 text-[13px] font-medium text-gray-900 hover:text-gray-600"
           >
             {tc("tryAgain")}
-          </Button>
+          </button>
         </div>
       ) : isSearching ? (
-        /* ── Search View ── */
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-gray-900">
-              검색 결과
-            </p>
-            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-600">
-              {courses.length}
-            </span>
-          </div>
+        /* Search results */
+        <div className="space-y-5">
+          <p className="text-[13px] text-gray-400">
+            {courses.length}개의 결과
+          </p>
           {courses.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3">
-              {courses.map((course) => (
-                <VideoCourseCard key={course.id} course={course} />
+            <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+              {courses.map((c) => (
+                <CourseCard key={c.id} course={c} />
               ))}
             </div>
           ) : (
@@ -469,49 +358,23 @@ export default function CoursesPage() {
           )}
         </div>
       ) : (
-        /* ── Default View ── */
-        <div className="space-y-8">
-          {/* Specialty header */}
-          {userSpecialty && (
-            <div className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-brand-500 to-brand-700 px-5 py-4 shadow-lg shadow-brand-500/15">
-              <div>
-                <p className="text-[10px] font-medium uppercase tracking-wider text-brand-200">
-                  내 관심 분야
-                </p>
-                <h2 className="mt-0.5 text-lg font-bold text-white">
-                  {userSpecialty.name}
-                </h2>
-              </div>
-              <Link
-                href="/onboarding/specialty"
-                className="flex items-center gap-1 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/25"
-              >
-                {t("changeSpecialty")}
-                <ChevronRight className="h-3 w-3" />
-              </Link>
-            </div>
-          )}
-
-          {/* Enrolled courses */}
+        /* Default view */
+        <div className="space-y-10">
           {enrolledCourses.length > 0 && (
-            <HorizontalCourseSection
+            <CourseSection
               title={t("myCourses")}
-              icon="📖"
               courses={enrolledCourses}
             />
           )}
 
-          {/* Subcategory sections */}
-          {subcategoryGroups.map((group) => (
-            <HorizontalCourseSection
-              key={group.key}
-              title={group.label}
-              icon={group.icon}
-              courses={group.courses}
+          {subcategoryGroups.map((g) => (
+            <CourseSection
+              key={g.key}
+              title={g.label}
+              courses={g.courses}
             />
           ))}
 
-          {/* Empty / fallback */}
           {enrolledCourses.length === 0 && subcategoryGroups.length === 0 && courses.length === 0 && (
             <EmptyState
               title={t("noCoursesAvailable")}
@@ -520,19 +383,10 @@ export default function CoursesPage() {
           )}
 
           {enrolledCourses.length === 0 && subcategoryGroups.length === 0 && courses.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="text-base">📂</span>
-                <h2 className="text-[15px] font-bold text-gray-900">전체 코스</h2>
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-gray-400">
-                  {courses.length}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {courses.map((course) => (
-                  <VideoCourseCard key={course.id} course={course} />
-                ))}
-              </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+              {courses.map((c) => (
+                <CourseCard key={c.id} course={c} />
+              ))}
             </div>
           )}
         </div>
