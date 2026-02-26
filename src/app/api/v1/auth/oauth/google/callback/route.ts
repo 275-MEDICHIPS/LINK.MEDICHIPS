@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const state = req.nextUrl.searchParams.get("redirect") || req.nextUrl.searchParams.get("state") || "/";
 
   if (!code) {
-    return NextResponse.redirect(new URL(`/login?error=no_code`, req.url));
+    return NextResponse.redirect(`${APP_URL}/login?error=no_code`);
   }
 
   try {
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!tokenRes.ok) {
-      return NextResponse.redirect(new URL(`/login?error=token_failed`, req.url));
+      return NextResponse.redirect(`${APP_URL}/login?error=token_failed`);
     }
 
     const tokenData: GoogleTokenResponse = await tokenRes.json();
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!userInfoRes.ok) {
-      return NextResponse.redirect(new URL(`/login?error=userinfo_failed`, req.url));
+      return NextResponse.redirect(`${APP_URL}/login?error=userinfo_failed`);
     }
 
     const googleUser: GoogleUserInfo = await userInfoRes.json();
@@ -177,7 +177,7 @@ export async function GET(req: NextRequest) {
       locale: user.preferredLocale || "ko",
     });
 
-    const response = NextResponse.redirect(new URL(state, req.url));
+    const response = NextResponse.redirect(`${APP_URL}${state.startsWith("/") ? state : `/${state}`}`);
     response.cookies.set("oauth_user", userData, {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
@@ -189,6 +189,6 @@ export async function GET(req: NextRequest) {
     return response;
   } catch (error) {
     console.error("Google OAuth error:", error);
-    return NextResponse.redirect(new URL(`/login?error=oauth_failed`, req.url));
+    return NextResponse.redirect(`${APP_URL}/login?error=oauth_failed`);
   }
 }
