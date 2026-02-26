@@ -317,24 +317,22 @@ export default function CoursesPage() {
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
-  const fetchCourses = useCallback(async () => {
+  const fetchCourses = useCallback(async (specId?: string | null) => {
     try {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams();
       if (debouncedSearch) {
         params.set("search", debouncedSearch);
-        // When searching, fetch all courses (no specialty filter)
-      } else if (userSpecialty) {
-        params.set("specialtyId", userSpecialty.id);
+      } else if (specId) {
+        params.set("specialtyId", specId);
       }
       const res = await fetch(`/api/v1/learner/courses?${params.toString()}`);
       if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error(`Failed to load courses (${res.status})`);
       const json = await res.json();
       setCourses(json.data.courses);
-      // Only set specialty from API on initial load (not during search)
-      if (!debouncedSearch && json.data.userSpecialty && !userSpecialty) {
+      if (json.data.userSpecialty) {
         setUserSpecialty(json.data.userSpecialty);
       }
     } catch (err) {
@@ -342,36 +340,13 @@ export default function CoursesPage() {
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, userSpecialty?.id]);
+  }, [debouncedSearch]);
 
-  // Initial fetch to get userSpecialty
+  // Fetch on mount and when search/specialty changes
   useEffect(() => {
-    if (!userSpecialty) {
-      (async () => {
-        try {
-          const res = await fetch("/api/v1/learner/courses");
-          if (!res.ok) return;
-          const json = await res.json();
-          if (json.data.userSpecialty) {
-            setUserSpecialty(json.data.userSpecialty);
-          }
-          setCourses(json.data.courses);
-        } catch {
-          // will be retried by the main effect
-        } finally {
-          setLoading(false);
-        }
-      })();
-    }
+    fetchCourses(userSpecialty?.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (userSpecialty || debouncedSearch) {
-      fetchCourses();
-    }
-  }, [fetchCourses, userSpecialty, debouncedSearch]);
+  }, [debouncedSearch]);
 
   // Group courses for the default (non-search) view
   const enrolledCourses = useMemo(
@@ -447,7 +422,7 @@ export default function CoursesPage() {
       ) : error ? (
         <div className="flex flex-col items-center justify-center gap-4 py-12">
           <p className="text-sm text-gray-500">{error}</p>
-          <Button variant="outline" size="sm" onClick={fetchCourses}>
+          <Button variant="outline" size="sm" onClick={() => fetchCourses(userSpecialty?.id)}>
             {tc("tryAgain")}
           </Button>
         </div>
