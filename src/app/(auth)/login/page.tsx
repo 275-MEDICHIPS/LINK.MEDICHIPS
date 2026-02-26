@@ -34,7 +34,7 @@ export default function LoginPage() {
       }
       const json = await res.json();
       if (json.data?.user) setUser(json.data.user);
-      window.location.href = "/dashboard";
+      window.location.href = "/";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -58,7 +58,7 @@ export default function LoginPage() {
       }
       const json = await res.json();
       if (json.data?.user) setUser(json.data.user);
-      window.location.href = "/dashboard";
+      window.location.href = "/";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

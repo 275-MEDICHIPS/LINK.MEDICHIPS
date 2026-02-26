@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
-  BookOpen,
   ClipboardCheck,
   Trophy,
   BarChart3,
@@ -15,8 +14,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { Toaster } from "@/components/ui/toaster";
 
 const tabKeys = [
-  { href: "/dashboard", icon: LayoutDashboard, key: "home" as const },
-  { href: "/courses", icon: BookOpen, key: "courses" as const },
+  { href: "/", icon: LayoutDashboard, key: "home" as const },
   { href: "/tasks", icon: ClipboardCheck, key: "tasks" as const },
   { href: "/achievements", icon: Trophy, key: "awards" as const },
   { href: "/leaderboard", icon: BarChart3, key: "rank" as const },
@@ -38,7 +36,7 @@ export default function LearnerLayout({
       <header className="sticky top-0 z-40 border-b border-gray-100 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <Image src="/logo.png" alt="Medichips Link" width={28} height={28} className="rounded-md" data-logo-bounce />
               <span className="text-sm font-bold text-gray-900">LINK</span>
             </Link>
