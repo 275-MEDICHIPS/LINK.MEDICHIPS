@@ -33,6 +33,7 @@ export default function AvatarPicker({
   const [uploading, setUploading] = useState(false);
   const [newName, setNewName] = useState("");
   const [newGender, setNewGender] = useState<string>("");
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const fetchAvatars = useCallback(async () => {
     setLoading(true);
@@ -56,56 +57,36 @@ export default function AvatarPicker({
   async function handleFileUpload(file: File) {
     if (!newName.trim()) return;
     setUploading(true);
+    setUploadError(null);
     try {
-      // 1. Get signed upload URL
-      const urlRes = await fetch(
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("name", newName.trim());
+      if (newGender) formData.append("gender", newGender);
+
+      const res = await fetch(
         "/api/v1/admin/video-production/avatars/upload",
         {
           method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({
-            fileName: file.name,
-            contentType: file.type,
-          }),
+          headers: csrfHeaders(),
+          body: formData,
         }
       );
-      const urlJson = await urlRes.json();
-      if (!urlRes.ok) throw new Error("Failed to get upload URL");
-
-      const { uploadUrl, publicUrl, gcsPath } = urlJson.data;
-
-      // 2. Upload to GCS
-      await fetch(uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-
-      // 3. Create avatar record
-      const createRes = await fetch(
-        "/api/v1/admin/video-production/avatars",
-        {
-          method: "POST",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({
-            name: newName.trim(),
-            imageUrl: publicUrl,
-            gcsPath,
-            gender: newGender || undefined,
-          }),
-        }
-      );
-      const createJson = await createRes.json();
-      if (!createRes.ok) throw new Error("Failed to create avatar");
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error?.message || "Upload failed");
+      }
 
       // Refresh list and select new avatar
       await fetchAvatars();
-      onSelect(createJson.data.id);
+      onSelect(json.data.id);
       setShowUpload(false);
       setNewName("");
       setNewGender("");
-    } catch {
-      // Handle error silently
+    } catch (err) {
+      setUploadError(
+        err instanceof Error ? err.message : "Upload failed. Please try again."
+      );
     } finally {
       setUploading(false);
     }
@@ -157,6 +138,9 @@ export default function AvatarPicker({
             <option value="male">Male</option>
             <option value="female">Female</option>
           </select>
+          {uploadError && (
+            <p className="text-xs text-red-600">{uploadError}</p>
+          )}
           <label
             className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed py-4 text-sm transition-colors ${
               !newName.trim() || uploading
