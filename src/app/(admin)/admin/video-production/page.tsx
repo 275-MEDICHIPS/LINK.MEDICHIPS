@@ -181,24 +181,26 @@ export default function VideoProductionDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Video Studio</h1>
           <p className="mt-1 text-sm text-gray-500">
-            AI video production pipeline — generate, review, and publish
+            AI video production pipeline
           </p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/video-production/avatars">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5">
               <Video className="h-4 w-4" />
-              Avatar Library
+              <span className="hidden sm:inline">Avatar Library</span>
+              <span className="sm:hidden">Avatars</span>
             </Button>
           </Link>
           <Link href="/admin/video-production/new">
-            <Button className="gap-2 bg-brand-500 hover:bg-brand-600">
+            <Button size="sm" className="gap-1.5 bg-brand-500 hover:bg-brand-600">
               <Plus className="h-4 w-4" />
-              New Video Job
+              <span className="hidden sm:inline">New Video Job</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </Link>
         </div>
@@ -274,12 +276,12 @@ export default function VideoProductionDashboard() {
 
       {/* Filter Bar */}
       <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1">
+        <CardContent className="p-3 sm:p-4">
+          <div className="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+            <div className="relative flex-1 sm:min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
-                placeholder="Search by script title or job ID..."
+                placeholder="Search..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -288,178 +290,206 @@ export default function VideoProductionDashboard() {
                 className="pl-9"
               />
             </div>
-            <select
-              value={filterMethod}
-              onChange={(e) => {
-                setFilterMethod(e.target.value);
-                setPage(1);
-              }}
-              className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-            >
-              <option value="">All Methods</option>
-              <option value="AI_GENERATED">AI Generated</option>
-              <option value="FACE_SWAP">Face Swap</option>
-            </select>
-            <select
-              value={filterCourseId}
-              onChange={(e) => {
-                setFilterCourseId(e.target.value);
-                setPage(1);
-              }}
-              className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-            >
-              <option value="">All Courses</option>
-              {courseOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filterStatus}
-              onChange={(e) => {
-                setFilterStatus(e.target.value);
-                setPage(1);
-              }}
-              className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
-            >
-              <option value="">All Statuses</option>
-              <option value="DRAFT">Draft</option>
-              <option value="SCRIPT_REVIEW">Script Review</option>
-              <option value="QUEUED">Queued</option>
-              <option value="RENDERING">Rendering</option>
-              <option value="FACE_SWAPPING">Face Swapping</option>
-              <option value="REVIEW">Review</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="FAILED">Failed</option>
-            </select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                fetchStats();
-                fetchJobs();
-              }}
-              className="gap-1"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Refresh
-            </Button>
+            <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-3">
+              <select
+                value={filterMethod}
+                onChange={(e) => {
+                  setFilterMethod(e.target.value);
+                  setPage(1);
+                }}
+                className="h-9 w-full rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 sm:h-10 sm:w-auto sm:px-3 sm:text-sm"
+              >
+                <option value="">Method</option>
+                <option value="AI_GENERATED">AI</option>
+                <option value="FACE_SWAP">Face Swap</option>
+              </select>
+              <select
+                value={filterStatus}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setPage(1);
+                }}
+                className="h-9 w-full rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 sm:h-10 sm:w-auto sm:px-3 sm:text-sm"
+              >
+                <option value="">Status</option>
+                <option value="DRAFT">Draft</option>
+                <option value="SCRIPT_REVIEW">Script Review</option>
+                <option value="QUEUED">Queued</option>
+                <option value="RENDERING">Rendering</option>
+                <option value="FACE_SWAPPING">Face Swapping</option>
+                <option value="REVIEW">Review</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="FAILED">Failed</option>
+              </select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  fetchStats();
+                  fetchJobs();
+                }}
+                className="h-9 gap-1 sm:h-10"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Job Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Production Jobs</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-brand-500" />
-              <span className="ml-2 text-sm text-gray-500">Loading...</span>
-            </div>
-          ) : jobs.length === 0 ? (
-            <div className="py-12 text-center">
-              <Film className="mx-auto h-12 w-12 text-gray-300" />
-              <p className="mt-2 text-sm text-gray-500">No video jobs found</p>
-              <Link href="/admin/video-production/new">
-                <Button className="mt-4 gap-2 bg-brand-500 hover:bg-brand-600" size="sm">
-                  <Plus className="h-4 w-4" />
-                  Create your first video
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 text-left">
-                    <th className="px-4 py-3 font-medium text-gray-500">
-                      <span className="flex items-center gap-1">
-                        Status
-                        <ArrowUpDown className="h-3 w-3" />
-                      </span>
-                    </th>
-                    <th className="px-4 py-3 text-center font-medium text-gray-500">Method / Provider</th>
-                    <th className="px-4 py-3 font-medium text-gray-500">Title / Lesson</th>
-                    <th className="px-4 py-3 font-medium text-gray-500">Course</th>
-                    <th className="px-4 py-3 font-medium text-gray-500">Cost</th>
-                    <th className="px-4 py-3 font-medium text-gray-500">Created</th>
-                    <th className="px-4 py-3 font-medium text-gray-500">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {jobs.map((job) => (
-                    <tr
-                      key={job.id}
-                      className="border-b border-gray-50 hover:bg-gray-50/50"
-                    >
-                      <td className="px-4 py-3">
-                        <StatusBadge status={job.status} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col items-center gap-1">
-                          <MethodBadge method={job.method} />
-                          <span className="text-xs text-gray-400">
-                            {job.provider === "VEO" ? "Veo 3.1" : job.provider.replace(/_/g, " ")}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="max-w-xs truncate font-medium text-gray-900">
+      {/* Job Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-brand-500" />
+          <span className="ml-2 text-sm text-gray-500">Loading...</span>
+        </div>
+      ) : jobs.length === 0 ? (
+        <div className="py-12 text-center">
+          <Film className="mx-auto h-12 w-12 text-gray-300" />
+          <p className="mt-2 text-sm text-gray-500">No video jobs found</p>
+          <Link href="/admin/video-production/new">
+            <Button className="mt-4 gap-2 bg-brand-500 hover:bg-brand-600" size="sm">
+              <Plus className="h-4 w-4" />
+              Create your first video
+            </Button>
+          </Link>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Card List */}
+          <div className="space-y-3 md:hidden">
+            {jobs.map((job) => (
+              <Link key={job.id} href={`/admin/video-production/${job.id}`}>
+                <Card className="transition hover:shadow-md">
+                  <CardContent className="p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-gray-900">
                           {job.script?.title ||
                             job.lesson?.translations?.[0]?.title ||
                             "Untitled"}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <StatusBadge status={job.status} />
+                          <MethodBadge method={job.method} />
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {job.course?.translations?.[0]?.title ? (
-                          <Link
-                            href={`/admin/courses/${job.courseId}/edit`}
-                            className="group flex items-center gap-1.5"
-                          >
-                            <BookOpen className="h-3.5 w-3.5 flex-shrink-0 text-brand-500" />
-                            <span className="max-w-[180px] truncate text-sm text-gray-700 group-hover:text-brand-600 group-hover:underline">
+                        <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-500">
+                          {job.course?.translations?.[0]?.title && (
+                            <span className="flex items-center gap-1 truncate">
+                              <BookOpen className="h-3 w-3 flex-shrink-0" />
                               {job.course.translations[0].title}
                             </span>
-                          </Link>
-                        ) : (
-                          <span className="text-xs text-gray-300">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {job.estimatedCostUsd
-                          ? `$${job.estimatedCostUsd.toFixed(2)}`
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
+                          )}
+                          <span className="flex items-center gap-1 flex-shrink-0">
+                            <Clock className="h-3 w-3" />
+                            {new Date(job.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <Eye className="mt-1 h-4 w-4 flex-shrink-0 text-gray-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <Card className="hidden md:block">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Production Jobs</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-left">
+                      <th className="px-4 py-3 font-medium text-gray-500">
                         <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(job.createdAt).toLocaleDateString()}
+                          Status
+                          <ArrowUpDown className="h-3 w-3" />
                         </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link href={`/admin/video-production/${job.id}`}>
-                          <Button variant="ghost" size="sm" className="gap-1 text-brand-600">
-                            <Eye className="h-3.5 w-3.5" />
-                            View
-                          </Button>
-                        </Link>
-                      </td>
+                      </th>
+                      <th className="px-4 py-3 text-center font-medium text-gray-500">Method</th>
+                      <th className="px-4 py-3 font-medium text-gray-500">Title / Lesson</th>
+                      <th className="hidden px-4 py-3 font-medium text-gray-500 lg:table-cell">Course</th>
+                      <th className="hidden px-4 py-3 font-medium text-gray-500 lg:table-cell">Cost</th>
+                      <th className="px-4 py-3 font-medium text-gray-500">Created</th>
+                      <th className="px-4 py-3 font-medium text-gray-500">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {jobs.map((job) => (
+                      <tr
+                        key={job.id}
+                        className="border-b border-gray-50 hover:bg-gray-50/50"
+                      >
+                        <td className="px-4 py-3">
+                          <StatusBadge status={job.status} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col items-center gap-1">
+                            <MethodBadge method={job.method} />
+                            <span className="text-xs text-gray-400">
+                              {job.provider === "VEO" ? "Veo 3.1" : job.provider.replace(/_/g, " ")}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="max-w-xs truncate font-medium text-gray-900">
+                            {job.script?.title ||
+                              job.lesson?.translations?.[0]?.title ||
+                              "Untitled"}
+                          </div>
+                        </td>
+                        <td className="hidden px-4 py-3 lg:table-cell">
+                          {job.course?.translations?.[0]?.title ? (
+                            <Link
+                              href={`/admin/courses/${job.courseId}/edit`}
+                              className="group flex items-center gap-1.5"
+                            >
+                              <BookOpen className="h-3.5 w-3.5 flex-shrink-0 text-brand-500" />
+                              <span className="max-w-[180px] truncate text-sm text-gray-700 group-hover:text-brand-600 group-hover:underline">
+                                {job.course.translations[0].title}
+                              </span>
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="hidden px-4 py-3 text-gray-600 lg:table-cell">
+                          {job.estimatedCostUsd
+                            ? `$${job.estimatedCostUsd.toFixed(2)}`
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(job.createdAt).toLocaleDateString()}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link href={`/admin/video-production/${job.id}`}>
+                            <Button variant="ghost" size="sm" className="gap-1 text-brand-600">
+                              <Eye className="h-3.5 w-3.5" />
+                              View
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
-              <p className="text-sm text-gray-500">
-                Page {page} of {totalPages} ({total} total)
+            <div className="flex items-center justify-between px-1 py-2">
+              <p className="text-xs text-gray-500 sm:text-sm">
+                {page} / {totalPages} ({total})
               </p>
               <div className="flex gap-1">
                 <Button
@@ -481,8 +511,8 @@ export default function VideoProductionDashboard() {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </>
+      )}
     </div>
   );
 }

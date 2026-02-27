@@ -449,50 +449,29 @@ export default function UsersPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Total Members</p>
-                <p className="mt-1 text-2xl font-bold text-accent-600">
-                  {loading ? "-" : total}
-                </p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-50">
-                <Users className="h-5 w-5 text-accent-600" />
-              </div>
-            </div>
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-[10px] font-medium text-gray-500 sm:text-xs">Total</p>
+            <p className="mt-0.5 text-lg font-bold text-accent-600 sm:mt-1 sm:text-2xl">
+              {loading ? "-" : total}
+            </p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Suspended</p>
-                <p className="mt-1 text-2xl font-bold text-red-600">
-                  {loading ? "-" : suspendedCount}
-                </p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50">
-                <Ban className="h-5 w-5 text-red-600" />
-              </div>
-            </div>
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-[10px] font-medium text-gray-500 sm:text-xs">Suspended</p>
+            <p className="mt-0.5 text-lg font-bold text-red-600 sm:mt-1 sm:text-2xl">
+              {loading ? "-" : suspendedCount}
+            </p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Pending</p>
-                <p className="mt-1 text-2xl font-bold text-amber-600">
-                  {loading ? "-" : pendingCount}
-                </p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50">
-                <UserPlus className="h-5 w-5 text-amber-600" />
-              </div>
-            </div>
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-[10px] font-medium text-gray-500 sm:text-xs">Pending</p>
+            <p className="mt-0.5 text-lg font-bold text-amber-600 sm:mt-1 sm:text-2xl">
+              {loading ? "-" : pendingCount}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -553,144 +532,199 @@ export default function UsersPage() {
         </CardContent>
       </Card>
 
-      {/* Table */}
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  User
-                </th>
-                <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">
-                  Contact
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Role
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Status
-                </th>
-                <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">
-                  Last Active
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-500" />
-                    <p className="mt-2 text-sm text-gray-500">Loading users...</p>
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center">
-                    <AlertCircle className="mx-auto h-10 w-10 text-red-300" />
-                    <p className="mt-2 text-sm font-medium text-gray-500">{error}</p>
-                  </td>
-                </tr>
-              ) : members.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center">
-                    <Users className="mx-auto h-10 w-10 text-gray-300" />
-                    <p className="mt-2 text-sm font-medium text-gray-500">No users found</p>
-                    <p className="mt-1 text-xs text-gray-400">
-                      Try adjusting your search or filters
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                members.map((member) => {
-                  const status = getUserStatus(member.user);
-                  const rc = roleConfig[member.role] || { label: member.role, className: "bg-gray-100 text-gray-700" };
-                  const sc = statusConfig[status];
-                  return (
-                    <tr
-                      key={member.id}
-                      className="border-b border-gray-50 transition-colors hover:bg-gray-50/50"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <UserAvatar name={member.user.name || "?"} />
-                          <div>
+      {/* Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-brand-500" />
+          <p className="ml-2 text-sm text-gray-500">Loading users...</p>
+        </div>
+      ) : error ? (
+        <div className="py-12 text-center">
+          <AlertCircle className="mx-auto h-10 w-10 text-red-300" />
+          <p className="mt-2 text-sm font-medium text-gray-500">{error}</p>
+        </div>
+      ) : members.length === 0 ? (
+        <div className="py-12 text-center">
+          <Users className="mx-auto h-10 w-10 text-gray-300" />
+          <p className="mt-2 text-sm font-medium text-gray-500">No users found</p>
+          <p className="mt-1 text-xs text-gray-400">
+            Try adjusting your search or filters
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Card List */}
+          <div className="space-y-2 md:hidden">
+            {members.map((member) => {
+              const status = getUserStatus(member.user);
+              const rc = roleConfig[member.role] || { label: member.role, className: "bg-gray-100 text-gray-700" };
+              const sc = statusConfig[status];
+              return (
+                <Card key={member.id}>
+                  <CardContent className="p-3">
+                    <div className="flex items-start gap-3">
+                      <UserAvatar name={member.user.name || "?"} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-gray-900">
+                          {member.user.name || "Unnamed"}
+                        </p>
+                        <p className="truncate text-xs text-gray-500">{member.user.email}</p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${rc.className}`}>
+                            {rc.label}
+                          </span>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${sc.className}`}>
+                            {sc.label}
+                          </span>
+                          <span className="text-[10px] text-gray-400">
+                            {formatLastActive(member.user.lastActiveAt)}
+                          </span>
+                        </div>
+                      </div>
+                      <RowActions member={member} />
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table */}
+          <Card className="hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      User
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Contact
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Role
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Status
+                    </th>
+                    <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">
+                      Last Active
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((member) => {
+                    const status = getUserStatus(member.user);
+                    const rc = roleConfig[member.role] || { label: member.role, className: "bg-gray-100 text-gray-700" };
+                    const sc = statusConfig[status];
+                    return (
+                      <tr
+                        key={member.id}
+                        className="border-b border-gray-50 transition-colors hover:bg-gray-50/50"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <UserAvatar name={member.user.name || "?"} />
                             <p className="text-sm font-medium text-gray-900">
                               {member.user.name || "Unnamed"}
                             </p>
-                            <p className="text-xs text-gray-500 md:hidden">
-                              {member.user.email}
-                            </p>
                           </div>
-                        </div>
-                      </td>
-                      <td className="hidden px-4 py-3 md:table-cell">
-                        <p className="text-sm text-gray-600">{member.user.email}</p>
-                        {member.user.phone && (
-                          <p className="text-xs text-gray-400">{member.user.phone}</p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${rc.className}`}
-                        >
-                          {rc.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${sc.className}`}
-                        >
-                          {sc.label}
-                        </span>
-                      </td>
-                      <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell">
-                        {formatLastActive(member.user.lastActiveAt)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <RowActions member={member} />
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 0 && (
-          <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
-            <p className="text-xs text-gray-500">
-              Page {page} of {totalPages || 1} ({total} users)
-            </p>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage(page - 1)}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" className="bg-brand-50 text-brand-700">
-                {page}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-sm text-gray-600">{member.user.email}</p>
+                          {member.user.phone && (
+                            <p className="text-xs text-gray-400">{member.user.phone}</p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${rc.className}`}
+                          >
+                            {rc.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${sc.className}`}
+                          >
+                            {sc.label}
+                          </span>
+                        </td>
+                        <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell">
+                          {formatLastActive(member.user.lastActiveAt)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <RowActions member={member} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          </div>
-        )}
-      </Card>
+
+            {/* Pagination */}
+            {totalPages > 0 && (
+              <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
+                <p className="text-xs text-gray-500">
+                  Page {page} of {totalPages || 1} ({total} users)
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage(page - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="bg-brand-50 text-brand-700">
+                    {page}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* Mobile Pagination */}
+          {totalPages > 0 && (
+            <div className="flex items-center justify-between px-1 py-2 md:hidden">
+              <p className="text-xs text-gray-500">
+                {page} / {totalPages || 1} ({total})
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Invite Dialog */}
       <InviteDialog

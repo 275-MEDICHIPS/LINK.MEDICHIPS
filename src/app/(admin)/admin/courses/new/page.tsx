@@ -150,7 +150,7 @@ export default function NewCoursePage() {
   };
 
   return (
-    <div className="-m-4 flex min-h-[calc(100vh-3.5rem)] flex-col lg:-m-6">
+    <div className="-mx-4 -mt-4 -mb-4 flex min-h-[calc(100vh-3.5rem)] flex-col lg:-mx-6 lg:-mt-6 lg:-mb-6">
       {/* Top Header */}
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">

@@ -380,152 +380,209 @@ export default function CoursesPage() {
         </div>
       )}
 
-      {/* Table */}
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-4 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.size === courses.length && courses.length > 0}
-                    onChange={toggleAll}
-                    className="h-4 w-4 rounded border-gray-300"
-                    aria-label="Select all courses"
-                  />
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Title
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Status
-                </th>
-                <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">
-                  Modules
-                </th>
-                <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">
-                  Enrollments
-                </th>
-                <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">
-                  Risk
-                </th>
-                <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">
-                  Updated
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-500" />
-                    <p className="mt-2 text-sm text-gray-500">Loading courses...</p>
-                  </td>
-                </tr>
-              ) : courses.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
-                    <BookOpen className="mx-auto h-10 w-10 text-gray-300" />
-                    <p className="mt-2 text-sm font-medium text-gray-500">No courses found</p>
-                    <p className="mt-1 text-xs text-gray-400">
-                      {search || statusFilter !== "all"
-                        ? "Try adjusting your search or filters"
-                        : "Create your first course to get started"}
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                courses.map((course) => (
-                  <tr
-                    key={course.id}
-                    className="border-b border-gray-50 transition-colors hover:bg-gray-50/50"
+      {/* Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-brand-500" />
+          <p className="ml-2 text-sm text-gray-500">Loading courses...</p>
+        </div>
+      ) : courses.length === 0 ? (
+        <div className="py-12 text-center">
+          <BookOpen className="mx-auto h-10 w-10 text-gray-300" />
+          <p className="mt-2 text-sm font-medium text-gray-500">No courses found</p>
+          <p className="mt-1 text-xs text-gray-400">
+            {search || statusFilter !== "all"
+              ? "Try adjusting your search or filters"
+              : "Create your first course to get started"}
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Card List */}
+          <div className="space-y-3 md:hidden">
+            {courses.map((course) => (
+              <Card key={course.id}>
+                <CardContent className="p-3">
+                  <Link
+                    href={`/admin/courses/${course.id}/edit`}
+                    className="flex items-start gap-3"
                   >
-                    <td className="px-4 py-3">
+                    <CourseThumbnail course={course} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-900">
+                        {course.title}
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <StatusBadge status={course.status} />
+                        <RiskBadge level={course.riskLevel} />
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-500">
+                        <span>모듈 {course.modules}개</span>
+                        <span>수강 {course.enrollments.toLocaleString()}</span>
+                        <span>{course.updatedAt}</span>
+                      </div>
+                    </div>
+                    <RowActions courseId={course.id} />
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <Card className="hidden md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="px-4 py-3 text-left">
                       <input
                         type="checkbox"
-                        checked={selectedIds.has(course.id)}
-                        onChange={() => toggleSelect(course.id)}
+                        checked={selectedIds.size === courses.length && courses.length > 0}
+                        onChange={toggleAll}
                         className="h-4 w-4 rounded border-gray-300"
-                        aria-label={`Select ${course.title}`}
+                        aria-label="Select all courses"
                       />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/admin/courses/${course.id}/edit`}
-                        className="group flex items-center gap-3"
-                      >
-                        <CourseThumbnail course={course} />
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-gray-900 group-hover:text-brand-600">
-                            {course.title}
-                          </p>
-                          {course.specialty && (
-                            <p className="truncate text-xs text-gray-500">
-                              {course.specialty}
-                            </p>
-                          )}
-                        </div>
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={course.status} />
-                    </td>
-                    <td className="hidden px-4 py-3 text-sm text-gray-600 md:table-cell">
-                      {course.modules}
-                    </td>
-                    <td className="hidden px-4 py-3 text-sm text-gray-600 lg:table-cell">
-                      {course.enrollments.toLocaleString()}
-                    </td>
-                    <td className="hidden px-4 py-3 md:table-cell">
-                      <RiskBadge level={course.riskLevel} />
-                    </td>
-                    <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell">
-                      {course.updatedAt}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <RowActions courseId={course.id} />
-                    </td>
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Title
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Modules
+                    </th>
+                    <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">
+                      Enrollments
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Risk
+                    </th>
+                    <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">
+                      Updated
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Actions
+                    </th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 0 && (
-          <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
-            <p className="text-xs text-gray-500">
-              Page {page} of {totalPages || 1} ({total} courses)
-            </p>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage(page - 1)}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" className="bg-brand-50 text-brand-700">
-                {page}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+                </thead>
+                <tbody>
+                  {courses.map((course) => (
+                    <tr
+                      key={course.id}
+                      className="border-b border-gray-50 transition-colors hover:bg-gray-50/50"
+                    >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(course.id)}
+                          onChange={() => toggleSelect(course.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                          aria-label={`Select ${course.title}`}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/admin/courses/${course.id}/edit`}
+                          className="group flex items-center gap-3"
+                        >
+                          <CourseThumbnail course={course} />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-gray-900 group-hover:text-brand-600">
+                              {course.title}
+                            </p>
+                            {course.specialty && (
+                              <p className="truncate text-xs text-gray-500">
+                                {course.specialty}
+                              </p>
+                            )}
+                          </div>
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={course.status} />
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {course.modules}
+                      </td>
+                      <td className="hidden px-4 py-3 text-sm text-gray-600 lg:table-cell">
+                        {course.enrollments.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <RiskBadge level={course.riskLevel} />
+                      </td>
+                      <td className="hidden px-4 py-3 text-sm text-gray-500 lg:table-cell">
+                        {course.updatedAt}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <RowActions courseId={course.id} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        )}
-      </Card>
+
+            {/* Pagination */}
+            {totalPages > 0 && (
+              <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
+                <p className="text-xs text-gray-500">
+                  Page {page} of {totalPages || 1} ({total} courses)
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage(page - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="bg-brand-50 text-brand-700">
+                    {page}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* Mobile Pagination */}
+          {totalPages > 0 && (
+            <div className="flex items-center justify-between px-1 py-2 md:hidden">
+              <p className="text-xs text-gray-500">
+                {page} / {totalPages || 1} ({total})
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
     </div>
   );
