@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Search,
   Plus,
@@ -17,7 +16,6 @@ import {
   ChevronRight,
   BookOpen,
   CheckSquare,
-  X,
   Trash2,
   Loader2,
 } from "lucide-react";
@@ -27,7 +25,6 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import { csrfHeaders } from "@/lib/utils/csrf";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -159,147 +156,6 @@ function RiskBadge({ level }: { level: RiskLevel }) {
   );
 }
 
-function CreateCourseDialog({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onCreated: () => void;
-}) {
-  const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [language, setLanguage] = useState("en");
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState("");
-
-  if (!open) return null;
-
-  const handleCreate = async () => {
-    if (!title.trim()) return;
-    setCreating(true);
-    setError("");
-    try {
-      // Generate slug: transliterate to ASCII, fallback to timestamp
-      const asciiSlug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "")
-        .slice(0, 80);
-      const slug = asciiSlug.length >= 3 ? asciiSlug : `course-${Date.now()}`;
-
-      const res = await fetch("/api/v1/courses", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          slug,
-          locale: language,
-          title: title.trim(),
-        }),
-      });
-
-      if (res.ok) {
-        const json = await res.json();
-        const newId = json.data?.id;
-        setTitle("");
-        onClose();
-        // Navigate directly to the edit page
-        if (newId) {
-          router.push(`/admin/courses/${newId}/edit`);
-        }
-      } else {
-        const json = await res.json();
-        setError(json.error?.message || "Failed to create course");
-      }
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && title.trim() && !creating) {
-      handleCreate();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Create New Course</h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Close dialog"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <p className="mt-2 text-sm text-gray-500">
-          Enter a title to get started. You can set thumbnail, description, risk level, and modules in the editor.
-        </p>
-
-        <div className="mt-5 space-y-4">
-          <div>
-            <label htmlFor="course-title" className="mb-1.5 block text-sm font-medium text-gray-700">
-              Course Title
-            </label>
-            <Input
-              id="course-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="e.g., Emergency Triage Protocol"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label htmlFor="language" className="mb-1.5 block text-sm font-medium text-gray-700">
-              Primary Language
-            </label>
-            <select
-              id="language"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-            >
-              <option value="en">English</option>
-              <option value="ko">Korean</option>
-              <option value="fr">French</option>
-              <option value="sw">Swahili</option>
-              <option value="am">Amharic</option>
-            </select>
-          </div>
-        </div>
-
-        {error && (
-          <p className="mt-3 text-sm text-red-600">{error}</p>
-        )}
-
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button disabled={!title.trim() || creating} onClick={handleCreate}>
-            {creating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="mr-2 h-4 w-4" />
-            )}
-            {creating ? "Creating..." : "Create & Edit"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function RowActions({ courseId }: { courseId: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -350,7 +206,6 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<CourseStatus | "all">("all");
-  const [createOpen, setCreateOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -438,10 +293,12 @@ export default function CoursesPage() {
             Manage medical education courses across all programs
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Course
-        </Button>
+        <Link href="/admin/courses/new">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Course
+          </Button>
+        </Link>
       </div>
 
       {/* Filters */}
@@ -670,12 +527,6 @@ export default function CoursesPage() {
         )}
       </Card>
 
-      {/* Create Dialog */}
-      <CreateCourseDialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onCreated={fetchCourses}
-      />
     </div>
   );
 }
