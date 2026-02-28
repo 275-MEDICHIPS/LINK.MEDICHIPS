@@ -67,6 +67,14 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @keyframes bounce-logo {
   0%   { transform: scale(1); }
   8%   { transform: scale(1.35); }

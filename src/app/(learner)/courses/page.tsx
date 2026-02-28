@@ -107,7 +107,7 @@ function FilterPill({
     <button
       onClick={onClick}
       className={cn(
-        "flex-shrink-0 rounded-full px-4 py-1.5 text-[13px] font-medium transition-all",
+        "flex-shrink-0 rounded-full px-4 py-2 text-[13px] font-medium transition-all active:scale-95",
         active
           ? "bg-brand-500 text-white shadow-sm"
           : "bg-white text-gray-500 shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:text-gray-700"
@@ -372,7 +372,7 @@ export default function CoursesPage() {
           </div>
 
           {/* Filter pills — horizontal scroll */}
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide">
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 scrollbar-hide">
             <FilterPill
               label="전체"
               count={courses.length}

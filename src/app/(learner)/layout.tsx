@@ -58,9 +58,9 @@ export default function LearnerLayout({
             {isAdmin && (
               <Link
                 href="/admin/dashboard"
-                className="flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200"
+                className="flex items-center gap-1 rounded-md bg-gray-100 px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 active:bg-gray-300"
               >
-                <Settings className="h-3 w-3" />
+                <Settings className="h-3.5 w-3.5" />
                 관리
               </Link>
             )}
