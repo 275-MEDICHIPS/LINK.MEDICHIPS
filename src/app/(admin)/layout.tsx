@@ -191,7 +191,7 @@ export default function AdminLayout({
         </header>
 
         {/* Page content */}
-        <main ref={mainRef} className="flex-1 px-4 py-4 pb-20 lg:px-6 lg:py-6 lg:pb-6">{children}</main>
+        <main ref={mainRef} className="flex-1 overflow-x-hidden px-4 py-4 pb-20 lg:px-6 lg:py-6 lg:pb-6">{children}</main>
 
         {/* Bottom tab bar — mobile only */}
         <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-gray-100 bg-white pb-safe lg:hidden">

@@ -284,7 +284,7 @@ export default function CoursesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -355,7 +355,7 @@ export default function CoursesPage() {
 
       {/* Bulk Actions */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2.5">
           <CheckSquare className="h-4 w-4 text-brand-600" />
           <span className="text-sm font-medium text-brand-700">
             {selectedIds.size} course{selectedIds.size > 1 ? "s" : ""} selected
@@ -399,7 +399,7 @@ export default function CoursesPage() {
       ) : (
         <>
           {/* Mobile Card List */}
-          <div className="space-y-3 overflow-x-hidden md:hidden">
+          <div className="space-y-3 md:hidden">
             {courses.map((course) => (
               <Card key={course.id}>
                 <CardContent className="p-3">
