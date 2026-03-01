@@ -18,7 +18,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const sidebarItems = [
   { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -47,6 +47,13 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Scroll to top on page navigation
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -184,7 +191,7 @@ export default function AdminLayout({
         </header>
 
         {/* Page content */}
-        <main className="flex-1 px-4 py-4 lg:px-6 lg:py-6">{children}</main>
+        <main ref={mainRef} className="flex-1 px-4 py-4 lg:px-6 lg:py-6">{children}</main>
 
         {/* Bottom tab bar — mobile only */}
         <nav className="sticky bottom-0 z-20 border-t border-gray-100 bg-white pb-safe lg:hidden">
