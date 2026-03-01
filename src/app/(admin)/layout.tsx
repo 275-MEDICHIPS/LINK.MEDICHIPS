@@ -175,7 +175,7 @@ export default function AdminLayout({
             </div>
             <Link
               href="/dashboard"
-              className="relative flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 active:bg-gray-300 before:absolute before:-inset-2 before:content-[''] lg:hidden"
+              className="flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 active:bg-gray-300 lg:hidden"
             >
               <Home className="h-3 w-3" />
               Learner Home

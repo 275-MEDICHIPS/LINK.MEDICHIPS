@@ -51,7 +51,7 @@ function LearnerShell({ children }: { children: React.ReactNode }) {
             {isAdmin && (
               <Link
                 href="/admin/dashboard"
-                className="relative flex shrink-0 items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 active:bg-gray-300 before:absolute before:-inset-2 before:content-['']"
+                className="flex shrink-0 items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 active:bg-gray-300"
               >
                 <Settings className="h-3 w-3" />
                 관리
