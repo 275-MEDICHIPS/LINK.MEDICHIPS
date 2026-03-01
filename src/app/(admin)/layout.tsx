@@ -164,7 +164,7 @@ export default function AdminLayout({
       )}
 
       {/* Main content area */}
-      <div className="flex flex-1 flex-col lg:pl-56">
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-56">
         {/* Top header - mobile only shows hamburger, desktop shows breadcrumb area */}
         <header className="sticky top-0 z-20 border-b border-gray-100 bg-white px-4 py-3 lg:px-6">
           <div className="flex items-center justify-between">
