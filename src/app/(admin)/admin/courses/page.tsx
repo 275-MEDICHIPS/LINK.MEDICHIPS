@@ -399,7 +399,7 @@ export default function CoursesPage() {
       ) : (
         <>
           {/* Mobile Card List */}
-          <div className="space-y-3 md:hidden">
+          <div className="space-y-3 overflow-x-hidden md:hidden">
             {courses.map((course) => (
               <Card key={course.id}>
                 <CardContent className="p-3">
