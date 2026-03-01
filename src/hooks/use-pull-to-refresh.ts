@@ -1,8 +1,17 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-const PULL_THRESHOLD = 50;
+const PULL_THRESHOLD = 150;
+const MAX_PULL = 200;
+
+function isStandalonePWA(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as unknown as { standalone?: boolean }).standalone === true
+  );
+}
 
 interface PullToRefreshReturn {
   isRefreshing: boolean;
@@ -19,20 +28,24 @@ export function usePullToRefresh(
 ): PullToRefreshReturn {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
+  const [isPWA, setIsPWA] = useState(false);
   const startY = useRef(0);
   const pulling = useRef(false);
 
+  useEffect(() => {
+    setIsPWA(isStandalonePWA());
+  }, []);
+
   const onTouchStart = useCallback(
     (e: React.TouchEvent) => {
-      if (isRefreshing) return;
-      // Only activate when scrolled to top
+      if (!isPWA || isRefreshing) return;
       const scrollTop =
         document.documentElement.scrollTop || document.body.scrollTop;
       if (scrollTop > 0) return;
       startY.current = e.touches[0].clientY;
       pulling.current = true;
     },
-    [isRefreshing]
+    [isPWA, isRefreshing]
   );
 
   const onTouchMove = useCallback(
@@ -40,8 +53,7 @@ export function usePullToRefresh(
       if (!pulling.current || isRefreshing) return;
       const delta = e.touches[0].clientY - startY.current;
       if (delta > 0) {
-        // Apply resistance: diminishing returns after threshold
-        setPullDistance(Math.min(delta * 0.5, 100));
+        setPullDistance(Math.min(delta * 0.4, MAX_PULL));
       }
     },
     [isRefreshing]
@@ -53,7 +65,7 @@ export function usePullToRefresh(
 
     if (pullDistance >= PULL_THRESHOLD) {
       setIsRefreshing(true);
-      setPullDistance(PULL_THRESHOLD); // Lock at threshold during refresh
+      setPullDistance(PULL_THRESHOLD);
       try {
         await onRefresh();
       } finally {
