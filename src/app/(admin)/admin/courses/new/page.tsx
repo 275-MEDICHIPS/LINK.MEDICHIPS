@@ -190,7 +190,7 @@ export default function NewCoursePage() {
 
       {/* Step Indicator */}
       <div className="border-b border-gray-100 bg-white">
-        <div className="mx-auto max-w-3xl px-3 py-4 sm:px-6 sm:py-5">
+        <div className="mx-auto max-w-3xl px-3 py-6 sm:px-6 sm:py-7">
           <StepIndicator current={currentStep} onStepClick={goToStep} />
         </div>
       </div>
