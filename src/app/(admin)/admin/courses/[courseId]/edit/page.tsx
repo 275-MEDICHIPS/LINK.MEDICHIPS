@@ -879,21 +879,21 @@ export default function CourseEditPage() {
   const saveButtonText = saving ? "Saving..." : saveStatus === "saved" ? "Saved!" : saveStatus === "error" ? "Error" : "Save Draft";
 
   return (
-    <div className="-m-4 flex h-[calc(100vh-3.5rem)] flex-col lg:-m-6">
+    <div className="-m-4 min-w-0 lg:-m-6 lg:flex lg:h-[calc(100vh-3.5rem)] lg:flex-col">
       {/* Top Bar */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <Link
             href="/admin/courses"
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
             aria-label="Back to courses"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-semibold text-gray-900">{course.title}</h1>
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-500">
+              <h1 className="truncate text-sm font-semibold text-gray-900">{course.title}</h1>
+              <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-500">
                 {course.status}
               </span>
             </div>
@@ -902,7 +902,7 @@ export default function CourseEditPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -910,26 +910,100 @@ export default function CourseEditPage() {
             disabled={saving}
             className={saveStatus === "saved" ? "border-accent-300 text-accent-600" : saveStatus === "error" ? "border-red-300 text-red-600" : ""}
           >
-            <Save className="mr-1.5 h-3.5 w-3.5" />
-            {saveButtonText}
+            <Save className="h-3.5 w-3.5 sm:mr-1.5" />
+            <span className="hidden sm:inline">{saveButtonText}</span>
           </Button>
           {course.status === "draft" && (
             <Button size="sm" onClick={handleSubmitForReview}>
-              <Send className="mr-1.5 h-3.5 w-3.5" />
-              Submit for Review
+              <Send className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Submit for Review</span>
             </Button>
           )}
           {course.status === "review" && (
             <Button size="sm" onClick={handlePublish}>
-              <Globe className="mr-1.5 h-3.5 w-3.5" />
-              Publish
+              <Globe className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Publish</span>
             </Button>
           )}
         </div>
       </div>
 
-      {/* Editor Body */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* ===== Mobile Layout: stacked sections ===== */}
+      <div className="space-y-4 p-4 pb-24 lg:hidden">
+        {/* Thumbnail */}
+        <CourseThumbnailEditor
+          courseId={courseId}
+          courseTitle={course.title}
+          thumbnailUrl={course.thumbnailUrl}
+          onThumbnailChange={(url) => handleCourseUpdate({ thumbnailUrl: url })}
+        />
+
+        {/* Course Details */}
+        <div>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">
+            Course Details
+          </h2>
+          <MetadataPanel course={course} onChange={handleCourseUpdate} />
+        </div>
+
+        {/* Video Settings - Collapsible */}
+        <div>
+          <button
+            onClick={() => setShowVideoSettings(!showVideoSettings)}
+            className="flex w-full items-center justify-between"
+          >
+            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              Video Settings
+            </h2>
+            <ChevronDown
+              className={`h-3.5 w-3.5 text-gray-400 transition-transform ${
+                showVideoSettings ? "" : "-rotate-90"
+              }`}
+            />
+          </button>
+          {showVideoSettings && (
+            <div className="mt-3">
+              <CourseVideoSettingsPanel
+                courseId={courseId}
+                onBatchGenerate={() => setShowBatchDialog(true)}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="border-t border-gray-100" />
+
+        {/* Structure (Module Tree) */}
+        <div>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-400">
+            Structure
+          </h2>
+          <ModuleTree
+            modules={course.modules}
+            selectedLessonId={selectedLessonId}
+            onSelectLesson={setSelectedLessonId}
+            videoStatus={videoStatus}
+            courseId={courseId}
+            courseLanguage={course.language}
+            onRefresh={fetchCourse}
+          />
+        </div>
+
+        {/* Lesson Editor */}
+        {selectedLesson && (
+          <>
+            <div className="border-t border-gray-100" />
+            <LessonEditor
+              key={selectedLesson.id}
+              lesson={selectedLesson}
+              courseId={courseId}
+            />
+          </>
+        )}
+      </div>
+
+      {/* ===== Desktop Layout: 3-column ===== */}
+      <div className="hidden flex-1 overflow-hidden lg:flex">
         {/* Left: Metadata + Video Settings */}
         <div className="w-72 shrink-0 overflow-y-auto border-r border-gray-100 bg-white p-4">
           <CourseThumbnailEditor
