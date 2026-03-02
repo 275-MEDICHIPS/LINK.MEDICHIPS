@@ -65,7 +65,7 @@ export default function Step1BasicInfo({ data, onChange, aiFile, onAiFileChange,
           </div>
 
           {/* Language + Risk */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">주 언어</label>
               <select
@@ -97,17 +97,18 @@ export default function Step1BasicInfo({ data, onChange, aiFile, onAiFileChange,
           {/* Thumbnail placeholder */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">썸네일</label>
-            <div className="flex items-center gap-4">
-              <div className="flex h-20 w-32 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-emerald-400 text-xs font-medium text-white">
+            {/* Mobile: stacked / Desktop: inline */}
+            <div className="sm:flex sm:items-center sm:gap-4">
+              <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-emerald-400 text-xs font-medium text-white sm:h-20 sm:w-32 sm:aspect-auto">
                 미리보기
               </div>
-              <div className="flex gap-2">
-                <button className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium hover:bg-gray-50">
-                  <Upload className="mr-1 inline h-3 w-3" />
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-0 sm:flex">
+                <button className="flex items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium hover:bg-gray-50 sm:py-1.5">
+                  <Upload className="h-3 w-3" />
                   업로드
                 </button>
-                <button className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium hover:bg-gray-50">
-                  <ImageIcon className="mr-1 inline h-3 w-3" />
+                <button className="flex items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium hover:bg-gray-50 sm:py-1.5">
+                  <ImageIcon className="h-3 w-3" />
                   갤러리
                 </button>
               </div>
@@ -132,10 +133,10 @@ export default function Step1BasicInfo({ data, onChange, aiFile, onAiFileChange,
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleFileDrop}
-                className="mt-4 cursor-pointer rounded-lg border-2 border-dashed border-brand-300 p-6 text-center transition hover:border-brand-400 hover:bg-brand-50/50"
+                className="mt-4 cursor-pointer rounded-lg border-2 border-dashed border-brand-300 p-4 text-center transition hover:border-brand-400 hover:bg-brand-50/50 sm:p-6"
                 onClick={() => document.getElementById("ai-file-input")?.click()}
               >
-                <FileText className="mx-auto h-8 w-8 text-brand-400" />
+                <FileText className="mx-auto h-6 w-6 text-brand-400 sm:h-8 sm:w-8" />
                 <p className="mt-2 text-sm text-gray-600">PDF, DOCX, TXT 파일을 끌어다 놓으세요</p>
                 <p className="mt-1 text-xs text-gray-400">또는 클릭하여 파일 선택 (최대 50MB)</p>
                 <input
