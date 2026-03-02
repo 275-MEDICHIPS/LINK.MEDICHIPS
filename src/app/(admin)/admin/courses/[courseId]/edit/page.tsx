@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Save,
   Send,
-  Globe,
   GripVertical,
   Plus,
   Video,
@@ -921,9 +920,15 @@ export default function CourseEditPage() {
           )}
           {course.status === "review" && (
             <Button size="sm" onClick={handlePublish}>
-              <Globe className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="h-3 w-3 shrink-0 rounded-full bg-red-400 sm:mr-1.5" />
               <span className="hidden sm:inline">Publish</span>
             </Button>
+          )}
+          {course.status === "published" && (
+            <span className="flex items-center gap-1.5 rounded-md bg-accent-50 px-2.5 py-1.5 text-xs font-medium text-accent-700">
+              <span className="h-2.5 w-2.5 rounded-full bg-accent-500" />
+              <span className="hidden sm:inline">Live</span>
+            </span>
           )}
         </div>
       </div>
