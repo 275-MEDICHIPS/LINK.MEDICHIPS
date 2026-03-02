@@ -18,6 +18,8 @@ import {
   CheckSquare,
   Trash2,
   Loader2,
+  FileText,
+  SendHorizonal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,7 +108,7 @@ function getGradient(title: string) {
   return GRADIENT_PRESETS[idx];
 }
 
-function CourseThumbnail({ course }: { course: Course }) {
+function CourseThumbnail({ course, size = "sm" }: { course: Course; size?: "sm" | "md" }) {
   const gradient = getGradient(course.title);
   const initials = course.title
     .split(/\s+/)
@@ -115,21 +117,23 @@ function CourseThumbnail({ course }: { course: Course }) {
     .join("")
     .toUpperCase();
 
+  const cls = size === "md" ? "h-16 w-16 rounded-lg text-sm" : "h-12 w-20 rounded-md text-xs";
+
   if (course.thumbnailUrl) {
     return (
       <img
         src={course.thumbnailUrl}
         alt=""
-        className="h-12 w-20 rounded-md object-cover"
+        className={`${size === "md" ? "h-16 w-16 rounded-lg" : "h-12 w-20 rounded-md"} shrink-0 object-cover`}
       />
     );
   }
   return (
     <div
-      className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md"
+      className={`flex shrink-0 items-center justify-center ${cls}`}
       style={{ background: `linear-gradient(135deg, ${gradient.from}, ${gradient.to})` }}
     >
-      <span className="text-xs font-bold text-white/90">{initials}</span>
+      <span className="font-bold text-white/90">{initials}</span>
     </div>
   );
 }
@@ -161,7 +165,7 @@ function RowActions({ courseId }: { courseId: string }) {
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(!open); }}
         className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
         aria-label="Row actions"
       >
@@ -283,6 +287,11 @@ export default function CoursesPage() {
     }
   };
 
+  // Stats from loaded data
+  const publishedCount = courses.filter((c) => c.status === "published").length;
+  const draftCount = courses.filter((c) => c.status === "draft").length;
+  const reviewCount = courses.filter((c) => c.status === "review").length;
+
   return (
     <div className="min-w-0 space-y-6 overflow-x-hidden">
       {/* Header */}
@@ -293,12 +302,55 @@ export default function CoursesPage() {
             Manage medical education courses across all programs
           </p>
         </div>
-        <Link href="/admin/courses/new">
-          <Button>
+        <Link href="/admin/courses/new" className="sm:w-auto">
+          <Button className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Create Course
           </Button>
         </Link>
+      </div>
+
+      {/* Stats — mobile: 3-col grid, same pattern as Users */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-medium text-gray-500 sm:text-xs">Total</p>
+                <p className="mt-0.5 text-lg font-bold text-accent-600 sm:mt-1 sm:text-2xl">
+                  {loading ? "-" : total}
+                </p>
+              </div>
+              <BookOpen className="hidden h-5 w-5 text-gray-300 sm:block" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-medium text-gray-500 sm:text-xs">Published</p>
+                <p className="mt-0.5 text-lg font-bold text-accent-600 sm:mt-1 sm:text-2xl">
+                  {loading ? "-" : publishedCount}
+                </p>
+              </div>
+              <SendHorizonal className="hidden h-5 w-5 text-gray-300 sm:block" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-medium text-gray-500 sm:text-xs">Draft</p>
+                <p className="mt-0.5 text-lg font-bold text-amber-600 sm:mt-1 sm:text-2xl">
+                  {loading ? "-" : draftCount}
+                </p>
+              </div>
+              <FileText className="hidden h-5 w-5 text-gray-300 sm:block" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -399,31 +451,32 @@ export default function CoursesPage() {
       ) : (
         <>
           {/* Mobile Card List */}
-          <div className="space-y-3 md:hidden">
+          <div className="space-y-2 md:hidden">
             {courses.map((course) => (
               <Card key={course.id}>
                 <CardContent className="p-3">
-                  <Link
-                    href={`/admin/courses/${course.id}/edit`}
-                    className="flex items-start gap-3"
-                  >
-                    <CourseThumbnail course={course} />
+                  <div className="flex items-start gap-3">
+                    <Link href={`/admin/courses/${course.id}/edit`} className="shrink-0">
+                      <CourseThumbnail course={course} size="md" />
+                    </Link>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-gray-900">
-                        {course.title}
-                      </p>
+                      <Link href={`/admin/courses/${course.id}/edit`}>
+                        <p className="line-clamp-2 text-sm font-medium text-gray-900">
+                          {course.title}
+                        </p>
+                      </Link>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         <StatusBadge status={course.status} />
                         <RiskBadge level={course.riskLevel} />
                       </div>
                       <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-500">
-                        <span>모듈 {course.modules}개</span>
-                        <span>수강 {course.enrollments.toLocaleString()}</span>
-                        <span>{course.updatedAt}</span>
+                        <span>{course.modules} modules</span>
+                        <span>{course.enrollments.toLocaleString()} enrolled</span>
                       </div>
+                      <p className="mt-1 text-[10px] text-gray-400">{course.updatedAt}</p>
                     </div>
                     <RowActions courseId={course.id} />
-                  </Link>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -583,7 +636,6 @@ export default function CoursesPage() {
           )}
         </>
       )}
-
     </div>
   );
 }
