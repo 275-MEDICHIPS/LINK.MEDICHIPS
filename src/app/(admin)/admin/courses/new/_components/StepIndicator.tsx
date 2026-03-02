@@ -40,7 +40,7 @@ export default function StepIndicator({ current, onStepClick }: StepIndicatorPro
                 {isCompleted ? <Check className="h-4 w-4" /> : step.num}
               </div>
               <span
-                className={`text-xs font-medium sm:text-sm ${
+                className={`whitespace-nowrap text-xs font-medium sm:text-sm ${
                   isCurrent
                     ? "text-brand-700"
                     : isCompleted
@@ -55,7 +55,7 @@ export default function StepIndicator({ current, onStepClick }: StepIndicatorPro
 
             {/* Connector line */}
             {idx < STEPS.length - 1 && (
-              <div className="mx-1 h-[3px] w-6 rounded-full bg-gray-200 sm:mx-3 sm:w-16 lg:w-24">
+              <div className="mx-[6px] h-[3px] w-6 rounded-full bg-gray-200 sm:mx-3 sm:w-16 lg:w-24">
                 <div
                   className="h-[3px] rounded-full bg-brand-500 transition-all duration-500"
                   style={{ width: isCompleted ? "100%" : "0%" }}
