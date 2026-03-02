@@ -892,8 +892,21 @@ export default function CourseEditPage() {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h1 className="truncate text-sm font-semibold text-gray-900">{course.title}</h1>
-              <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-500">
-                {course.status}
+              <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                course.status === "published"
+                  ? "bg-accent-50 text-accent-700"
+                  : course.status === "review"
+                    ? "bg-amber-50 text-amber-700"
+                    : "bg-gray-100 text-gray-500"
+              }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${
+                  course.status === "published"
+                    ? "bg-accent-500"
+                    : course.status === "review"
+                      ? "bg-amber-500"
+                      : "bg-gray-400"
+                }`} />
+                {course.status === "published" ? "Live" : course.status === "review" ? "Review" : "Draft"}
               </span>
             </div>
             <p className="text-xs text-gray-400">
@@ -912,24 +925,6 @@ export default function CourseEditPage() {
             <Save className="h-3.5 w-3.5 sm:mr-1.5" />
             <span className="hidden sm:inline">{saveButtonText}</span>
           </Button>
-          {/* Status badge */}
-          <span className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium sm:flex ${
-            course.status === "published"
-              ? "bg-accent-50 text-accent-700"
-              : course.status === "review"
-                ? "bg-amber-50 text-amber-700"
-                : "bg-gray-100 text-gray-600"
-          }`}>
-            <span className={`h-2 w-2 rounded-full ${
-              course.status === "published"
-                ? "bg-accent-500"
-                : course.status === "review"
-                  ? "bg-amber-500"
-                  : "bg-gray-400"
-            }`} />
-            {course.status === "published" ? "Live" : course.status === "review" ? "Review" : "Draft"}
-          </span>
-          {/* Action button */}
           {course.status === "draft" && (
             <Button size="sm" variant="outline" onClick={handleSubmitForReview}>
               <Send className="h-3.5 w-3.5 sm:mr-1.5" />
