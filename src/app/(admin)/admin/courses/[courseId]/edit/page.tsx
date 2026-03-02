@@ -912,23 +912,35 @@ export default function CourseEditPage() {
             <Save className="h-3.5 w-3.5 sm:mr-1.5" />
             <span className="hidden sm:inline">{saveButtonText}</span>
           </Button>
+          {/* Status badge */}
+          <span className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium sm:flex ${
+            course.status === "published"
+              ? "bg-accent-50 text-accent-700"
+              : course.status === "review"
+                ? "bg-amber-50 text-amber-700"
+                : "bg-gray-100 text-gray-600"
+          }`}>
+            <span className={`h-2 w-2 rounded-full ${
+              course.status === "published"
+                ? "bg-accent-500"
+                : course.status === "review"
+                  ? "bg-amber-500"
+                  : "bg-gray-400"
+            }`} />
+            {course.status === "published" ? "Live" : course.status === "review" ? "Review" : "Draft"}
+          </span>
+          {/* Action button */}
           {course.status === "draft" && (
-            <Button size="sm" onClick={handleSubmitForReview}>
-              <span className="h-3 w-3 shrink-0 rounded-full bg-gray-400 sm:mr-1.5" />
-              <span className="hidden sm:inline">Draft</span>
+            <Button size="sm" variant="outline" onClick={handleSubmitForReview}>
+              <Send className="h-3.5 w-3.5 sm:mr-1.5" />
+              <span className="hidden sm:inline">Submit</span>
             </Button>
           )}
           {course.status === "review" && (
             <Button size="sm" onClick={handlePublish}>
-              <span className="h-3 w-3 shrink-0 rounded-full bg-amber-400 sm:mr-1.5" />
+              <Send className="h-3.5 w-3.5 sm:mr-1.5" />
               <span className="hidden sm:inline">Publish</span>
             </Button>
-          )}
-          {course.status === "published" && (
-            <span className="flex items-center gap-1.5 rounded-md bg-accent-50 px-2.5 py-1.5 text-xs font-medium text-accent-700">
-              <span className="h-2.5 w-2.5 rounded-full bg-accent-500" />
-              <span className="hidden sm:inline">Live</span>
-            </span>
           )}
         </div>
       </div>
