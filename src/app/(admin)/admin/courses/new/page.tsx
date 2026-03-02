@@ -188,15 +188,13 @@ export default function NewCoursePage() {
         </div>
       </header>
 
-      {/* Step Indicator */}
-      <div className="border-b border-gray-100 bg-white">
-        <div className="mx-auto max-w-3xl px-3 py-8 sm:px-6">
-          <StepIndicator current={currentStep} onStepClick={goToStep} />
-        </div>
-      </div>
-
-      {/* Step Content */}
+      {/* Step Indicator + Content */}
       <div className="flex-1">
+        <div className="bg-white">
+          <div className="mx-auto max-w-3xl px-3 pb-4 pt-6 sm:px-6 sm:pb-5 sm:pt-7">
+            <StepIndicator current={currentStep} onStepClick={goToStep} />
+          </div>
+        </div>
         {currentStep === 1 && (
           <Step1BasicInfo
             data={basicInfo}
