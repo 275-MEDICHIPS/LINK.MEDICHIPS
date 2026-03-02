@@ -97,21 +97,18 @@ export default function Step1BasicInfo({ data, onChange, aiFile, onAiFileChange,
           {/* Thumbnail placeholder */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">썸네일</label>
-            {/* Mobile: stacked / Desktop: inline */}
-            <div className="sm:flex sm:items-center sm:gap-4">
-              <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-emerald-400 text-xs font-medium text-white sm:h-20 sm:w-32 sm:aspect-auto">
-                미리보기
-              </div>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-0 sm:flex">
-                <button className="flex items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium hover:bg-gray-50 sm:py-1.5">
-                  <Upload className="h-3 w-3" />
-                  업로드
-                </button>
-                <button className="flex items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium hover:bg-gray-50 sm:py-1.5">
-                  <ImageIcon className="h-3 w-3" />
-                  갤러리
-                </button>
-              </div>
+            <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-emerald-400 text-xs font-medium text-white">
+              미리보기
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button className="flex items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium hover:bg-gray-50">
+                <Upload className="h-3 w-3" />
+                업로드
+              </button>
+              <button className="flex items-center justify-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium hover:bg-gray-50">
+                <ImageIcon className="h-3 w-3" />
+                갤러리
+              </button>
             </div>
           </div>
         </div>
@@ -128,44 +125,44 @@ export default function Step1BasicInfo({ data, onChange, aiFile, onAiFileChange,
             <p className="mt-1 text-sm text-gray-600">
               SOP 문서를 업로드하면 AI가 코스 구조와 콘텐츠를 자동으로 설계합니다.
             </p>
-
-            {!aiFile ? (
-              <div
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleFileDrop}
-                className="mt-4 cursor-pointer rounded-lg border-2 border-dashed border-brand-300 p-4 text-center transition hover:border-brand-400 hover:bg-brand-50/50 sm:p-6"
-                onClick={() => document.getElementById("ai-file-input")?.click()}
-              >
-                <FileText className="mx-auto h-6 w-6 text-brand-400 sm:h-8 sm:w-8" />
-                <p className="mt-2 text-sm text-gray-600">PDF, DOCX, TXT 파일을 끌어다 놓으세요</p>
-                <p className="mt-1 text-xs text-gray-400">또는 클릭하여 파일 선택 (최대 50MB)</p>
-                <input
-                  id="ai-file-input"
-                  type="file"
-                  accept=".pdf,.docx,.txt"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
-              </div>
-            ) : (
-              <div className="mt-4 flex items-center justify-between rounded-lg border border-brand-200 bg-white p-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-red-500" />
-                  <span className="text-sm font-medium text-gray-700">{aiFile.name}</span>
-                  <span className="text-xs text-gray-400">
-                    {(aiFile.size / 1024 / 1024).toFixed(1)} MB
-                  </span>
-                </div>
-                <button
-                  onClick={() => onAiFileChange(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
+
+        {!aiFile ? (
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleFileDrop}
+            className="mt-4 cursor-pointer rounded-lg border-2 border-dashed border-brand-300 p-4 text-center transition hover:border-brand-400 hover:bg-brand-50/50 sm:p-6"
+            onClick={() => document.getElementById("ai-file-input")?.click()}
+          >
+            <FileText className="mx-auto h-6 w-6 text-brand-400 sm:h-8 sm:w-8" />
+            <p className="mt-2 text-sm text-gray-600">PDF, DOCX, TXT 파일을 끌어다 놓으세요</p>
+            <p className="mt-1 text-xs text-gray-400">또는 클릭하여 파일 선택 (최대 50MB)</p>
+            <input
+              id="ai-file-input"
+              type="file"
+              accept=".pdf,.docx,.txt"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+          </div>
+        ) : (
+          <div className="mt-4 flex items-center justify-between rounded-lg border border-brand-200 bg-white p-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <FileText className="h-5 w-5 flex-shrink-0 text-red-500" />
+              <span className="truncate text-sm font-medium text-gray-700">{aiFile.name}</span>
+              <span className="flex-shrink-0 text-xs text-gray-400">
+                {(aiFile.size / 1024 / 1024).toFixed(1)} MB
+              </span>
+            </div>
+            <button
+              onClick={() => onAiFileChange(null)}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Next Button */}
