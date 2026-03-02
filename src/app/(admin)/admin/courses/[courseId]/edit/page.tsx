@@ -914,13 +914,13 @@ export default function CourseEditPage() {
           </Button>
           {course.status === "draft" && (
             <Button size="sm" onClick={handleSubmitForReview}>
-              <Send className="h-3.5 w-3.5 sm:mr-1.5" />
-              <span className="hidden sm:inline">Submit for Review</span>
+              <span className="h-3 w-3 shrink-0 rounded-full bg-gray-400 sm:mr-1.5" />
+              <span className="hidden sm:inline">Draft</span>
             </Button>
           )}
           {course.status === "review" && (
             <Button size="sm" onClick={handlePublish}>
-              <span className="h-3 w-3 shrink-0 rounded-full bg-red-400 sm:mr-1.5" />
+              <span className="h-3 w-3 shrink-0 rounded-full bg-amber-400 sm:mr-1.5" />
               <span className="hidden sm:inline">Publish</span>
             </Button>
           )}
