@@ -88,7 +88,7 @@ export default function Step4Review({
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-md px-6 py-20 text-center">
+      <div className="mx-auto max-w-md px-3 py-12 text-center sm:px-6 sm:py-20">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
           <Check className="h-8 w-8 text-green-600" />
         </div>
@@ -117,12 +117,12 @@ export default function Step4Review({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-8">
+    <div className="mx-auto max-w-2xl px-3 py-5 sm:px-6 sm:py-8">
       {/* Course Summary */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">코스 요약</h2>
-        <div className="flex items-start gap-4">
-          <div className="flex h-[72px] w-28 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-emerald-400 text-[10px] font-medium text-white">
+        <div className="flex items-start gap-3 sm:gap-4">
+          <div className="flex h-14 w-20 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-emerald-400 text-[10px] font-medium text-white sm:h-[72px] sm:w-28">
             {basicInfo.title.slice(0, 10)}
           </div>
           <div>
@@ -145,7 +145,7 @@ export default function Step4Review({
       </div>
 
       {/* Checklist */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
         <h3 className="mb-4 text-sm font-semibold text-gray-900">완성도 체크리스트</h3>
         <div className="space-y-3">
           {checks.map((check, i) => (
@@ -180,7 +180,7 @@ export default function Step4Review({
 
       {/* AI Content Review */}
       {aiLessons.length > 0 && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-violet-600" />
             <h3 className="text-sm font-semibold text-gray-900">AI 생성 콘텐츠 (전문가 검토 필요)</h3>
@@ -217,17 +217,17 @@ export default function Step4Review({
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={onPrev}
-          className="flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+          className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 sm:order-1"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           이전
         </button>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2 sm:order-2 sm:flex-row sm:items-center sm:gap-3">
           <button
             onClick={onSaveDraft}
             className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
@@ -237,7 +237,7 @@ export default function Step4Review({
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex items-center gap-2 rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-50"
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

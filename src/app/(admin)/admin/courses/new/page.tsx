@@ -153,17 +153,17 @@ export default function NewCoursePage() {
     <div className="-mx-4 -mt-4 -mb-4 flex min-h-[calc(100vh-3.5rem)] flex-col lg:-mx-6 lg:-mt-6 lg:-mb-6">
       {/* Top Header */}
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/admin/courses"
-              className="flex items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-900"
+              className="flex flex-shrink-0 items-center gap-1.5 text-sm text-gray-500 transition hover:text-gray-900"
             >
               <ArrowLeft className="h-4 w-4" />
-              코스 목록
+              <span className="hidden sm:inline">코스 목록</span>
             </Link>
-            <span className="text-gray-300">|</span>
-            <span className="font-semibold text-gray-900">
+            <span className="hidden text-gray-300 sm:inline">|</span>
+            <span className="truncate font-semibold text-gray-900">
               {basicInfo.title || "새 코스 만들기"}
             </span>
             {currentStep > 1 && (
@@ -190,7 +190,7 @@ export default function NewCoursePage() {
 
       {/* Step Indicator */}
       <div className="border-b border-gray-100 bg-white">
-        <div className="mx-auto max-w-3xl px-6 py-5">
+        <div className="mx-auto max-w-3xl px-3 py-4 sm:px-6 sm:py-5">
           <StepIndicator current={currentStep} onStepClick={goToStep} />
         </div>
       </div>

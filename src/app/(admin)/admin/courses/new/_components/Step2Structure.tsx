@@ -157,10 +157,10 @@ export default function Step2Structure({ modules, onChange, hasAiFile, onPrev, o
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-8">
+    <div className="mx-auto max-w-3xl px-3 py-5 sm:px-6 sm:py-8">
       {/* AI Banner */}
       {hasAiFile && (
-        <div className="mb-6 flex items-center justify-between rounded-xl border border-violet-200 bg-gradient-to-r from-violet-50 to-purple-50 p-4">
+        <div className="mb-6 flex items-center justify-between rounded-xl border border-violet-200 bg-gradient-to-r from-violet-50 to-purple-50 p-3 sm:p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100">
               <span className="text-sm">✨</span>
@@ -218,7 +218,7 @@ export default function Step2Structure({ modules, onChange, hasAiFile, onPrev, o
                 {mod.lessons.map((lesson, lesIdx) => (
                   <div
                     key={lesson.id}
-                    className="group flex items-center gap-2 px-4 py-2.5 pl-14 transition hover:bg-gray-50/50"
+                    className="group flex items-center gap-2 px-4 py-2.5 pl-8 transition hover:bg-gray-50/50 sm:pl-14"
                   >
                     <GripVertical className="h-4 w-4 text-gray-300 opacity-0 transition group-hover:opacity-100" />
                     <span className="text-base">{CONTENT_ICONS[lesson.contentType]}</span>
@@ -237,7 +237,7 @@ export default function Step2Structure({ modules, onChange, hasAiFile, onPrev, o
                 ))}
 
                 {/* Add Lesson */}
-                <div className="px-4 py-2 pl-14">
+                <div className="px-4 py-2 pl-8 sm:pl-14">
                   {addingLessonFor === mod.id ? (
                     <div className="flex items-center gap-2">
                       <Input
@@ -341,10 +341,10 @@ export default function Step2Structure({ modules, onChange, hasAiFile, onPrev, o
       </div>
 
       {/* Navigation */}
-      <div className="mt-8 flex justify-between">
+      <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-between">
         <button
           onClick={onPrev}
-          className="flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+          className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 sm:order-1"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -354,7 +354,7 @@ export default function Step2Structure({ modules, onChange, hasAiFile, onPrev, o
         <button
           onClick={onNext}
           disabled={modules.length === 0}
-          className="flex items-center gap-2 rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-50 sm:order-2"
         >
           다음: 콘텐츠 작성
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

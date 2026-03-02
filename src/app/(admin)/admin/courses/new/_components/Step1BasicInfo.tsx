@@ -33,9 +33,9 @@ export default function Step1BasicInfo({ data, onChange, aiFile, onAiFileChange,
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-8">
+    <div className="mx-auto max-w-2xl px-3 py-5 sm:px-6 sm:py-8">
       {/* Basic Info Card */}
-      <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
         <h2 className="text-lg font-semibold text-gray-900">코스 기본 정보</h2>
         <p className="mt-1 text-sm text-gray-500">코스의 제목과 기본 설정을 입력하세요.</p>
 
@@ -117,7 +117,7 @@ export default function Step1BasicInfo({ data, onChange, aiFile, onAiFileChange,
       </div>
 
       {/* AI Builder CTA */}
-      <div className="mt-6 rounded-xl border border-brand-200 bg-gradient-to-r from-brand-50 to-emerald-50 p-6">
+      <div className="mt-6 rounded-xl border border-brand-200 bg-gradient-to-r from-brand-50 to-emerald-50 p-4 sm:p-6">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-brand-100">
             <Sparkles className="h-5 w-5 text-brand-600" />
@@ -168,11 +168,11 @@ export default function Step1BasicInfo({ data, onChange, aiFile, onAiFileChange,
       </div>
 
       {/* Next Button */}
-      <div className="mt-8 flex justify-end">
+      <div className="mt-8 flex">
         <button
           onClick={onNext}
           disabled={!canProceed}
-          className="flex items-center gap-2 rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-50 sm:w-auto sm:ml-auto"
         >
           다음: 구조 설계
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -212,7 +212,7 @@ export default function Step3Content({ modules, contents, onContentChange, onPre
                   {q.options.map((opt, optIdx) => (
                     <label
                       key={optIdx}
-                      className={`flex cursor-pointer items-center gap-2 rounded-lg p-2 transition ${
+                      className={`flex cursor-pointer items-center gap-2 rounded-lg p-2.5 transition sm:p-2 ${
                         q.correctIndex === optIdx
                           ? "border border-green-200 bg-green-50"
                           : "hover:bg-gray-50"
@@ -413,7 +413,7 @@ export default function Step3Content({ modules, contents, onContentChange, onPre
       </div>
 
       {/* Content Editor */}
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto pb-24 lg:pb-20">
         <div className="mx-auto max-w-3xl p-4 lg:p-8">
           {renderEditor()}
         </div>
