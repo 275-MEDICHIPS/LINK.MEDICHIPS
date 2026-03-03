@@ -26,6 +26,12 @@ import type {
   VideoProductionMethod,
   VideoProvider,
 } from "@prisma/client";
+import {
+  hydrateScenes,
+  renderAllScenes,
+  getScenesByJob,
+  getJobCostSummary,
+} from "@/lib/services/scene-renderer.service";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -50,6 +56,8 @@ export interface CreateJobParams {
     resolution?: string;
     fidelityLevel?: string;
   };
+  // Topic input
+  topicInput?: string;
 }
 
 export interface GenerateScriptParams {
@@ -110,14 +118,14 @@ async function transitionStatus(
  * Create a new video production job.
  */
 export async function createJob(params: CreateJobParams, userId: string) {
-  // Validate method-provider compatibility (VEO supports both methods)
-  if (params.provider !== "VEO") {
+  // Validate method-provider compatibility
+  if (params.provider !== "VEO" && params.provider !== "SEEDANCE") {
     if (
       params.method === "AI_GENERATED" &&
       !isVideoGenerationProvider(params.provider)
     ) {
       throw new ApiError(
-        "AI_GENERATED method requires VEO, SYNTHESIA, or HEYGEN provider",
+        "AI_GENERATED method requires VEO, SEEDANCE, or compatible provider",
         400,
         "INVALID_PROVIDER"
       );
@@ -148,6 +156,7 @@ export async function createJob(params: CreateJobParams, userId: string) {
         : Prisma.JsonNull,
       sourceVideoUrl: params.sourceVideoUrl,
       sourceVideoGcsPath: params.sourceVideoGcsPath,
+      topicInput: params.topicInput,
       ...(params.faceSwapConfig && {
         faceSwapConfig: {
           create: {
@@ -272,7 +281,8 @@ function getProvider(job: { method: string; provider: VideoProvider }) {
 }
 
 /**
- * Approve script and queue for rendering.
+ * Approve script → SCENE_SETUP + hydrate scenes.
+ * AI_GENERATED flow now uses Scene-based production.
  */
 export async function approveScript(jobId: string, userId: string) {
   const job = await prisma.videoProductionJob.findUnique({
@@ -288,7 +298,15 @@ export async function approveScript(jobId: string, userId: string) {
     });
   }
 
-  return transitionStatus(jobId, ["SCRIPT_REVIEW"], "QUEUED", userId);
+  // Approve → SCENE_SETUP + hydrate scenes
+  const updated = await transitionStatus(
+    jobId,
+    ["SCRIPT_REVIEW"],
+    "SCENE_SETUP",
+    userId
+  );
+  await hydrateScenes(jobId);
+  return updated;
 }
 
 /**
@@ -513,8 +531,8 @@ export async function ingestToMux(jobId: string) {
     where: { id: jobId },
   });
   if (!job) throw new ApiError("Job not found", 404, "JOB_NOT_FOUND");
-  // Prefer merged video (TTS + video) over raw output
-  const videoUrl = job.mergedVideoUrl || job.outputVideoUrl;
+  // Prefer: finalMergedVideo (scene concat) → mergedVideo (TTS) → raw output
+  const videoUrl = job.finalMergedVideoUrl || job.mergedVideoUrl || job.outputVideoUrl;
   if (!videoUrl) {
     throw new ApiError("No output video URL", 400, "NO_OUTPUT_VIDEO");
   }
@@ -682,7 +700,14 @@ export async function retryJob(jobId: string, userId: string) {
 export async function cancelJob(jobId: string, userId: string) {
   return transitionStatus(
     jobId,
-    ["DRAFT", "SCRIPT_GENERATING", "SCRIPT_REVIEW", "QUEUED"],
+    [
+      "DRAFT",
+      "SCRIPT_GENERATING",
+      "SCRIPT_REVIEW",
+      "QUEUED",
+      "SCENE_SETUP",
+      "SCENE_UPLOADING",
+    ],
     "CANCELLED",
     userId
   );
@@ -697,6 +722,7 @@ export async function getJobDetail(jobId: string) {
     include: {
       script: true,
       faceSwapConfig: true,
+      scenes: { orderBy: { orderIndex: "asc" } },
       statusHistory: {
         orderBy: { createdAt: "desc" },
         take: 50,
@@ -770,6 +796,124 @@ export async function listJobs(filters: {
   return { jobs, total, page, pageSize };
 }
 
+// ─── Scene-based Production Methods ─────────────────────────────────
+
+/**
+ * Transition from SCENE_SETUP to SCENE_RENDERING — start AI rendering for all scenes.
+ */
+export async function startSceneRendering(jobId: string, userId: string) {
+  const updated = await transitionStatus(
+    jobId,
+    ["SCENE_SETUP", "SCENE_UPLOADING", "FINAL_REVIEW"],
+    "SCENE_RENDERING",
+    userId
+  );
+
+  // Launch only PENDING/FAILED scene renders — completed scenes are cached
+  const renderSummary = await renderAllScenes(jobId);
+
+  return { job: updated, renderSummary };
+}
+
+/**
+ * Transition from SCENE_RENDERING to MERGING when all scenes complete.
+ */
+export async function checkAndMergeScenes(jobId: string) {
+  const scenes = await getScenesByJob(jobId);
+  const allDone = scenes.every(
+    (s) =>
+      s.renderStatus === "COMPLETED" ||
+      s.renderStatus === "SKIPPED"
+  );
+
+  if (!allDone) {
+    const pending = scenes.filter(
+      (s) => s.renderStatus !== "COMPLETED" && s.renderStatus !== "SKIPPED"
+    );
+    return {
+      ready: false,
+      pendingScenes: pending.length,
+      failedScenes: scenes.filter((s) => s.renderStatus === "FAILED").length,
+    };
+  }
+
+  // All scenes done — transition to MERGING
+  await transitionStatus(jobId, ["SCENE_RENDERING"], "MERGING", "system");
+
+  // Concatenate scenes
+  const { concatenateScenes } = await import("@/lib/video/scene-concatenator");
+  const { finalUrl, finalGcsPath } = await concatenateScenes(jobId);
+
+  // Update job with merged video
+  await prisma.videoProductionJob.update({
+    where: { id: jobId },
+    data: {
+      finalMergedVideoUrl: finalUrl,
+      finalMergedGcsPath: finalGcsPath,
+      outputVideoUrl: finalUrl,
+      outputGcsPath: finalGcsPath,
+    },
+  });
+
+  // Transition to FINAL_REVIEW
+  await transitionStatus(jobId, ["MERGING"], "FINAL_REVIEW", "system");
+
+  return { ready: true, finalUrl };
+}
+
+/**
+ * Approve video from FINAL_REVIEW or REVIEW.
+ */
+export async function approveFinalVideo(jobId: string, userId: string) {
+  return transitionStatus(
+    jobId,
+    ["FINAL_REVIEW", "REVIEW"],
+    "COMPLETED",
+    userId,
+    { completedAt: new Date() }
+  );
+}
+
+/**
+ * Get job detail with scenes and cost summary.
+ */
+export async function getJobDetailWithScenes(jobId: string) {
+  const job = await prisma.videoProductionJob.findUnique({
+    where: { id: jobId },
+    include: {
+      script: true,
+      faceSwapConfig: true,
+      scenes: { orderBy: { orderIndex: "asc" } },
+      statusHistory: {
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      },
+      lesson: {
+        include: {
+          translations: true,
+          module: {
+            include: {
+              translations: true,
+              course: { include: { translations: true } },
+            },
+          },
+        },
+      },
+      course: { include: { translations: true } },
+    },
+  });
+
+  if (!job) throw new ApiError("Job not found", 404, "JOB_NOT_FOUND");
+
+  // Include cost summary for AI_GENERATED jobs with scenes
+  if (job.method === "AI_GENERATED" && job.scenes.length > 0) {
+    const costSummary = await getJobCostSummary(jobId);
+    return { ...job, costSummary };
+  }
+
+  return job;
+}
+
 /**
  * Get dashboard stats.
  */
@@ -789,12 +933,16 @@ export async function getStats() {
               "RENDERING",
               "FACE_SWAPPING",
               "POST_PROCESSING",
+              "SCENE_SETUP",
+              "SCENE_UPLOADING",
+              "SCENE_RENDERING",
+              "MERGING",
             ],
           },
         },
       }),
       prisma.videoProductionJob.count({
-        where: { status: { in: ["SCRIPT_REVIEW", "REVIEW"] } },
+        where: { status: { in: ["SCRIPT_REVIEW", "REVIEW", "FINAL_REVIEW"] } },
       }),
       prisma.videoProductionJob.count({
         where: {

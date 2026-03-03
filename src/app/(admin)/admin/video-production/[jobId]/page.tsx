@@ -30,6 +30,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import SceneStoryboard from "../_components/SceneStoryboard";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -71,6 +72,10 @@ interface JobDetail {
     metadata?: Record<string, unknown> | null;
     createdAt: string;
   }[];
+  topicInput?: string | null;
+  finalMergedVideoUrl?: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  scenes?: any[];
   courseId?: string | null;
   lessonId?: string | null;
   course?: { id: string; translations: { title: string }[] } | null;
@@ -88,11 +93,11 @@ interface JobDetail {
 const AI_PIPELINE_STEPS = [
   { key: "DRAFT", label: "Draft" },
   { key: "SCRIPT_GENERATING", label: "Script" },
-  { key: "SCRIPT_REVIEW", label: "Script Review" },
-  { key: "QUEUED", label: "Queued" },
-  { key: "RENDERING", label: "Rendering" },
-  { key: "POST_PROCESSING", label: "Processing" },
-  { key: "REVIEW", label: "Review" },
+  { key: "SCRIPT_REVIEW", label: "Review" },
+  { key: "SCENE_SETUP", label: "Scenes" },
+  { key: "SCENE_RENDERING", label: "Render" },
+  { key: "MERGING", label: "Merge" },
+  { key: "FINAL_REVIEW", label: "Final" },
   { key: "COMPLETED", label: "Complete" },
 ];
 
@@ -223,6 +228,9 @@ export default function JobDetailPage() {
       "RENDERING",
       "FACE_SWAPPING",
       "POST_PROCESSING",
+      "SCENE_RENDERING",
+      "MERGING",
+      "SCENE_UPLOADING",
     ];
     if (!activeStatuses.includes(job.status)) return;
 
@@ -428,6 +436,30 @@ export default function JobDetailPage() {
               </CardContent>
             </Card>
           )}
+          {/* Scene View */}
+          {job.method === "AI_GENERATED" && job.scenes && job.scenes.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Film className="h-4 w-4" />
+                  Scenes ({job.scenes.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SceneStoryboard
+                  scenes={job.scenes}
+                  mode={
+                    ["SCENE_SETUP", "SCENE_UPLOADING"].includes(job.status)
+                      ? "setup"
+                      : ["SCENE_RENDERING", "MERGING"].includes(job.status)
+                        ? "rendering"
+                        : "review"
+                  }
+                  jobId={job.id}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right: Status Card + Actions + History */}
@@ -578,7 +610,7 @@ export default function JobDetailPage() {
                 </Button>
               )}
 
-              {job.status === "REVIEW" && (
+              {(job.status === "REVIEW" || job.status === "FINAL_REVIEW") && (
                 <>
                   <Button
                     onClick={() => doAction("approve")}
@@ -612,6 +644,59 @@ export default function JobDetailPage() {
                     Reject
                   </Button>
                 </>
+              )}
+
+              {/* Re-render from FINAL_REVIEW */}
+              {job.status === "FINAL_REVIEW" && job.method === "AI_GENERATED" && (
+                <Button
+                  onClick={() => doAction("start-rendering")}
+                  disabled={actionLoading !== null}
+                  variant="outline"
+                  className="w-full gap-2"
+                  size="sm"
+                >
+                  {actionLoading === "start-rendering" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="h-4 w-4" />
+                  )}
+                  Re-render Changed Scenes
+                </Button>
+              )}
+
+              {/* Start Scene Rendering */}
+              {job.status === "SCENE_SETUP" && job.method === "AI_GENERATED" && (
+                <Button
+                  onClick={() => doAction("start-rendering")}
+                  disabled={actionLoading !== null}
+                  className="w-full gap-2 bg-brand-500 hover:bg-brand-600"
+                  size="sm"
+                >
+                  {actionLoading === "start-rendering" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  Start Scene Rendering
+                </Button>
+              )}
+
+              {/* Check & Merge Scenes */}
+              {job.status === "SCENE_RENDERING" && job.method === "AI_GENERATED" && (
+                <Button
+                  onClick={() => doAction("check-scenes")}
+                  disabled={actionLoading !== null}
+                  variant="outline"
+                  className="w-full gap-2"
+                  size="sm"
+                >
+                  {actionLoading === "check-scenes" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Check & Merge Scenes
+                </Button>
               )}
 
               {job.status === "COMPLETED" && (
@@ -661,7 +746,7 @@ export default function JobDetailPage() {
                 </Button>
               )}
 
-              {["DRAFT", "SCRIPT_REVIEW", "QUEUED"].includes(job.status) && (
+              {["DRAFT", "SCRIPT_REVIEW", "QUEUED", "SCENE_SETUP", "SCENE_UPLOADING"].includes(job.status) && (
                 <Button
                   variant="ghost"
                   onClick={() => {

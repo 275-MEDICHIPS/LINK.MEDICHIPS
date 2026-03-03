@@ -160,6 +160,12 @@ enum VideoProductionStatus {
   COMPLETED
   FAILED
   CANCELLED
+  // James Workflow states
+  SCENE_SETUP
+  SCENE_UPLOADING
+  SCENE_RENDERING
+  MERGING
+  FINAL_REVIEW
 }
 
 enum VideoProductionMethod {
@@ -169,6 +175,24 @@ enum VideoProductionMethod {
 
 enum VideoProvider {
   VEO
+  SEEDANCE
+}
+
+enum SceneSource {
+  DOCTOR_VIDEO
+  AI_GENERATED
+  STOCK_FOOTAGE
+  HYBRID
+}
+
+enum SceneRenderStatus {
+  PENDING
+  UPLOADING
+  RENDERING
+  POST_PROCESSING
+  COMPLETED
+  FAILED
+  SKIPPED
 }
 
 // ==================== ORGANIZATIONS & MULTI-TENANCY ====================
@@ -1017,9 +1041,15 @@ model VideoProductionJob {
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
+  // Scene-based production
+  topicInput          String?
+  finalMergedVideoUrl String?
+  finalMergedGcsPath  String?
+
   // Relations
   faceSwapConfig  FaceSwapConfig?
   statusHistory   VideoJobStatusHistory[]
+  scenes          VideoScene[]
 
   @@index([status])
   @@index([lessonId])
@@ -1097,6 +1127,58 @@ model VideoJobStatusHistory {
 
   @@index([jobId, createdAt])
   @@map("video_job_status_history")
+}
+
+model VideoScene {
+  id          String             @id @default(cuid())
+  jobId       String
+  job         VideoProductionJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  orderIndex  Int
+
+  // Content (from script segment)
+  speakerLabel String?
+  text         String
+  visualNotes  String?
+  durationSec  Int              @default(8)
+
+  // Source selection
+  source       SceneSource      @default(AI_GENERATED)
+  renderStatus SceneRenderStatus @default(PENDING)
+
+  // Doctor upload
+  uploadedVideoUrl     String?
+  uploadedVideoGcsPath String?
+
+  // AI render output
+  externalJobId      String?
+  renderedVideoUrl   String?
+  renderedVideoGcsPath String?
+
+  // TTS
+  ttsAudioUrl    String?
+  ttsAudioGcsPath String?
+
+  // Final (after post-processing)
+  finalVideoUrl    String?
+  finalVideoGcsPath String?
+  finalDurationSec  Int?
+
+  // Cost
+  estimatedCostUsd Float?
+  actualCostUsd    Float?
+
+  // Meta
+  errorMessage String?
+  retryCount   Int     @default(0)
+  version      Int     @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([jobId, orderIndex])
+  @@index([jobId, orderIndex])
+  @@index([renderStatus])
+  @@map("video_scenes")
 }
 
 model CourseVideoSettings {

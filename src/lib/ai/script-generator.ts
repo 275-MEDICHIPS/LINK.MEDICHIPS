@@ -96,6 +96,7 @@ export async function generateVideoScript(
     ``,
     `TOPIC: ${topic}`,
     `TARGET DURATION: ${targetDurationSec} seconds (~${Math.round(targetDurationSec / 60)} minutes)`,
+    `TARGET SCENES: ${Math.max(3, Math.min(8, Math.round(targetDurationSec / 40)))} scenes (each scene = one video clip)`,
     `LANGUAGE/LOCALE: ${targetLocale}`,
     `RISK LEVEL: ${riskLevel}`,
     speakerName ? `SPEAKER NAME: ${speakerName}` : "",

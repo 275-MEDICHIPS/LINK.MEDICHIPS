@@ -432,6 +432,32 @@ export default function SceneStoryboard({
           Scenes ({sortedScenes.length})
         </h3>
 
+        {/* Batch source toggle (setup mode) */}
+        {mode === "setup" && onSourceChange && (
+          <div className="flex gap-1">
+            <button
+              onClick={() =>
+                sortedScenes.forEach((s) =>
+                  onSourceChange(s.id, "AI_GENERATED")
+                )
+              }
+              className="rounded-md border border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-50"
+            >
+              All AI
+            </button>
+            <button
+              onClick={() =>
+                sortedScenes.forEach((s) =>
+                  onSourceChange(s.id, "DOCTOR_VIDEO")
+                )
+              }
+              className="rounded-md border border-gray-200 px-2 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-50"
+            >
+              All Doctor
+            </button>
+          </div>
+        )}
+
         {/* Rendering progress bar */}
         {renderingProgress && (
           <div className="flex items-center gap-3 text-xs">
